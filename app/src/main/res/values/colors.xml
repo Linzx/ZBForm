@@ -4,8 +4,9 @@
     <!-- for signui -->
     <color name="colorPrimary">#3086BE</color>
     <color name="colorPrimaryDark">#3086BE</color>
-    <color name="colorAccent">#FF4081</color>
+    <color name="colorAccent">#3086BE</color>
     <color name="btn_press">#ff336BA3</color>
+    <color name="accent_material_light">#3086BE</color><!-- login color-->
     <!-- for signui -->
 
     <color name="white_text">#fafafa</color>
@@ -32,7 +33,7 @@
     <color name="menu_text_color_selected">#FFFFFF</color>
     <color name="avatar_text">#FFFFFF</color>
     <color name="avatar_background">#444444</color>
-    <color name="accent_material_light">#d20000</color>
+
     <color name="primary_material_light">#f5f5f5</color>
     <color name="theme_color_primary">#d20000</color>
 
@@ -86,7 +87,7 @@
     <color name="commentBarEditTextColor">#ff333333</color>
     <color name="commentBarLineColor">@color/lineColor</color>
     <color name="commentBarPostDisableTextColor">#ff999999</color>
-    <color name="commentBarPostTextColor">#ff333333</color>
+    <color name="commentBarPostTextColor">#ff3333</color>
     <color name="contentTvColor">#ff333333</color>
     <color name="creamPlaylistChooseClassTitleColor">#ff333333</color>
     <color name="creamPlaylistEntranceHeaderBackground">#ffffffff</color>

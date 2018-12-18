@@ -7,7 +7,6 @@ import com.github.paolorotolo.appintro.AppIntro;
 import com.zbform.penform.R;
 
 /**
- * Created by julio on 20/10/15.
  */
 public abstract class BaseAppIntro extends AppIntro {
     private int mScrollDurationFactor = 1;

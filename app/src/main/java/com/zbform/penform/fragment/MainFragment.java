@@ -24,7 +24,7 @@ public class MainFragment extends BaseFragment {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            reloadAdapter();
+//            reloadAdapter();
         }
     }
 
@@ -49,14 +49,10 @@ public class MainFragment extends BaseFragment {
         super.setUserVisibleHint(isVisibleToUser);
         if (isVisibleToUser) {
             //相当于Fragment的onResume
-            reloadAdapter();
+//            reloadAdapter();
         }
     }
 
 
-    @Override
-    public void changeTheme() {
-        super.changeTheme();
-//        swipeRefresh.setColorSchemeColors(ThemeUtils.getColorById(mContext, R.color.theme_color_primary));
-    }
+
 }

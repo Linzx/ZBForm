@@ -13,7 +13,7 @@ public class PlaylistPlayInfoGet {
     static ArrayList<MusicDetailInfo> arrayList;
 
     public PlaylistPlayInfoGet(ArrayList<MusicDetailInfo> arrayList) {
-        this.arrayList = arrayList;
+        PlaylistPlayInfoGet.arrayList = arrayList;
     }
 
     static ExecutorService pool = Executors.newFixedThreadPool(10);

@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewParent;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import com.zbform.penform.animation.AnimationHelper;
@@ -18,6 +19,7 @@ public class TransitionView extends RelativeLayout
     private View v_line;
     private TextView tv_sign_up;
     private TextView tv_success;
+    private View parent;
 
     private OnAnimationEndListener mOnAnimationEndListener;
 
@@ -46,6 +48,9 @@ public class TransitionView extends RelativeLayout
         tv_success = (TextView) mRootView.findViewById(R.id.tv_success);
     }
 
+    public void setParent(View v){
+        parent = v;
+    }
     /**
      */
     public void startAnimation()
@@ -112,13 +117,12 @@ public class TransitionView extends RelativeLayout
     }
 
     //计算扩散动画最终放大比例
-    private float getScale()
-    {
+    private float getScale() {
         //原始扩散圆的直径
         int orgWidth = v_spread.getMeasuredWidth();
 
-        int width = getMeasuredWidth();
-        int height = getMeasuredHeight();
+        int width = parent == null ? getMeasuredWidth() : parent.getMeasuredWidth();
+        int height = parent == null ? getMeasuredWidth() : parent.getMeasuredHeight();
 
         //扩散圆最终扩散的圆的半径
         float finalDiameter = (int) (Math.sqrt(width * width + height * height));

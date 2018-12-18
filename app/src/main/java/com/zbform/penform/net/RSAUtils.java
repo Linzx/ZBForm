@@ -112,7 +112,7 @@ public class RSAUtils {
     }
 
     @NonNull
-    static public String toHex(byte[] c) throws UnsupportedEncodingException {
+    static public String toHex(byte[] c) {
 
         StringBuilder buf = new StringBuilder();
         for (byte b : c) {

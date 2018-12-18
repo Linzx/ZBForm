@@ -5,6 +5,8 @@
         AppBaseTheme from res/values/styles.xml on API 11+ devices.
     -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+
         <item name="android:windowTranslucentStatus">true</item>
         <item name="android:windowAnimationStyle">@style/NoAnimation</item>
         <item name="android:actionOverflowButtonStyle">@style/MyOverflowStyle</item>

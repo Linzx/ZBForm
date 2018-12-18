@@ -29,7 +29,7 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 
 import com.zbform.penform.R;
-import com.zbform.penform.adapter.SearchAdapter;
+//import com.zbform.penform.adapter.SearchAdapter;
 import com.zbform.penform.info.MusicInfo;
 import com.zbform.penform.provider.SearchHistory;
 import com.zbform.penform.util.CommonUtils;
@@ -44,7 +44,7 @@ public class LocalSearchActivity extends AppCompatActivity implements SearchView
     private InputMethodManager mImm;
     private String queryString;
 
-    private SearchAdapter adapter;
+//    private SearchAdapter adapter;
     private RecyclerView recyclerView;
 
     private List<MusicInfo> searchResults = new ArrayList<>();
@@ -73,8 +73,8 @@ public class LocalSearchActivity extends AppCompatActivity implements SearchView
         recyclerView = (RecyclerView) findViewById(R.id.recyclerview);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setHasFixedSize(true);
-        adapter = new SearchAdapter(this);
-        recyclerView.setAdapter(adapter);
+//        adapter = new SearchAdapter(this);
+//        recyclerView.setAdapter(adapter);
     }
 
 
@@ -141,13 +141,13 @@ public class LocalSearchActivity extends AppCompatActivity implements SearchView
 
             searchResults.addAll((songList.size() < 10 ? songList : songList.subList(0, 10)));
         } else {
-            searchResults.clear();
-            adapter.updateSearchResults(searchResults);
-            adapter.notifyDataSetChanged();
+//            searchResults.clear();
+//            adapter.updateSearchResults(searchResults);
+//            adapter.notifyDataSetChanged();
         }
 
-        adapter.updateSearchResults(searchResults);
-        adapter.notifyDataSetChanged();
+//        adapter.updateSearchResults(searchResults);
+//        adapter.notifyDataSetChanged();
 
         return true;
     }

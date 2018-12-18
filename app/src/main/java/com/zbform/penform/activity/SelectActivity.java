@@ -26,7 +26,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.zbform.penform.R;
-import com.zbform.penform.dialog.AddPlaylistDialog;
 import com.zbform.penform.info.MusicInfo;
 import com.zbform.penform.provider.PlaylistsManager;
 import com.zbform.penform.service.MediaService;
@@ -152,9 +151,9 @@ public class SelectActivity extends AppCompatActivity implements View.OnClickLis
                 for (int i = 0; i < mAdapter.getSelectedItem().size(); i++) {
                     list1[i] = selectList.get(i).songId;
                 }
-                AddPlaylistDialog.newInstance(list1).show(getSupportFragmentManager(), "add");
-                Intent intent = new Intent(MediaService.PLAYLIST_CHANGED);
-                sendBroadcast(intent);
+//                AddPlaylistDialog.newInstance(list1).show(getSupportFragmentManager(), "add");
+//                Intent intent = new Intent(MediaService.PLAYLIST_CHANGED);
+//                sendBroadcast(intent);
 
                 break;
             case R.id.select_del:

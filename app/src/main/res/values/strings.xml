@@ -5,6 +5,26 @@
     <string name="prompt_username">Username</string>
     <string name="prompt_password">Password</string>
 
+    <string-array name="menu_items">
+        <item>表单列表</item>
+        <item>表单记录</item>
+        <item>笔管理</item>
+        <item>设置</item>
+        <item>检查更新</item>
+        <item>退出</item>
+    </string-array>
+
+    <string name="cube_ptr_pull_down">下拉</string>
+    <string name="cube_ptr_pull_down_to_refresh">下拉刷新</string>
+    <string name="cube_ptr_release_to_refresh">释放刷新</string>
+    <string name="cube_ptr_refreshing">加载中...</string>
+    <string name="cube_ptr_refresh_complete">更新完成.</string>
+
+    <string name="cube_ptr_last_update">上次更新:&#160;</string>
+    <string name="cube_ptr_seconds_ago">&#160;秒之前</string>
+    <string name="cube_ptr_minutes_ago">&#160;分钟之前</string>
+    <string name="cube_ptr_hours_ago">&#160;小时之前</string>
+
     <string name="wifi_ap_name">AP Name</string>
     <string name="wifi_ap_psw">AP PSW</string>
     <string name="cus_info">Custom Info</string>

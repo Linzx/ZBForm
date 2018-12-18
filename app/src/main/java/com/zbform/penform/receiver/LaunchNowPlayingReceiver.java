@@ -20,7 +20,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 
-//import com.zbform.penform.activity.PlayingActivity;
 
 public class LaunchNowPlayingReceiver extends BroadcastReceiver {
 

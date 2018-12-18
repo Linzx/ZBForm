@@ -4,14 +4,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center_horizontal"
-    android:orientation="vertical"
-    android:fitsSystemWindows="true">
+    android:orientation="vertical">
 
     <!-- Login progress -->
     <ImageView
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/actionbar_discover_normal"
+        android:layout_height="200dp"
+        android:src="@drawable/logo"
         />
 
     <ScrollView
@@ -64,13 +63,14 @@
             </android.support.design.widget.TextInputLayout>
 
             <Button
-                android:id="@+id/btn_login"
+                android:id="@+id/tv_sign_up"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/sign_up"
                 android:textStyle="bold"
                 android:textColor="@color/white"
-                android:background="?colorAccent"
+                android:background="@drawable/selector_btn_bg"
+                android:onClick="singUp"
                 />
 
         </LinearLayout>

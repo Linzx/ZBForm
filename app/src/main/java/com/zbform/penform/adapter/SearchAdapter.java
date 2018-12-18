@@ -24,7 +24,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.zbform.penform.R;
-import com.zbform.penform.fragment.SimpleMoreFragment;
 import com.zbform.penform.info.MusicInfo;
 import com.zbform.penform.service.MusicPlayer;
 import com.zbform.penform.util.MusicUtils;
@@ -71,13 +70,13 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ItemHolder
 
     private void setOnPopupMenuListener(ItemHolder itemHolder, final int position) {
 
-        itemHolder.menu.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                SimpleMoreFragment morefragment = SimpleMoreFragment.newInstance(searchResults.get(position).songId);
-                morefragment.show(((AppCompatActivity) mContext).getSupportFragmentManager(), "music");
-            }
-        });
+//        itemHolder.menu.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                SimpleMoreFragment morefragment = SimpleMoreFragment.newInstance(searchResults.get(position).songId);
+//                morefragment.show(((AppCompatActivity) mContext).getSupportFragmentManager(), "music");
+//            }
+//        });
     }
 
 

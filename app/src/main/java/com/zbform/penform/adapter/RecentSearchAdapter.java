@@ -24,7 +24,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.zbform.penform.R;
-import com.zbform.penform.fragmentnet.SearchWords;
 import com.zbform.penform.provider.SearchHistory;
 
 import java.util.ArrayList;
@@ -32,16 +31,16 @@ import java.util.ArrayList;
 public class RecentSearchAdapter extends RecyclerView.Adapter<RecentSearchAdapter.ItemHolder> {
     private Context mContext;
     private ArrayList<String> recentSearches = new ArrayList<>();
-    private SearchWords searchWords;
+//    private SearchWords searchWords;
 
     public RecentSearchAdapter(Activity context) {
         mContext = context;
         recentSearches = SearchHistory.getInstance(context).getRecentSearches();
     }
 
-    public void setListenter(SearchWords search) {
-        searchWords = search;
-    }
+//    public void setListenter(SearchWords search) {
+//        searchWords = search;
+//    }
 
     @Override
     public ItemHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
@@ -95,9 +94,9 @@ public class RecentSearchAdapter extends RecyclerView.Adapter<RecentSearchAdapte
 
         @Override
         public void onClick(View v) {
-            if (searchWords != null) {
-                searchWords.onSearch(recentSearches.get(getAdapterPosition()));
-            }
+//            if (searchWords != null) {
+//                searchWords.onSearch(recentSearches.get(getAdapterPosition()));
+//            }
 
         }
 

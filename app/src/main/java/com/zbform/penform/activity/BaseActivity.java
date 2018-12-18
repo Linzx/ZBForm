@@ -14,7 +14,6 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.zbform.penform.R;
-import com.zbform.penform.fragment.QuickControlsFragment;
 import com.zbform.penform.service.MediaService;
 import com.zbform.penform.service.MusicPlayer;
 import com.zbform.penform.util.IConstants;
@@ -31,9 +30,8 @@ public class BaseActivity extends AppCompatActivity implements ServiceConnection
 
     private MusicPlayer.ServiceToken mToken;
     private PlaybackStatus mPlaybackStatus; //receiver 接受播放状态变化等
-    private QuickControlsFragment fragment; //底部播放控制栏
     private String TAG = "BaseActivity";
-    private ArrayList<MusicStateListener> mMusicListener = new ArrayList<>();
+//    private ArrayList<MusicStateListener> mMusicListener = new ArrayList<>();
 
     /**
      * 更新播放队列
@@ -45,34 +43,34 @@ public class BaseActivity extends AppCompatActivity implements ServiceConnection
     /**
      * 更新歌曲状态信息
      */
-    public void updateTrackInfo() {
-        for (final MusicStateListener listener : mMusicListener) {
-            if (listener != null) {
-                listener.reloadAdapter();
-                listener.updateTrackInfo();
-            }
-        }
-    }
+//    public void updateTrackInfo() {
+//        for (final MusicStateListener listener : mMusicListener) {
+//            if (listener != null) {
+//                listener.reloadAdapter();
+//                listener.updateTrackInfo();
+//            }
+//        }
+//    }
 
     /**
      *  fragment界面刷新
      */
-    public void refreshUI() {
-        for (final MusicStateListener listener : mMusicListener) {
-            if (listener != null) {
-                listener.reloadAdapter();
-            }
-        }
-
-    }
-
-    public void updateTime() {
-        for (final MusicStateListener listener : mMusicListener) {
-            if (listener != null) {
-                listener.updateTime();
-            }
-        }
-    }
+//    public void refreshUI() {
+//        for (final MusicStateListener listener : mMusicListener) {
+//            if (listener != null) {
+//                listener.reloadAdapter();
+//            }
+//        }
+//
+//    }
+//
+//    public void updateTime() {
+//        for (final MusicStateListener listener : mMusicListener) {
+//            if (listener != null) {
+//                listener.updateTime();
+//            }
+//        }
+//    }
 
     /**
      *  歌曲切换
@@ -94,13 +92,6 @@ public class BaseActivity extends AppCompatActivity implements ServiceConnection
 
     }
 
-    public void changeTheme() {
-        for (final MusicStateListener listener : mMusicListener) {
-            if (listener != null) {
-                listener.changeTheme();
-            }
-        }
-    }
 
     /**
      * @param l 歌曲是否加载中
@@ -115,7 +106,7 @@ public class BaseActivity extends AppCompatActivity implements ServiceConnection
      */
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        //super.onSaveInstanceState(outState);
+        super.onSaveInstanceState(outState);
     }
 
     /**
@@ -130,21 +121,21 @@ public class BaseActivity extends AppCompatActivity implements ServiceConnection
     /**
      * @param show 显示或关闭底部播放控制栏
      */
-    protected void showQuickControl(boolean show) {
-        Log.d(TAG, MusicPlayer.getQueue().length + "");
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        if (show) {
-            if (fragment == null) {
-                fragment = QuickControlsFragment.newInstance();
-                ft.add(R.id.bottom_container, fragment).commitAllowingStateLoss();
-            } else {
-                ft.show(fragment).commitAllowingStateLoss();
-            }
-        } else {
-            if (fragment != null)
-                ft.hide(fragment).commitAllowingStateLoss();
-        }
-    }
+//    protected void showQuickControl(boolean show) {
+//        Log.d(TAG, MusicPlayer.getQueue().length + "");
+//        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+//        if (show) {
+//            if (fragment == null) {
+//                fragment = QuickControlsFragment.newInstance();
+//                ft.add(R.id.bottom_container, fragment).commitAllowingStateLoss();
+//            } else {
+//                ft.show(fragment).commitAllowingStateLoss();
+//            }
+//        } else {
+//            if (fragment != null)
+//                ft.hide(fragment).commitAllowingStateLoss();
+//        }
+//    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -165,7 +156,7 @@ public class BaseActivity extends AppCompatActivity implements ServiceConnection
         f.addAction(IConstants.PLAYLIST_COUNT_CHANGED);
         f.addAction(MediaService.MUSIC_LODING);
         registerReceiver(mPlaybackStatus, new IntentFilter(f));
-        showQuickControl(true);
+//        showQuickControl(true);
     }
 
 
@@ -188,7 +179,7 @@ public class BaseActivity extends AppCompatActivity implements ServiceConnection
             unregisterReceiver(mPlaybackStatus);
         } catch (final Throwable e) {
         }
-        mMusicListener.clear();
+//        mMusicListener.clear();
 
     }
 
@@ -199,21 +190,21 @@ public class BaseActivity extends AppCompatActivity implements ServiceConnection
         }
     }
 
-    public void setMusicStateListenerListener(final MusicStateListener status) {
-        if (status == this) {
-            throw new UnsupportedOperationException("Override the method, don't add a listener");
-        }
-
-        if (status != null) {
-            mMusicListener.add(status);
-        }
-    }
-
-    public void removeMusicStateListenerListener(final MusicStateListener status) {
-        if (status != null) {
-            mMusicListener.remove(status);
-        }
-    }
+//    public void setMusicStateListenerListener(final MusicStateListener status) {
+//        if (status == this) {
+//            throw new UnsupportedOperationException("Override the method, don't add a listener");
+//        }
+//
+//        if (status != null) {
+//            mMusicListener.add(status);
+//        }
+//    }
+//
+//    public void removeMusicStateListenerListener(final MusicStateListener status) {
+//        if (status != null) {
+//            mMusicListener.remove(status);
+//        }
+//    }
 
 
     private final static class PlaybackStatus extends BroadcastReceiver {
@@ -232,12 +223,12 @@ public class BaseActivity extends AppCompatActivity implements ServiceConnection
             BaseActivity baseActivity = mReference.get();
             if (baseActivity != null) {
                 if (action.equals(MediaService.META_CHANGED)) {
-                    baseActivity.updateTrackInfo();
+//                    baseActivity.updateTrackInfo();
 
                 } else if (action.equals(MediaService.PLAYSTATE_CHANGED)) {
 
                 } else if (action.equals(MediaService.TRACK_PREPARED)) {
-                    baseActivity.updateTime();
+//                    baseActivity.updateTime();
                 } else if (action.equals(MediaService.BUFFER_UP)) {
                     baseActivity.updateBuffer(intent.getIntExtra("progress", 0));
                 } else if (action.equals(MediaService.MUSIC_LODING)) {
@@ -245,9 +236,9 @@ public class BaseActivity extends AppCompatActivity implements ServiceConnection
                 } else if (action.equals(MediaService.REFRESH)) {
 
                 } else if (action.equals(IConstants.MUSIC_COUNT_CHANGED)) {
-                    baseActivity.refreshUI();
+//                    baseActivity.refreshUI();
                 } else if (action.equals(IConstants.PLAYLIST_COUNT_CHANGED)) {
-                    baseActivity.refreshUI();
+//                    baseActivity.refreshUI();
                 } else if (action.equals(MediaService.QUEUE_CHANGED)) {
                     baseActivity.updateQueue();
                 } else if (action.equals(MediaService.TRACK_ERROR)) {

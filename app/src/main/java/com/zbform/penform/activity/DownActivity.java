@@ -10,10 +10,9 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 
-import com.bilibili.magicasakura.utils.ThemeUtils;
 import com.zbform.penform.R;
-import com.zbform.penform.fragment.DownFragment;
-import com.zbform.penform.fragment.DownMusicFragment;
+//import com.zbform.penform.fragment.DownFragment;
+//import com.zbform.penform.fragment.DownMusicFragment;
 import com.zbform.penform.util.CommonUtils;
 
 
@@ -59,8 +58,8 @@ public class DownActivity extends BaseActivity {
         }
 
         final TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
-        tabLayout.setTabTextColors(R.color.text_color, ThemeUtils.getThemeColorStateList(this, R.color.theme_color_primary).getDefaultColor());
-        tabLayout.setSelectedTabIndicatorColor(ThemeUtils.getThemeColorStateList(this, R.color.theme_color_primary).getDefaultColor());
+//        tabLayout.setTabTextColors(R.color.text_color, ThemeUtils.getThemeColorStateList(this, R.color.theme_color_primary).getDefaultColor());
+//        tabLayout.setSelectedTabIndicatorColor(ThemeUtils.getThemeColorStateList(this, R.color.theme_color_primary).getDefaultColor());
         tabLayout.setupWithViewPager(viewPager);
 
 
@@ -69,8 +68,8 @@ public class DownActivity extends BaseActivity {
 
     private void setupViewPager(ViewPager viewPager) {
         Adapter adapter = new Adapter(getSupportFragmentManager());
-        adapter.addFragment(DownMusicFragment.newInstance("/storage/emulated/0/remusic", false, null), "单曲");
-        adapter.addFragment(new DownFragment(), "下载中");
+//        adapter.addFragment(DownMusicFragment.newInstance("/storage/emulated/0/remusic", false, null), "单曲");
+//        adapter.addFragment(new DownFragment(), "下载中");
         viewPager.setAdapter(adapter);
     }
 
