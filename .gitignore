@@ -8,3 +8,7 @@ gradlew
 gradlew.bat
 local.properties
 build/*
+app/.DS_Store
+app/**/.DS_Store
+.DS_Store
+gradle.properties

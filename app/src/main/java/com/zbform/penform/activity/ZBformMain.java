@@ -40,13 +40,9 @@ import com.zbform.penform.banner.BannerHttpUtils;
 import com.zbform.penform.dialog.CardPickerDialog;
 import com.zbform.penform.fragment.FormListFragment;
 import com.zbform.penform.handler.HandlerUtil;
-import com.zbform.penform.info.URLUtils;
-import com.zbform.penform.service.MusicPlayer;
 import com.zbform.penform.settings.Activity_Settings;
-import com.zbform.penform.util.ThemeHelper;
 import com.zbform.penform.update.UpdateAppManager;
 import com.zbform.penform.update.UpdateUtils;
-import com.zbform.penform.widget.CustomViewPager;
 import com.zbform.penform.widget.SplashScreen;
 
 import java.util.ArrayList;
@@ -150,16 +146,11 @@ public class ZBformMain extends BaseActivity{
                     case 4:
 //                        BitSetFragment bfragment = new BitSetFragment();
 //                        bfragment.show(getSupportFragmentManager(), "bitset");
-                        new CheckUpdateTask().execute(URLUtils.UPDATE_URL_PATH_JSON);
                         drawerLayout.closeDrawers();
 
                         break;
                     case 5:
-                        //侧边栏退出按钮
-                        if (MusicPlayer.isPlaying()) {
-                            MusicPlayer.playOrPause();
-                        }
-                        unbindService();
+
                         finish();
                         drawerLayout.closeDrawers();
 

@@ -50,9 +50,6 @@
             android:name="com.zbform.penform.activity.LocalSearchActivity"
             android:screenOrientation="portrait" />
         <activity
-            android:name="com.zbform.penform.activity.SelectActivity"
-            android:screenOrientation="portrait" />
-        <activity
             android:name="com.zbform.penform.activity.PlaylistSelectActivity"
             android:screenOrientation="portrait" />
         <activity
@@ -121,18 +118,6 @@
             <intent-filter>
                 <action android:name="com.foxconn.smartbox.LAUNCH_NOW_PLAYING_ACTION" />
             </intent-filter>
-        </receiver>
-        <receiver android:name="com.zbform.penform.widget.SimpleWidgetProvider">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.foxconn.smartbox.metachanged" />
-                <action android:name="com.foxconn.smartbox.change_music" />
-                <action android:name="com.foxconn.smartbox.progress" />
-            </intent-filter>
-
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/appwidget_info" />
         </receiver>
 
         <activity

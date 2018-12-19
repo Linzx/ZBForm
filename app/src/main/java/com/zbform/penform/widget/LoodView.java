@@ -32,7 +32,6 @@ import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.zbform.penform.R;
-import com.zbform.penform.json.FocusItemInfo;
 import com.zbform.penform.net.BMA;
 import com.zbform.penform.net.HttpUtil;
 import com.zbform.penform.net.NetworkUtils;
@@ -222,12 +221,7 @@ public class LoodView extends FrameLayout {
 
                     imageNet.clear();
                     for (int i = 0; i < en; i++) {
-                        FocusItemInfo focusItemInfo = gson.fromJson(rray.get(i), FocusItemInfo.class);
-                        if (focusItemInfo != null) {
-                            imageNet.add(focusItemInfo.getRandpic());
-                        } else {
-                            imageNet.add("");
-                        }
+
                     }
                 } catch (NullPointerException e) {
                     e.printStackTrace();

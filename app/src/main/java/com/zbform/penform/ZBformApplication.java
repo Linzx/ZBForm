@@ -4,9 +4,6 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Build;
 import android.os.Environment;
-import android.support.annotation.ColorInt;
-import android.support.annotation.ColorRes;
-import android.util.Log;
 
 import com.facebook.cache.disk.DiskCacheConfig;
 import com.facebook.common.internal.Supplier;
@@ -16,15 +13,7 @@ import com.facebook.imagepipeline.core.ImagePipeline;
 import com.facebook.imagepipeline.core.ImagePipelineConfig;
 import com.google.gson.Gson;
 import com.zbform.penform.handler.UnceHandler;
-import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.permissions.Nammu;
-import com.zbform.penform.provider.PlaylistInfo;
-import com.zbform.penform.util.IConstants;
-import com.zbform.penform.util.PreferencesUtility;
-import com.zbform.penform.util.ThemeHelper;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 /**
  */

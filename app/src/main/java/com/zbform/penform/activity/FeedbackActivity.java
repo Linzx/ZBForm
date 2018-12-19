@@ -12,7 +12,6 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.zbform.penform.R;
-import com.zbform.penform.info.URLUtils;
 import com.zbform.penform.settings.FeedbackJsonParser;
 import com.zbform.penform.util.CommonUtils;
 
@@ -97,7 +96,7 @@ public class FeedbackActivity extends AppCompatActivity implements View.OnClickL
                 params.put("phone",mPhoneNumber);
 
                 JSONObject jsonObject = feedbackJsonParser.makeHttpRequest(
-                        URLUtils.FEEDBACK_URL,"POST",params);
+                        "","POST",params);
                 String message = jsonObject.getString("returnMessage");
                 Log.d(TAG,"jsonObject:" + jsonObject.toString());
                 return message;

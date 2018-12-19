@@ -16,14 +16,9 @@ import com.lidroid.xutils.exception.HttpException;
 import com.lidroid.xutils.http.ResponseInfo;
 import com.lidroid.xutils.http.callback.RequestCallBack;
 import com.lidroid.xutils.http.client.HttpRequest;
-import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.view.TransitionView;
 import com.zbform.penform.R;
-
-import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class SignInActivity extends AppCompatActivity{
 
