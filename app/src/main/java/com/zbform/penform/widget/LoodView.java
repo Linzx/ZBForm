@@ -32,9 +32,10 @@ import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.zbform.penform.R;
-import com.zbform.penform.net.BMA;
-import com.zbform.penform.net.HttpUtil;
-import com.zbform.penform.net.NetworkUtils;
+import com.zbform.penform.json.FocusItemInfo;
+//import com.zbform.penform.net.BMA;
+//import com.zbform.penform.net.HttpUtil;
+//import com.zbform.penform.net.NetworkUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -122,7 +123,7 @@ public class LoodView extends FrameLayout {
      * @param context
      */
     private void initUI(Context context) {
-        LayoutInflater.from(context).inflate(R.layout.load_view, this, true);
+//        LayoutInflater.from(context).inflate(R.layout.load_view, this, true);
         for (String imagesID : imageNet) {
             final SimpleDraweeView mAlbumArt = new SimpleDraweeView(context);
 
@@ -181,15 +182,15 @@ public class LoodView extends FrameLayout {
             mAlbumArt.setScaleType(ImageView.ScaleType.CENTER_CROP);
             imageViewList.add(mAlbumArt);
         }
-        dotViewList.add(findViewById(R.id.v_dot1));
-        dotViewList.add(findViewById(R.id.v_dot2));
-        dotViewList.add(findViewById(R.id.v_dot3));
-        dotViewList.add(findViewById(R.id.v_dot4));
-        dotViewList.add(findViewById(R.id.v_dot5));
-        dotViewList.add(findViewById(R.id.v_dot6));
-        dotViewList.add(findViewById(R.id.v_dot7));
-
-        viewPager = (ViewPager) findViewById(R.id.viewPager);
+//        dotViewList.add(findViewById(R.id.v_dot1));
+//        dotViewList.add(findViewById(R.id.v_dot2));
+//        dotViewList.add(findViewById(R.id.v_dot3));
+//        dotViewList.add(findViewById(R.id.v_dot4));
+//        dotViewList.add(findViewById(R.id.v_dot5));
+//        dotViewList.add(findViewById(R.id.v_dot6));
+//        dotViewList.add(findViewById(R.id.v_dot7));
+//
+//        viewPager = (ViewPager) findViewById(R.id.viewPager);
         viewPager.setFocusable(true);
         fPagerAdapter = new FPagerAdapter();
         viewPager.setAdapter(fPagerAdapter);
@@ -210,22 +211,27 @@ public class LoodView extends FrameLayout {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-                if (NetworkUtils.isConnectInternet(mContext)) {
-                    isFromCache = false;
-                }
-
-                try {
-                    JsonArray rray = HttpUtil.getResposeJsonObject(BMA.focusPic(7), mContext, isFromCache).get("pic").getAsJsonArray();
-                    int en = rray.size();
-                    Gson gson = new Gson();
-
-                    imageNet.clear();
-                    for (int i = 0; i < en; i++) {
-
-                    }
-                } catch (NullPointerException e) {
-                    e.printStackTrace();
-                }
+//                if (NetworkUtils.isConnectInternet(mContext)) {
+//                    isFromCache = false;
+//                }
+//
+//                try {
+//                    JsonArray rray = HttpUtil.getResposeJsonObject(BMA.focusPic(7), mContext, isFromCache).get("pic").getAsJsonArray();
+//                    int en = rray.size();
+//                    Gson gson = new Gson();
+//
+//                    imageNet.clear();
+//                    for (int i = 0; i < en; i++) {
+//                        FocusItemInfo focusItemInfo = gson.fromJson(rray.get(i), FocusItemInfo.class);
+//                        if (focusItemInfo != null) {
+//                            imageNet.add(focusItemInfo.getRandpic());
+//                        } else {
+//                            imageNet.add("");
+//                        }
+//                    }
+//                } catch (NullPointerException e) {
+//                    e.printStackTrace();
+//                }
 
 
                 return null;

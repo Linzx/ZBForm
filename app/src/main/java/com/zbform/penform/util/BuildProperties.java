@@ -12,7 +12,7 @@ import java.util.Properties;
 import java.util.Set;
 
 /**
-
+ * Created by isaac on 2018/8/2.
  */
 //引用到的工具类 判断定制系统类型
 

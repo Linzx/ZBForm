@@ -10,13 +10,14 @@ import android.widget.Toast;
 
 import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.activity.ZBformMain;
+//import com.zbform.penform.provider.MusicPlaybackState;
 import com.zbform.penform.util.PreferencesUtility;
 
 import java.io.File;
 import java.io.PrintWriter;
 
 /**
-
+ * Created by isaac on 2018/8/2.
  */
 public class UnceHandler implements Thread.UncaughtExceptionHandler {
 
@@ -45,6 +46,7 @@ public class UnceHandler implements Thread.UncaughtExceptionHandler {
             if (file.exists()) {
                 file.delete();
             }
+//            MusicPlaybackState.getInstance(application).clearQueue();
             Intent intent = new Intent(application.getApplicationContext(), ZBformMain.class);
             if(System.currentTimeMillis() - PreferencesUtility.getInstance(application.getApplicationContext()).lastExit() < 10000){
                 android.os.Process.killProcess(android.os.Process.myPid());

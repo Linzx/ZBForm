@@ -6,7 +6,7 @@ import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 
 /**
-
+ * Created by isaac on 2018/8/2.
  */
 /*
 * 获取、设置控件信息

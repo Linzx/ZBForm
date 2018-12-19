@@ -1,30 +1,39 @@
 package com.zbform.penform.activity;
 
 import android.animation.ObjectAnimator;
+import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AutoCompleteTextView;
+import android.widget.EditText;
 
-import com.lidroid.xutils.HttpUtils;
-import com.lidroid.xutils.exception.HttpException;
-import com.lidroid.xutils.http.ResponseInfo;
-import com.lidroid.xutils.http.callback.RequestCallBack;
-import com.lidroid.xutils.http.client.HttpRequest;
-import com.zbform.penform.net.ApiAddress;
+import com.zbform.penform.task.LoginTask;
 import com.zbform.penform.view.TransitionView;
 import com.zbform.penform.R;
 
-public class SignInActivity extends AppCompatActivity{
+
+public class SignInActivity extends AppCompatActivity implements View.OnClickListener, LoginTask.OnLoginTaskListener {
 
     private TransitionView mAnimView;
     private Toolbar mToolbar;
     private View mBarContainer;
+    private AutoCompleteTextView mNameText;
+    private EditText mPwdText;
+    private LoginTask mLoginTask;
+
+    public static void launch(Activity activity) {
+        Intent intent = new Intent(activity, SignInActivity.class);
+        activity.startActivity(intent);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
@@ -42,74 +51,70 @@ public class SignInActivity extends AppCompatActivity{
                 gotoHomeActivity();
             }
         });
+
+        mNameText = findViewById(R.id.actv_username);
+        mPwdText = findViewById(R.id.edit_password);
+        View signUp = findViewById(R.id.tv_sign_up);
+        signUp.setOnClickListener(this);
+        mLoginTask = new LoginTask();
+        mLoginTask.setOnLoginTaskListener(this);
     }
 
     private void gotoHomeActivity(){
-        //startActivity(new Intent(this, ZBformMain.class));
+        ZBformMain.launch(this);
         finish();
     }
 
-    public void singUp(View view){
-        testGet(view);
-        hideInput(view);
+    public void startLoginView(){
+        hideToolBar();
+
+        mAnimView.startLoginAni();
+    }
+
+    private void hideToolBar(){
         float curY = mBarContainer.getTranslationY();//获取当前的y轴位置
         float height = mBarContainer.getHeight();
         ObjectAnimator oa = ObjectAnimator.ofFloat(mBarContainer,"translationY",curY,-height);
         oa.setDuration(800);
         oa.start();
-        mAnimView.startAnimation();
-
-
     }
+
 
     public void hideInput(View view) {
         InputMethodManager inputMethodManager = (InputMethodManager) this.getSystemService(this.INPUT_METHOD_SERVICE);
         inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 
-    public void testGet(View view) {
-//        String keyOrigin = "ZB002"+ApiAddress.SYSTEM_KEY;
-//        String signcode="";
-//        try {
-//            String key1 = ZBformApplication.getSHA(keyOrigin);
-//            Log.i("whd","key1="+key1);
-//
-//             signcode =  ZBformApplication.getSHA(key1);
-//            Log.i("whd","key2="+signcode);
-//        } catch (NoSuchAlgorithmException e) {
-//            e.printStackTrace();
-//        }
-//
-//        long time = System.currentTimeMillis();
+    @Override
+    public void onClick(View v) {
+        String id = mNameText.getText().toString();
+        String pwd = mPwdText.getText().toString();
+        Log.i("whd","id="+id);
+        Log.i("whd","pwd="+pwd);
+        if (TextUtils.isEmpty(id) || pwd.isEmpty()){
+            return;
+        }
 
+        hideInput(v);
+        mLoginTask.Login(this, id, pwd);
+    }
 
-        HttpUtils http = new HttpUtils();
-        http.configCurrentHttpCacheExpiry(1000 * 10);
-        http.send(HttpRequest.HttpMethod.GET,
-                ApiAddress.getLoginUri("ZB002","888888"),
-                //params,
-                new RequestCallBack<String>() {
+    @Override
+    public void onStartLogin() {
+        startLoginView();
+    }
 
-                    @Override
-                    public void onStart() {
-                    }
+    @Override
+    public void onLoginSuccess() {
+        mAnimView.mSuccess = true;
+        if (mAnimView.mSignEnd) {
+            mAnimView.startSuccessAni();
+        }
+    }
 
-                    @Override
-                    public void onLoading(long total, long current, boolean isUploading) {
-                        Log.i("whd","onLoading");
-                    }
+    @Override
+    public void onLoginFail() {
+        Log.i("whd","onLoginFail");
 
-                    @Override
-                    public void onSuccess(ResponseInfo<String> responseInfo) {
-
-                        Log.i("whd","onSuccess="+responseInfo.result);
-                    }
-
-
-                    @Override
-                    public void onFailure(HttpException error, String msg) {
-                        Log.i("whd","onFailure="+msg);
-                    }
-                });
     }
 }

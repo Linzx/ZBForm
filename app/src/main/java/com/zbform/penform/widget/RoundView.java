@@ -25,7 +25,7 @@ import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.zbform.penform.R;
 
 /**
-
+ * Created by isaac on 2018/8/2.
  */
 public class RoundView extends FrameLayout {
     private View mView;
@@ -51,8 +51,8 @@ public class RoundView extends FrameLayout {
 
     private void initView(Context context){
         this.setAnimationCacheEnabled(false);
-        mView = LayoutInflater.from(context).inflate(R.layout.fragment_roundimage,null);
-        albumView = (SimpleDraweeView) mView.findViewById(R.id.sdv);
+        mView = null;//LayoutInflater.from(context).inflate(R.layout.fragment_roundimage,null);
+        albumView =null;// (SimpleDraweeView) mView.findViewById(R.id.sdv);
         addView(mView);
         //设置图像是否为圆形
         rp.setRoundAsCircle(true);

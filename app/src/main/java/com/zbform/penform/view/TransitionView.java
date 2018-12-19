@@ -4,31 +4,32 @@ import android.animation.Animator;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewParent;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
 import com.zbform.penform.animation.AnimationHelper;
 import com.zbform.penform.R;
 
 /**
  */
-public class TransitionView extends RelativeLayout
-{
+public class TransitionView extends RelativeLayout {
 
     private View v_spread; // 播放扩散动画的view
     private View v_line;
     private TextView tv_sign_up;
     private TextView tv_success;
     private View parent;
+    public boolean mSuccess = false;
+    public boolean mSignEnd = false;
 
     private OnAnimationEndListener mOnAnimationEndListener;
 
-    public TransitionView(Context context, AttributeSet attrs)
-    {
+    public TransitionView(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public TransitionView(Context context, AttributeSet attrs, int defStyleAttr)
-    {
+    public TransitionView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 
         //允许绘制背景，及执行onDraw()方法
@@ -37,8 +38,7 @@ public class TransitionView extends RelativeLayout
         init();
     }
 
-    private void init()
-    {
+    private void init() {
         View mRootView = inflate(getContext(), R.layout.view_transtion, this);
 
         v_spread = mRootView.findViewById(R.id.v_spread);
@@ -47,13 +47,15 @@ public class TransitionView extends RelativeLayout
         tv_success = (TextView) mRootView.findViewById(R.id.tv_success);
     }
 
-    public void setParent(View v){
+    public void setParent(View v) {
         parent = v;
     }
+
     /**
      */
-    public void startAnimation()
-    {
+    public void startLoginAni() {
+        mSuccess = false;
+        mSignEnd = false;
         this.setVisibility(View.VISIBLE);
 
         tv_sign_up.setTranslationX(0);
@@ -62,53 +64,45 @@ public class TransitionView extends RelativeLayout
         v_line.setVisibility(View.INVISIBLE);
 
         //缩放动画
-        AnimationHelper.spreadAni(v_spread, getScale(), new AnimationHelper.SimpleAnimatorListener()
-        {
+        AnimationHelper.spreadAni(v_spread, getScale(), new AnimationHelper.SimpleAnimatorListener() {
             @Override
-            public void onAnimationEnd(Animator animation)
-            {
+            public void onAnimationEnd(Animator animation) {
                 //结束后播放sign up 文字显示入场动画
                 startSignUpInAni();
             }
         });
     }
 
-    private void startSignUpInAni()
-    {
-        AnimationHelper.signUpTextInAni(tv_sign_up, new AnimationHelper.SimpleAnimatorListener()
-        {
+    private void startSignUpInAni() {
+        AnimationHelper.signUpTextInAni(tv_sign_up, new AnimationHelper.SimpleAnimatorListener() {
             @Override
-            public void onAnimationEnd(Animator animation)
-            {
+            public void onAnimationEnd(Animator animation) {
                 //开启线条播放动画
                 startLineAni();
             }
         });
     }
 
-    private void startLineAni()
-    {
-        AnimationHelper.lineExpendAni(v_line, new AnimationHelper.SimpleAnimatorListener()
-        {
+    private void startLineAni() {
+        AnimationHelper.lineExpendAni(v_line, new AnimationHelper.SimpleAnimatorListener() {
             @Override
-            public void onAnimationEnd(Animator animation)
-            {
+            public void onAnimationEnd(Animator animation) {
                 //开启success文字入场动画
-                startSuccessAni();
+                mSignEnd = true;
+                if(mSuccess) {
+                    startSuccessAni();
+                }
+
             }
         });
     }
 
-    private void startSuccessAni()
-    {
-        AnimationHelper.successInAni(tv_success, tv_sign_up, new AnimationHelper.SimpleAnimatorListener()
-        {
+    public void startSuccessAni() {
+        AnimationHelper.successInAni(tv_success, tv_sign_up, new AnimationHelper.SimpleAnimatorListener() {
             @Override
-            public void onAnimationEnd(Animator animation)
-            {
+            public void onAnimationEnd(Animator animation) {
                 //回调
-                if (mOnAnimationEndListener != null)
-                {
+                if (mOnAnimationEndListener != null) {
                     mOnAnimationEndListener.onEnd();
                 }
             }
@@ -130,15 +124,13 @@ public class TransitionView extends RelativeLayout
         return finalDiameter / orgWidth + 1;
     }
 
-    public void setOnAnimationEndListener(OnAnimationEndListener onAnimationEndListener)
-    {
+    public void setOnAnimationEndListener(OnAnimationEndListener onAnimationEndListener) {
         this.mOnAnimationEndListener = onAnimationEndListener;
     }
 
     /**
      */
-    public interface OnAnimationEndListener
-    {
+    public interface OnAnimationEndListener {
         void onEnd();
     }
 }

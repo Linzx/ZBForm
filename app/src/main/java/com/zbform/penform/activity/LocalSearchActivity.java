@@ -29,7 +29,14 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 
 import com.zbform.penform.R;
+//import com.zbform.penform.adapter.SearchAdapter;
+//import com.zbform.penform.info.MusicInfo;
+import com.zbform.penform.provider.SearchHistory;
 import com.zbform.penform.util.CommonUtils;
+//import com.zbform.penform.util.SearchUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class LocalSearchActivity extends AppCompatActivity implements SearchView.OnQueryTextListener, View.OnTouchListener {
 
@@ -40,12 +47,13 @@ public class LocalSearchActivity extends AppCompatActivity implements SearchView
 //    private SearchAdapter adapter;
     private RecyclerView recyclerView;
 
+//    private List<MusicInfo> searchResults = new ArrayList<>();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_local_search);
+//        setContentView(R.layout.activity_local_search);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.setPadding(0, CommonUtils.getStatusHeight(this), 0, 0);
@@ -62,7 +70,7 @@ public class LocalSearchActivity extends AppCompatActivity implements SearchView
         mImm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 
 
-        recyclerView = (RecyclerView) findViewById(R.id.recyclerview);
+//        recyclerView = (RecyclerView) findViewById(R.id.recyclerview);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setHasFixedSize(true);
 //        adapter = new SearchAdapter(this);
@@ -127,7 +135,16 @@ public class LocalSearchActivity extends AppCompatActivity implements SearchView
             return true;
         }
         queryString = newText;
-
+        if (!queryString.trim().equals("")) {
+//            this.searchResults = new ArrayList();
+//            List<MusicInfo> songList = SearchUtils.searchSongs(this, queryString);
+//
+//            searchResults.addAll((songList.size() < 10 ? songList : songList.subList(0, 10)));
+        } else {
+//            searchResults.clear();
+//            adapter.updateSearchResults(searchResults);
+//            adapter.notifyDataSetChanged();
+        }
 
 //        adapter.updateSearchResults(searchResults);
 //        adapter.notifyDataSetChanged();
@@ -148,6 +165,7 @@ public class LocalSearchActivity extends AppCompatActivity implements SearchView
             }
             mSearchView.clearFocus();
 
+            SearchHistory.getInstance(this).addSearchString(queryString);
         }
     }
 

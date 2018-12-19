@@ -76,7 +76,7 @@ public class AnimationHelper
         AnimatorSet animatorSet = new AnimatorSet();
 
         animatorSet.playTogether(scaleX, scaleY, translationAni, alphaAni);
-        animatorSet.setDuration(2000);
+        animatorSet.setDuration(1000);
         animatorSet.start();
 
         animatorSet.addListener(endListener);

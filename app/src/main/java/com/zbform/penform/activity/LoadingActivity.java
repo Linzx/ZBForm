@@ -9,7 +9,7 @@ import android.os.Handler;
 import com.zbform.penform.R;
 
 /**
-
+ * Created by isaac on 2018/8/2.
  */
 public class LoadingActivity extends Activity {
 
@@ -19,7 +19,7 @@ public class LoadingActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_loading);
+//        setContentView(R.layout.activity_loading);
 
         // 使用Handler的postDelayed方法，3秒后执行跳转到MainActivity
         new Handler().postDelayed(new Runnable() {

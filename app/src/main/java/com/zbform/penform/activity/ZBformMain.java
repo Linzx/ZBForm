@@ -1,20 +1,16 @@
 package com.zbform.penform.activity;
 
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
@@ -35,15 +31,11 @@ import com.bumptech.glide.Glide;
 import com.zbform.penform.R;
 import com.zbform.penform.account.GlideCircleTransform;
 import com.zbform.penform.adapter.MenuItemAdapter;
-import com.zbform.penform.appintro.FadeAnimation;
-import com.zbform.penform.banner.BannerHttpUtils;
-import com.zbform.penform.dialog.CardPickerDialog;
+//import com.zbform.penform.banner.BannerHttpUtils;
 import com.zbform.penform.fragment.FormListFragment;
-import com.zbform.penform.handler.HandlerUtil;
 import com.zbform.penform.settings.Activity_Settings;
 import com.zbform.penform.update.UpdateAppManager;
 import com.zbform.penform.update.UpdateUtils;
-import com.zbform.penform.widget.SplashScreen;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,51 +44,31 @@ public class ZBformMain extends BaseActivity{
 
     private static final String TAG = "ZBformMain";
 
-    private static final String PRE_INTRODUCE_SHOWED = "show_introduce";
-    private boolean mSplashShow = false;
     private ActionBar mActionBar;
     private ArrayList<TextView> tabs = new ArrayList<>();
     private DrawerLayout drawerLayout;
     private ListView mLvLeftMenu;
     private long time = 0;
-    private SplashScreen mSplashScreen;
 
     private FragmentManager fragmentManager;
 
+    public static void launch(Activity activity) {
+        Intent intent = new Intent(activity, ZBformMain.class);
+        activity.startActivity(intent);
+    }
 
     public void onCreate(Bundle savedInstanceState) {
-
-        SharedPreferences sp = getSharedPreferences(PRE_INTRODUCE_SHOWED, Context.MODE_PRIVATE);
-        if (!sp.getBoolean(PRE_INTRODUCE_SHOWED, false)) {
-            SharedPreferences.Editor editor = sp.edit();
-            editor.putBoolean(PRE_INTRODUCE_SHOWED, true);
-            editor.apply();
-            Intent intent = new Intent(this, FadeAnimation.class); // Call the AppIntro java class
-            startActivity(intent);
-        } else {
-            mSplashShow = true;
-            mSplashScreen = new SplashScreen(this);
-            mSplashScreen.show(R.drawable.art_login_bg,
-                    SplashScreen.SLIDE_LEFT);
-        }
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
         getWindow().setBackgroundDrawableResource(R.color.background_material_light_1);
         fragmentManager = getSupportFragmentManager();
 
-        drawerLayout = findViewById(R.id.fd);
-        mLvLeftMenu = findViewById(R.id.id_lv_left_menu);
+        drawerLayout = (DrawerLayout) findViewById(R.id.fd);
+        mLvLeftMenu = (ListView) findViewById(R.id.id_lv_left_menu);
 
         setToolBar();
         setUpDrawer();
-        if (mSplashShow) {
-            HandlerUtil.getInstance(this).postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    mSplashScreen.removeSplashScreen();
-                }
-            }, 3000);
-        }
     }
 
     private void setToolBar() {
@@ -129,9 +101,9 @@ public class ZBformMain extends BaseActivity{
                         drawerLayout.closeDrawers();
                         break;
                     case 2:
-                        CardPickerDialog dialog = new CardPickerDialog();
-                       // dialog.setClickListener(ZBformMain.this);
-                        dialog.show(getSupportFragmentManager(), "theme");
+//                        CardPickerDialog dialog = new CardPickerDialog();
+//                       // dialog.setClickListener(ZBformMain.this);
+//                        dialog.show(getSupportFragmentManager(), "theme");
                         drawerLayout.closeDrawers();
 
                         break;
@@ -146,11 +118,13 @@ public class ZBformMain extends BaseActivity{
                     case 4:
 //                        BitSetFragment bfragment = new BitSetFragment();
 //                        bfragment.show(getSupportFragmentManager(), "bitset");
+//                        new CheckUpdateTask().execute(URLUtils.UPDATE_URL_PATH_JSON);
                         drawerLayout.closeDrawers();
 
                         break;
                     case 5:
-
+                        //侧边栏退出按钮
+                        unbindService();
                         finish();
                         drawerLayout.closeDrawers();
 
@@ -166,7 +140,7 @@ public class ZBformMain extends BaseActivity{
         protected String doInBackground(String... strings) {
             Log.d(TAG,"check update");
             String downloadUrl;
-            String urlString = BannerHttpUtils.sendGetMessage(strings[0], "utf-8");
+            String urlString = "";//BannerHttpUtils.sendGetMessage(strings[0], "utf-8");
             Log.d(TAG,"urlString:" + urlString);
             downloadUrl = UpdateUtils.parseUrl(urlString);
             Log.d(TAG,"downloadUrl:" + downloadUrl);
@@ -239,7 +213,6 @@ public class ZBformMain extends BaseActivity{
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mSplashScreen.removeSplashScreen();
     }
 
     /**
@@ -286,7 +259,7 @@ public class ZBformMain extends BaseActivity{
 
     private void selectFragment(int position) {
         FragmentTransaction transaction = fragmentManager.beginTransaction();
-        Fragment fragment = new FormListFragment();
+       Fragment fragment = new FormListFragment();
         transaction.replace(R.id.fragment_container, fragment);
         transaction.commit();
         //setTitle(title);

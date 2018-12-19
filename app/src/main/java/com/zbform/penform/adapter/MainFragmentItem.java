@@ -1,7 +1,7 @@
 package com.zbform.penform.adapter;
 
 /**
-
+ * Created by isaac on 2018/8/2.
  */
 public class MainFragmentItem {
     public String title;   //信息标题
