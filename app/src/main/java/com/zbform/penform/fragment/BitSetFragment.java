@@ -15,7 +15,7 @@ import com.zbform.penform.util.PreferencesUtility;
 
 
 /**
- * Created by isaac on 2018/8/2.
+
  */
 public class BitSetFragment extends DialogFragment implements View.OnClickListener {
 

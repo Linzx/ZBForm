@@ -33,7 +33,7 @@ import java.lang.ref.WeakReference;
 
 
 /**
- * Created by isaac on 2018/8/2.
+
  */
 public class RoundFragment extends Fragment {
 

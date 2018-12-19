@@ -9,7 +9,7 @@ import android.os.Handler;
 import com.zbform.penform.R;
 
 /**
- * Created by isaac on 2018/8/2.
+
  */
 public class LoadingActivity extends Activity {
 

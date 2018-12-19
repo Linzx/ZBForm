@@ -8,7 +8,7 @@ import android.support.v4.app.Fragment;
 import com.zbform.penform.activity.BaseActivity;
 
 /**
- * Created by isaac on 2018/8/2.
+
  */
 public class BaseFragment extends Fragment {
 

@@ -16,7 +16,7 @@ import java.io.File;
 import java.io.PrintWriter;
 
 /**
- * Created by isaac on 2018/8/2.
+
  */
 public class UnceHandler implements Thread.UncaughtExceptionHandler {
 

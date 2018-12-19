@@ -1,7 +1,7 @@
 package com.zbform.penform.net;
 
 /**
- * Created by isaac on 2018/8/2.
+
  */
 public class Base64Encoder {
     private static final char last2byte = (char) Integer

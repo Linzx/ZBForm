@@ -18,10 +18,6 @@ public class LvMenuItem {
         if (type != TYPE_SEPARATOR && TextUtils.isEmpty(name)) {
             throw new IllegalArgumentException("you need set a name for a non-SEPARATOR item");
         }
-
-        //  L.e(type + "");
-
-
     }
 
     public LvMenuItem(String name) {

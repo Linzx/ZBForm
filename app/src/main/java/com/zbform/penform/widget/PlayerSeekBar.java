@@ -14,7 +14,7 @@ import android.widget.SeekBar;
 import com.zbform.penform.R;
 
 /**
- * Created by isaac on 2018/8/2.
+
  */
 public class PlayerSeekBar extends SeekBar {
 

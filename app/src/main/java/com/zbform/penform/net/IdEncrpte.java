@@ -3,7 +3,7 @@ package com.zbform.penform.net;
 import java.security.MessageDigest;
 
 /**
- * Created by isaac on 2018/8/2.
+
  */
 public class IdEncrpte {
 

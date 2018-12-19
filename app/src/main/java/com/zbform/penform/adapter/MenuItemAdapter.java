@@ -32,12 +32,11 @@ public class MenuItemAdapter extends BaseAdapter {
 
     private List<LvMenuItem> mItems = new ArrayList<LvMenuItem>(
             Arrays.asList(
-                    new LvMenuItem(R.mipmap.topmenu_icn_night, "音箱使用说明"),
-                    new LvMenuItem(R.mipmap.topmenu_icn_skin, "主题换肤"),
-                    new LvMenuItem(R.mipmap.topmenu_icn_time, "设置"),
-                    new LvMenuItem(R.mipmap.topmenu_icn_vip, "检查更新"),
+                    new LvMenuItem(R.mipmap.topmenu_icn_cloud, "表单列表"),
+                    new LvMenuItem(R.mipmap.topmenu_icn_free, "表单记录列表"),
+                    new LvMenuItem(R.mipmap.topmenu_icn_store, "蓝牙笔管理"),
+                    new LvMenuItem(R.mipmap.topmenu_icn_set, "设置"),
                     new LvMenuItem(R.mipmap.topmenu_icn_exit, "退出")
-
             ));
 
 

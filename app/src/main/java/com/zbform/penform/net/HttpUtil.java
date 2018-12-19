@@ -34,7 +34,7 @@ import okio.BufferedSource;
 import okio.Okio;
 
 /**
- * Created by isaac on 2018/8/2.
+
  */
 public class HttpUtil {
     public  static final OkHttpClient mOkHttpClient = new OkHttpClient();

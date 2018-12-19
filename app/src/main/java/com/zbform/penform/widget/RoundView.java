@@ -25,7 +25,7 @@ import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.zbform.penform.R;
 
 /**
- * Created by isaac on 2018/8/2.
+
  */
 public class RoundView extends FrameLayout {
     private View mView;

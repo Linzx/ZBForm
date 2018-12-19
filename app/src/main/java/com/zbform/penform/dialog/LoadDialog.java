@@ -10,7 +10,7 @@ import android.view.Window;
 import com.zbform.penform.R;
 
 /**
- * Created by isaac on 2018/8/2.
+
  */
 public class LoadDialog extends DialogFragment {
 

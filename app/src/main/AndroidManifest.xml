@@ -3,12 +3,10 @@
     package="com.zbform.penform">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.BROADCAST_STICKY" />
-    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
@@ -44,85 +42,11 @@
             android:name="com.zbform.penform.activity.LoadingActivity"
             android:screenOrientation="portrait" />
         <activity
-            android:name="com.zbform.penform.activity.NetSearchWordsActivity"
-            android:screenOrientation="portrait" />
-        <activity
             android:name="com.zbform.penform.activity.LocalSearchActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name="com.zbform.penform.activity.PlaylistSelectActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name="com.zbform.penform.activity.PlaylistManagerActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name="com.zbform.penform.activity.AlbumsDetailActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name="com.zbform.penform.activity.TabActivity"
             android:screenOrientation="portrait" />
         <activity
             android:name="com.zbform.penform.activity.DownActivity"
             android:screenOrientation="portrait" />
-        <activity
-            android:name="com.zbform.penform.activity.PlaylistActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name="com.zbform.penform.activity.RecentActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name="com.zbform.penform.activity.NetItemChangeActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name="com.zbform.penform.activity.ArtistDetailActivity"
-            android:screenOrientation="portrait" />
-        <activity
-            android:name="com.zbform.penform.activity.RadioDetailActivity"
-            android:screenOrientation="portrait" />
-        <activity android:name="com.zbform.penform.activity.SkillSummaryActivity" />
-        <activity
-            android:name="com.zbform.penform.activity.LockActivity"
-            android:excludeFromRecents="true"
-            android:exported="false"
-            android:launchMode="singleInstance"
-            android:noHistory="true"
-            android:screenOrientation="portrait"
-            android:taskAffinity="com.package.name.lockscreen"
-            android:theme="@style/LockScreenTheme" />
-        <activity android:name="com.zbform.penform.activity.RankPlaylistActivity" />
-
-
-        <service android:name="com.zbform.penform.downmusic.DownService">
-            <intent-filter>
-                <action android:name="com.foxconn.smartbox.downtaskadd" />
-                <action android:name="com.foxconn.smartbox.resumestarttask" />
-                <action android:name="com.foxconn.smartbox.startalltask" />
-                <action android:name="com.foxconn.smartbox.multidowntaskadd" />
-                <action android:name="com.foxconn.smartbox.pausetask" />
-                <action android:name="com.foxconn.smartbox.pausealltask" />
-                <action android:name="com.foxconn.smartbox.cacletask" />
-                <action android:name="com.foxconn.smartbox.caclealltask" />
-            </intent-filter>
-        </service>
-        <service
-            android:name="com.zbform.penform.service.MediaService"
-            android:process=":main" />
-
-        <receiver android:name="com.zbform.penform.receiver.MediaButtonIntentReceiver">
-            <intent-filter>
-                <action android:name="android.intent.action.MEDIA_BUTTON" />
-                <action android:name="android.media.AUDIO_BECOMING_NOISY" />
-            </intent-filter>
-        </receiver>
-        <receiver android:name="com.zbform.penform.receiver.LaunchNowPlayingReceiver">
-            <intent-filter>
-                <action android:name="com.foxconn.smartbox.LAUNCH_NOW_PLAYING_ACTION" />
-            </intent-filter>
-        </receiver>
-
-        <activity
-            android:name="com.zbform.penform.appintro.AppIntroduce"
-            android:label="app_intro" />
 
         <provider
             android:name="android.support.v4.content.FileProvider"
@@ -144,8 +68,6 @@
         <activity android:name="com.zbform.penform.settings.Activity_Settings"/>
 
         <activity android:name="com.zbform.penform.activity.FeedbackActivity" />
-
-        <activity android:name="com.zbform.penform.connect.ConnectActivity" />
 
     </application>
 

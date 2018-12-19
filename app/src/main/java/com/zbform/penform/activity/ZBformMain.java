@@ -84,8 +84,8 @@ public class ZBformMain extends BaseActivity{
         getWindow().setBackgroundDrawableResource(R.color.background_material_light_1);
         fragmentManager = getSupportFragmentManager();
 
-        drawerLayout = (DrawerLayout) findViewById(R.id.fd);
-        mLvLeftMenu = (ListView) findViewById(R.id.id_lv_left_menu);
+        drawerLayout = findViewById(R.id.fd);
+        mLvLeftMenu = findViewById(R.id.id_lv_left_menu);
 
         setToolBar();
         setUpDrawer();
@@ -286,7 +286,7 @@ public class ZBformMain extends BaseActivity{
 
     private void selectFragment(int position) {
         FragmentTransaction transaction = fragmentManager.beginTransaction();
-       Fragment fragment = new FormListFragment();
+        Fragment fragment = new FormListFragment();
         transaction.replace(R.id.fragment_container, fragment);
         transaction.commit();
         //setTitle(title);
