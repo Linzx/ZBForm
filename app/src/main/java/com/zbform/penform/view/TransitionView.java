@@ -3,6 +3,7 @@ package com.zbform.penform.view;
 import android.animation.Animator;
 import android.content.Context;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewParent;
 import android.widget.RelativeLayout;
@@ -22,6 +23,8 @@ public class TransitionView extends RelativeLayout {
     private View parent;
     public boolean mSuccess = false;
     public boolean mSignEnd = false;
+    private float mStartScale;
+    private int mOldWidth;
 
     private OnAnimationEndListener mOnAnimationEndListener;
 
@@ -73,6 +76,17 @@ public class TransitionView extends RelativeLayout {
         });
     }
 
+    public void startLoginFailAni() {
+
+        AnimationHelper.spreadAni(v_spread, mStartScale, new AnimationHelper.SimpleAnimatorListener() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+//                v_spread.setLayoutParams();
+                TransitionView.this.setVisibility(View.INVISIBLE);
+            }
+        });
+    }
+
     private void startSignUpInAni() {
         AnimationHelper.signUpTextInAni(tv_sign_up, new AnimationHelper.SimpleAnimatorListener() {
             @Override
@@ -91,6 +105,8 @@ public class TransitionView extends RelativeLayout {
                 mSignEnd = true;
                 if(mSuccess) {
                     startSuccessAni();
+                } else {
+                    startLoginFailAni();
                 }
 
             }
@@ -112,7 +128,8 @@ public class TransitionView extends RelativeLayout {
     //计算扩散动画最终放大比例
     private float getScale() {
         //原始扩散圆的直径
-        int orgWidth = v_spread.getMeasuredWidth();
+        mOldWidth = v_spread.getMeasuredWidth();
+        Log.i("whd","mOldWidth="+mOldWidth);
 
         int width = parent == null ? getMeasuredWidth() : parent.getMeasuredWidth();
         int height = parent == null ? getMeasuredWidth() : parent.getMeasuredHeight();
@@ -121,7 +138,9 @@ public class TransitionView extends RelativeLayout {
         float finalDiameter = (int) (Math.sqrt(width * width + height * height));
 
         //因为圆未居中，所以加1
-        return finalDiameter / orgWidth + 1;
+        mStartScale = mOldWidth / (finalDiameter-1);
+        Log.i("whd","f="+mStartScale);
+        return finalDiameter / mOldWidth + 1;
     }
 
     public void setOnAnimationEndListener(OnAnimationEndListener onAnimationEndListener) {
