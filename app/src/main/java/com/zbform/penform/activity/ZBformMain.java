@@ -77,7 +77,6 @@ public class ZBformMain extends BaseActivity{
         mActionBar = getSupportActionBar();
         mActionBar.setDisplayHomeAsUpEnabled(true);
         mActionBar.setHomeAsUpIndicator(R.drawable.ic_menu);
-        mActionBar.setTitle("");
     }
 
     private void setUpDrawer() {

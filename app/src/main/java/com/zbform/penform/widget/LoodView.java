@@ -32,10 +32,6 @@ import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.zbform.penform.R;
-import com.zbform.penform.json.FocusItemInfo;
-//import com.zbform.penform.net.BMA;
-//import com.zbform.penform.net.HttpUtil;
-//import com.zbform.penform.net.NetworkUtils;
 
 import java.util.ArrayList;
 import java.util.List;

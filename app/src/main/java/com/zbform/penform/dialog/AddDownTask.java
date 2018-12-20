@@ -16,13 +16,8 @@ import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
 
 import com.facebook.drawee.view.SimpleDraweeView;
-import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.R;
-//import com.zbform.penform.downmusic.DownService;
 import com.zbform.penform.handler.HandlerUtil;
-import com.zbform.penform.json.MusicFileDownInfo;
-//import com.zbform.penform.net.BMA;
-//import com.zbform.penform.net.HttpUtil;
 import com.zbform.penform.util.IConstants;
 import com.zbform.penform.util.PreferencesUtility;
 import com.google.gson.JsonArray;
@@ -118,19 +113,6 @@ public class AddDownTask extends DialogFragment {
                     int len = jsonArray.size();
 
                     int downloadBit = PreferencesUtility.getInstance(mContext).getDownMusicBit();
-                    MusicFileDownInfo musicFileDownInfo = null;
-                    for (int i = len - 1; i > -1; i--) {
-                        int bit = Integer.parseInt(jsonArray.get(i).getAsJsonObject().get("file_bitrate").toString());
-                        if (bit == downloadBit) {
-                            musicFileDownInfo = ZBformApplication.gsonInstance().fromJson(jsonArray.get(i), MusicFileDownInfo.class);
-                        } else if (bit < downloadBit && bit >= 64) {
-                            musicFileDownInfo = ZBformApplication.gsonInstance().fromJson(jsonArray.get(i), MusicFileDownInfo.class);
-                        }
-                    }
-                    if (musicFileDownInfo != null) {
-                        mList.add(musicFileDownInfo.getFile_link());
-                        size += musicFileDownInfo.getFile_size();
-                    }
 
 
                 } catch (Exception e) {
