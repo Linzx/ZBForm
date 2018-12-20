@@ -101,6 +101,7 @@ public class SignInActivity extends AppCompatActivity implements View.OnClickLis
 
     @Override
     public void onStartLogin() {
+        Log.i("whd","onStartLogin");
         startLoginView();
     }
 
@@ -114,7 +115,17 @@ public class SignInActivity extends AppCompatActivity implements View.OnClickLis
 
     @Override
     public void onLoginFail() {
+        mAnimView.mSuccess = false;
         Log.i("whd","onLoginFail");
+        if (mAnimView.mSignEnd) {
+            mAnimView.startLoginFailAni();
+        }
+    }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        System.exit(0);
+        finish();
     }
 }
