@@ -1,6 +1,9 @@
 package com.zbform.penform.json;
 
 public class BaseInfo {
+
+    public Header header;
+
     public static class Header {
 
         private String errorCode;

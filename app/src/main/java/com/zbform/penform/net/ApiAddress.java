@@ -9,6 +9,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class ApiAddress {
+    public final static String TAG = "apiaddress";
+
     private static boolean DEBUG = true;
     public static final String SYSTEM_KEY = "7A1285_788a0f";
 
@@ -62,22 +64,98 @@ public class ApiAddress {
 
     public static String getLoginUri(String userid, String password) {
         String signcode = getSignCode(userid + SYSTEM_KEY);
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd HH:mm:ss.SSS");// HH:mm:ss
-        Date date = new Date(System.currentTimeMillis());
-        String timestamp = simpleDateFormat.format(date);
 
         StringBuilder sb = new StringBuilder();
         sb.append(ApiAddress.UserLogin_Get);
         sb.append("?signcode=");
         sb.append(Uri.encode(signcode));
         sb.append("&timestamp=");
-        sb.append(Uri.encode(timestamp));
+        sb.append(Uri.encode(getTimeStamp()));
         sb.append("&userid=");
         sb.append(Uri.encode(userid));
         sb.append("&password=");
         sb.append(Uri.encode(password));
 
-        Log.i("whd", "url=" + sb.toString());
+        Log.i("whd", "get login url=" + sb.toString());
+        return sb.toString();
+    }
+
+    public static String getTimeStamp(){
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd HH:mm:ss.SSS");// HH:mm:ss
+        Date date = new Date(System.currentTimeMillis());
+        return simpleDateFormat.format(date);
+    }
+
+    public static String getFormListUri(String userid, String userkey) {
+        String signCode = getSignCode(userid+userkey+SYSTEM_KEY);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(ApiAddress.Form_List);
+        sb.append("?signcode=");
+        sb.append(Uri.encode(signCode));
+        sb.append("&timestamp=");
+        sb.append(Uri.encode(getTimeStamp()));
+        sb.append("&userid=");
+        sb.append(Uri.encode(userid));
+
+        Log.i(TAG, "get form list url=" + sb.toString());
+        return sb.toString();
+    }
+
+    public static String getFormUri(String userid, String userkey, String formId) {
+        String signCode = getSignCode(userid+userkey+SYSTEM_KEY);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(ApiAddress.Form_Get);
+        sb.append("?signcode=");
+        sb.append(Uri.encode(signCode));
+        sb.append("&timestamp=");
+        sb.append(Uri.encode(getTimeStamp()));
+        sb.append("&userid=");
+        sb.append(Uri.encode(userid));
+        sb.append("&id=");
+        sb.append(Uri.encode(formId));
+
+        Log.i(TAG, "get form url=" + sb.toString());
+        return sb.toString();
+    }
+
+    public static String getRecordListUri(String userid, String userkey, String formId) {
+        String signCode = getSignCode(userid+userkey+SYSTEM_KEY);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(ApiAddress.Hw_List);
+        sb.append("?signcode=");
+        sb.append(Uri.encode(signCode));
+        sb.append("&timestamp=");
+        sb.append(Uri.encode(getTimeStamp()));
+        sb.append("&userid=");
+        sb.append(Uri.encode(userid));
+        sb.append("&formid=");
+        sb.append(Uri.encode(formId));
+
+        Log.i(TAG, "get record list url=" + sb.toString());
+        return sb.toString();
+    }
+
+    public static String getRecordUri(String userid, String userkey, String formId, String hwId)
+    {
+        String signCode = getSignCode(userid+userkey+SYSTEM_KEY);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(ApiAddress.Hw_List);
+        sb.append("?signcode=");
+        sb.append(Uri.encode(signCode));
+        sb.append("&timestamp=");
+        sb.append(Uri.encode(getTimeStamp()));
+        sb.append("&userid=");
+        sb.append(Uri.encode(userid));
+        sb.append("&formid=");
+        sb.append(Uri.encode(formId));
+        sb.append("&id=");
+        sb.append(Uri.encode(hwId));
+
+        Log.i(TAG, "get record url=" + sb.toString());
         return sb.toString();
     }
 

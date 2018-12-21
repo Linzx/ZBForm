@@ -2,9 +2,7 @@ package com.zbform.penform.json;
 
 public class UserInfo extends BaseInfo{
 
-    public Header header;
     public Results[] results;
-
 
     public static class Results {
         private String userCode;
