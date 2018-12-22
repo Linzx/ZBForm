@@ -27,6 +27,7 @@ public class TransitionView extends RelativeLayout {
     private int mOldWidth;
 
     private OnAnimationEndListener mOnAnimationEndListener;
+    private OnAnimationEndListener mOnLoginFailEndListener;
 
     public TransitionView(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
@@ -81,7 +82,9 @@ public class TransitionView extends RelativeLayout {
         AnimationHelper.spreadAni(v_spread, mStartScale, new AnimationHelper.SimpleAnimatorListener() {
             @Override
             public void onAnimationEnd(Animator animation) {
-//                v_spread.setLayoutParams();
+                if (mOnLoginFailEndListener != null){
+                    mOnLoginFailEndListener.onEnd();
+                }
                 TransitionView.this.setVisibility(View.INVISIBLE);
             }
         });
@@ -136,15 +139,17 @@ public class TransitionView extends RelativeLayout {
 
         //扩散圆最终扩散的圆的半径
         float finalDiameter = (int) (Math.sqrt(width * width + height * height));
-
-        //因为圆未居中，所以加1
         mStartScale = mOldWidth / (finalDiameter-1);
-        Log.i("whd","f="+mStartScale);
+        //因为圆未居中，所以加1
         return finalDiameter / mOldWidth + 1;
     }
 
     public void setOnAnimationEndListener(OnAnimationEndListener onAnimationEndListener) {
         this.mOnAnimationEndListener = onAnimationEndListener;
+    }
+
+    public void setOnLoginFailEndListener(OnAnimationEndListener onAnimationEndListener) {
+        this.mOnLoginFailEndListener = onAnimationEndListener;
     }
 
     /**

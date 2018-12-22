@@ -32,6 +32,7 @@ import com.zbform.penform.R;
 import com.zbform.penform.account.GlideCircleTransform;
 import com.zbform.penform.adapter.MenuItemAdapter;
 //import com.zbform.penform.banner.BannerHttpUtils;
+import com.zbform.penform.fragment.BaseFragment;
 import com.zbform.penform.fragment.FormListFragment;
 import com.zbform.penform.settings.Activity_Settings;
 import com.zbform.penform.update.UpdateAppManager;
@@ -52,6 +53,8 @@ public class ZBformMain extends BaseActivity{
 
     private FragmentManager fragmentManager;
 
+    private BaseFragment mCurrentFragmet;
+
     public static void launch(Activity activity) {
         Intent intent = new Intent(activity, ZBformMain.class);
         activity.startActivity(intent);
@@ -69,6 +72,8 @@ public class ZBformMain extends BaseActivity{
 
         setToolBar();
         setUpDrawer();
+        mCurrentFragmet = new FormListFragment();
+        selectFragment(mCurrentFragmet);
     }
 
     private void setToolBar() {
@@ -77,6 +82,7 @@ public class ZBformMain extends BaseActivity{
         mActionBar = getSupportActionBar();
         mActionBar.setDisplayHomeAsUpEnabled(true);
         mActionBar.setHomeAsUpIndicator(R.drawable.ic_menu);
+        mActionBar.setTitle("");
     }
 
     private void setUpDrawer() {
@@ -94,17 +100,17 @@ public class ZBformMain extends BaseActivity{
         mLvLeftMenu.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
                 switch (position) {
                     case 1:
-                        selectFragment(position);
+                        if (!(mCurrentFragmet instanceof FormListFragment)) {
+                            mCurrentFragmet = new FormListFragment();
+                            selectFragment(mCurrentFragmet);
+                        }
                         drawerLayout.closeDrawers();
                         break;
                     case 2:
-//                        CardPickerDialog dialog = new CardPickerDialog();
-//                       // dialog.setClickListener(ZBformMain.this);
-//                        dialog.show(getSupportFragmentManager(), "theme");
                         drawerLayout.closeDrawers();
-
                         break;
                     case 3:
 //                        TimingFragment fragment3 = new TimingFragment();
@@ -132,70 +138,6 @@ public class ZBformMain extends BaseActivity{
         });
     }
 
-
-
-    public class CheckUpdateTask extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... strings) {
-            Log.d(TAG,"check update");
-            String downloadUrl;
-            String urlString = "";//BannerHttpUtils.sendGetMessage(strings[0], "utf-8");
-            Log.d(TAG,"urlString:" + urlString);
-            downloadUrl = UpdateUtils.parseUrl(urlString);
-            Log.d(TAG,"downloadUrl:" + downloadUrl);
-            return downloadUrl;
-        }
-
-        @Override
-        protected void onPostExecute(String downloadUrl) {
-            Log.d(TAG,"downloadUrl" + downloadUrl);
-            Toast.makeText(ZBformMain.this,"update available",Toast.LENGTH_SHORT).show();
-            download(downloadUrl);
-        }
-
-        private void download(final String downloadUrl) {
-            new AlertDialog.Builder(ZBformMain.this)
-                    .setTitle("提示")
-                    .setMessage("版本更新")
-                    .setPositiveButton("更新", new DialogInterface.OnClickListener() {
-                        @Override public void onClick(DialogInterface dialogInterface, int i) {
-                            dialogInterface.dismiss();
-                            UpdateAppManager.downloadApk(ZBformMain.this,downloadUrl,"版本升级","SmartBox");
-
-                        }
-                    })
-                    .setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                        @Override public void onClick(DialogInterface dialogInterface, int i) {
-                            dialogInterface.dismiss();
-                        }
-                    })
-                    .show();
-        }
-    }
-    static class CustomViewPagerAdapter extends FragmentPagerAdapter {
-        private final List<Fragment> mFragments = new ArrayList<>();
-
-        public CustomViewPagerAdapter(FragmentManager fm) {
-            super(fm);
-        }
-
-        public void addFragment(Fragment fragment) {
-            mFragments.add(fragment);
-        }
-
-        @Override
-        public Fragment getItem(int position) {
-            return mFragments.get(position);
-        }
-
-        @Override
-        public int getCount() {
-            return mFragments.size();
-        }
-
-    }
-
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // handle item selection
@@ -214,9 +156,6 @@ public class ZBformMain extends BaseActivity{
         super.onDestroy();
     }
 
-    /**
-     * 双击返回桌面
-     */
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
@@ -256,10 +195,9 @@ public class ZBformMain extends BaseActivity{
         // finish();
     }
 
-    private void selectFragment(int position) {
+    private void selectFragment(BaseFragment fragment) {
         FragmentTransaction transaction = fragmentManager.beginTransaction();
-       Fragment fragment = new FormListFragment();
-        transaction.replace(R.id.fragment_container, fragment);
+        transaction.replace(R.id.fragment_container,  fragment);
         transaction.commit();
         //setTitle(title);
     }

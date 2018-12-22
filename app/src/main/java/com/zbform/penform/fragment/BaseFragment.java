@@ -28,13 +28,11 @@ public class BaseFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-//        ((BaseActivity) getActivity()).setMusicStateListenerListener(this);
     }
 
     @Override
     public void onStop() {
         super.onStop();
-//        ((BaseActivity) getActivity()).removeMusicStateListenerListener(this);
     }
 
     @Override

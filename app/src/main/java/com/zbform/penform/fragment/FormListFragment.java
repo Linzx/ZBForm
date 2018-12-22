@@ -3,140 +3,177 @@ package com.zbform.penform.fragment;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
+import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
-import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
+import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.pullrefresh.PtrClassicFrameLayout;
+import com.pullrefresh.PtrDefaultHandler;
+import com.pullrefresh.PtrFrameLayout;
+import com.pullrefresh.loadmore.GridViewWithHeaderAndFooter;
 import com.pullrefresh.loadmore.OnLoadMoreListener;
-import com.pullrefresh.loadmore.SwipeRefreshHelper;
 import com.zbform.penform.R;
+import com.zbform.penform.json.FormListInfo;
+import com.zbform.penform.task.FormListTask;
+import com.zbform.penform.view.GridDividerItemDecoration;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class FormListFragment extends Fragment {
+public class FormListFragment extends BaseFragment implements FormListTask.OnFormTaskListener{
 
-    public Activity mContext;
-    private SwipeRefreshLayout mSryt;
-    private GridView mListView;
+    private PtrClassicFrameLayout ptrClassicFrameLayout;
+//    private GridViewWithHeaderAndFooter mGridView;
+    private RecyclerView mRecyclerView;
+    private RecyclerViewAdapter mAdapter;
+    private List<String> mData = new ArrayList<>();
+    private Handler handler = new Handler();
+    private FormListTask mTask;
 
-    private List<String> mDatas = new ArrayList<>();
-    private GridViewAdapter mAdapter;
-    private SwipeRefreshHelper mSwipeRefreshHelper;
     private int page = 0;
-    private Handler mHandler = new Handler();
+    private Context mContext;
+
+
     @Override
-    public void onAttach(Activity activity){
-        super.onAttach(activity);
-        this.mContext = activity;
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        mContext = context;
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_fromlist, container, false);
-       initView(view);
+        initView(view);
         initData();
         return view;
     }
 
     private void initView(View view) {
-        mSryt = (SwipeRefreshLayout) view.findViewById(R.id.sryt_swipe_listview);
-        mListView = (GridView) view.findViewById(R.id.lv_swipe_listview);
-        mSryt.setColorSchemeColors(Color.BLUE);
+        ptrClassicFrameLayout = (PtrClassicFrameLayout) view.findViewById(R.id.form_grid_view_frame);
+        mRecyclerView = (RecyclerView) view.findViewById(R.id.form_recycler_view);
+        mRecyclerView.addItemDecoration(new GridDividerItemDecoration(mContext));
     }
 
     private void initData() {
-        mAdapter = new GridViewAdapter(this.getActivity(), mDatas);
-        mListView.setAdapter(mAdapter);
-        mSwipeRefreshHelper = new SwipeRefreshHelper(mSryt);
+        mTask = new FormListTask();
+        mTask.setOnFormTaskListener(this);
 
-        mSryt.post(new Runnable() {
+        mAdapter = new RecyclerViewAdapter(mContext);
+        mRecyclerView.setAdapter(mAdapter);
+        mRecyclerView.setLayoutManager(new GridLayoutManager(mContext,2));
+        ptrClassicFrameLayout.postDelayed(new Runnable() {
+
             @Override
             public void run() {
-                mSwipeRefreshHelper.autoRefresh();
+                ptrClassicFrameLayout.autoRefresh(true);
             }
-        });
+        }, 150);
 
-        mSwipeRefreshHelper.setOnSwipeRefreshListener(new SwipeRefreshHelper.OnSwipeRefreshListener() {
+        ptrClassicFrameLayout.setPtrHandler(new PtrDefaultHandler() {
+
             @Override
-            public void onfresh() {
-                mHandler.postDelayed(new Runnable() {
+            public void onRefreshBegin(PtrFrameLayout frame) {
+                handler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        mDatas.clear();
-                        page = 0;
-                        for (int i = 0; i < 17; i++) {
-                            mDatas.add(new String("  SwipeListView item  -" + i));
-                        }
-                        mAdapter.notifyDataSetChanged();
-                        mSwipeRefreshHelper.refreshComplete();
-                        mSwipeRefreshHelper.setLoadMoreEnable(true);
+                        mTask.execute(mContext);
+//                        page = 0;
+//                        mData.clear();
+//                        for (int i = 0; i < 40; i++) {
+//                            mData.add(new String("GridView item  -" + i));
+//                        }
+//                        mAdapter.notifyDataSetChanged();
+//                        ptrClassicFrameLayout.refreshComplete();
+//                        ptrClassicFrameLayout.setLoadMoreEnable(true);
                     }
                 }, 1500);
             }
         });
 
-        mSwipeRefreshHelper.setOnLoadMoreListener(new OnLoadMoreListener() {
+        ptrClassicFrameLayout.setOnLoadMoreListener(new OnLoadMoreListener() {
+
             @Override
             public void loadMore() {
-                mHandler.postDelayed(new Runnable() {
+                handler.postDelayed(new Runnable() {
+
                     @Override
                     public void run() {
-                        mDatas.add(new String("  SwipeListView item  - add " + page));
-                        mAdapter.notifyDataSetChanged();
-                        mSwipeRefreshHelper.loadMoreComplete(true);
-                        page++;
-//                        Toast.makeText, "load more complete", Toast.LENGTH_SHORT).show();
+//                        for (int i = 0; i < 4; i++) {
+//                            mData.add(new String("GridView item -- add" + page));
+//                        }
+//                        mAdapter.notifyDataSetChanged();
+//                        ptrClassicFrameLayout.loadMoreComplete(true);
+//                        page++;
+                        Toast.makeText(mContext, "load more complete", Toast.LENGTH_SHORT).show();
                     }
                 }, 1000);
             }
         });
+    }
+
+    @Override
+    public void onStartGet() {
 
     }
 
-    SwipeRefreshHelper.OnSwipeRefreshListener mOnSwipeRefreshListener = new SwipeRefreshHelper.OnSwipeRefreshListener() {
-        @Override
-        public void onfresh() {
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    mDatas.clear();
-                    page = 0;
-                    for (int i = 0; i < 17; i++) {
-                        mDatas.add(new String("  SwipeListView item  -" + i));
-                    }
-                    mAdapter.notifyDataSetChanged();
-                    mSwipeRefreshHelper.refreshComplete();
-                    mSwipeRefreshHelper.setLoadMoreEnable(true);
-                }
-            }, 1000);
+    @Override
+    public void onGetSuccess(List<FormListInfo.Results> results) {
+        Log.i("whd","onget success");
+        if (mAdapter != null && results!= null){
+            Log.i("whd","onget success1="+results.size());
+            mAdapter.setData(results);
+            mAdapter.notifyDataSetChanged();
         }
-    };
-    public class GridViewAdapter extends BaseAdapter {
-        private List<String> datas;
+        ptrClassicFrameLayout.refreshComplete();
+    }
+
+    @Override
+    public void onGetFail() {
+        ptrClassicFrameLayout.refreshComplete();
+
+    }
+
+
+    public class RecyclerViewAdapter extends RecyclerView.Adapter<ChildViewHolder> {
+        private List<FormListInfo.Results> datas;
         private LayoutInflater inflater;
 
-        public GridViewAdapter(Context context, List<String> data) {
+        public RecyclerViewAdapter(Context context) {
+            super();
+            inflater = LayoutInflater.from(context);
+        }
+
+        public RecyclerViewAdapter(Context context, List<FormListInfo.Results> data) {
             super();
             inflater = LayoutInflater.from(context);
             datas = data;
         }
 
+
+        @NonNull
         @Override
-        public int getCount() {
-            return datas.size();
+        public ChildViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = inflater.inflate(R.layout.listitem_layout, null);
+            return new ChildViewHolder(view);
         }
 
         @Override
-        public Object getItem(int position) {
-            return null;
+        public void onBindViewHolder(@NonNull ChildViewHolder holder, int position) {
+            FormListInfo.Results item = datas.get(position);
+            holder.itemName.setText(item.getName());
         }
 
         @Override
@@ -145,17 +182,43 @@ public class FormListFragment extends Fragment {
         }
 
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            if (convertView == null) {
-                convertView = inflater.inflate(R.layout.listitem_layout, parent, false);
+        public int getItemCount() {
+            if (datas != null ) {
+                return datas.size();
+            }else  {
+                return 0;
             }
-            TextView textView = (TextView) convertView;
-            textView.setText(datas.get(position));
-            return convertView;
         }
 
-        public List<String> getData() {
+//        @Override
+//        public View getView(int position, View convertView, ViewGroup parent) {
+//            if (convertView == null) {
+//                convertView = inflater.inflate(R.layout.listitem_layout, parent, false);
+//            }
+//            TextView textView = (TextView) convertView.findViewById(R.id.form_name);
+//            FormListInfo.Results item = datas.get(position);
+//            textView.setText(item.getName());
+//            return convertView;
+//        }
+
+        public List<FormListInfo.Results> getData() {
             return datas;
+        }
+
+        public void setData(List<FormListInfo.Results> results) {
+            datas = results;
+        }
+
+    }
+
+    public class ChildViewHolder extends RecyclerView.ViewHolder {
+        public TextView itemName;
+        public ImageView itemImg;
+
+        public ChildViewHolder(View view) {
+            super(view);
+            itemName = (TextView) view.findViewById(R.id.form_name);
+            itemImg = (ImageView) view.findViewById(R.id.form_img);
         }
 
     }

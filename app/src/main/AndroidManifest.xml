@@ -61,6 +61,9 @@
             </intent-filter>
         </receiver>
 
+        <activity
+            android:name="com.zbform.penform.appintro.AppIntroduce"
+            android:label="app_intro" />
 
         <!-- 广播注册 -->
         <receiver android:name="com.zbform.penform.update.InstallReceiver">

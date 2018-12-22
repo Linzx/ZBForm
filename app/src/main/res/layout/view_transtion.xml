@@ -20,7 +20,7 @@
         android:layout_above="@+id/v_line"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="10dp"
-        android:text="SIGN UP"
+        android:text="@string/login_loading"
         android:textColor="@android:color/white"
         android:textSize="18sp"
         android:visibility="invisible"/>
@@ -31,7 +31,7 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_alignTop="@id/tv_sign_up"
-        android:text="SUCCESS"
+        android:text="@string/login_success"
         android:textColor="@android:color/white"
         android:textSize="18sp"
         android:visibility="invisible"/>

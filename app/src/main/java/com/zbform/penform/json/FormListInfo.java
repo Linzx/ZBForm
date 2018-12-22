@@ -150,5 +150,4 @@ public class FormListInfo extends BaseInfo {
             this.modifyDate = modifyDate;
         }
     }
-
 }

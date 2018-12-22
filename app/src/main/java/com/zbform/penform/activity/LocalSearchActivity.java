@@ -31,6 +31,7 @@ import android.view.inputmethod.InputMethodManager;
 import com.zbform.penform.R;
 //import com.zbform.penform.adapter.SearchAdapter;
 //import com.zbform.penform.info.MusicInfo;
+//import com.zbform.penform.provider.SearchHistory;
 import com.zbform.penform.util.CommonUtils;
 //import com.zbform.penform.util.SearchUtils;
 
@@ -164,6 +165,7 @@ public class LocalSearchActivity extends AppCompatActivity implements SearchView
             }
             mSearchView.clearFocus();
 
+//            SearchHistory.getInstance(this).addSearchString(queryString);
         }
     }
 
