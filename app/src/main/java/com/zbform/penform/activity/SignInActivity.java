@@ -3,17 +3,18 @@ package com.zbform.penform.activity;
 import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.Intent;
-import android.net.Uri;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.zbform.penform.task.LoginTask;
 import com.zbform.penform.view.TransitionView;
@@ -31,6 +32,7 @@ public class SignInActivity extends AppCompatActivity implements View.OnClickLis
 
     public static void launch(Activity activity) {
         Intent intent = new Intent(activity, SignInActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
         activity.startActivity(intent);
     }
 
@@ -49,6 +51,16 @@ public class SignInActivity extends AppCompatActivity implements View.OnClickLis
             @Override
             public void onEnd() {
                 gotoHomeActivity();
+            }
+        });
+
+        mAnimView.setOnLoginFailEndListener(new TransitionView.OnAnimationEndListener() {
+            @Override
+            public void onEnd() {
+                showToolBar();
+                Toast.makeText(SignInActivity.this,
+                        SignInActivity.this.getString(R.string.login_fail),
+                        Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -79,6 +91,13 @@ public class SignInActivity extends AppCompatActivity implements View.OnClickLis
         oa.start();
     }
 
+    private void showToolBar(){
+        float curY = mBarContainer.getTranslationY();//获取当前的y轴位置
+        ObjectAnimator oa = ObjectAnimator.ofFloat(mBarContainer,"translationY",curY,0);
+        oa.setDuration(800);
+        oa.start();
+    }
+
 
     public void hideInput(View view) {
         InputMethodManager inputMethodManager = (InputMethodManager) this.getSystemService(this.INPUT_METHOD_SERVICE);
@@ -92,11 +111,11 @@ public class SignInActivity extends AppCompatActivity implements View.OnClickLis
         Log.i("whd","id="+id);
         Log.i("whd","pwd="+pwd);
         if (TextUtils.isEmpty(id) || pwd.isEmpty()){
-            return;
+            //return;
         }
 
         hideInput(v);
-        mLoginTask.Login(this, id, pwd);
+        mLoginTask.Login(this, "ZB002", "888888");
     }
 
     @Override
@@ -123,9 +142,14 @@ public class SignInActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        System.exit(0);
-        finish();
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle presses on the action bar items
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 }

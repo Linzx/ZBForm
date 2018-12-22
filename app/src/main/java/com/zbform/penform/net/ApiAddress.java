@@ -1,7 +1,10 @@
 package com.zbform.penform.net;
 
 import android.net.Uri;
+import android.text.TextUtils;
 import android.util.Log;
+
+import com.zbform.penform.ZBformApplication;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

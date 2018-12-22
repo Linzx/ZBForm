@@ -172,5 +172,4 @@ public class FormListInfo extends BaseInfo {
                     '}';
         }
     }
-
 }

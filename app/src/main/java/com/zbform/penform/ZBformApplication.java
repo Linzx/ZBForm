@@ -29,18 +29,14 @@ import java.security.NoSuchAlgorithmException;
 /**
  */
 public class ZBformApplication extends Application {
+
+
+    private static String mLoginUserId;
+    private static String mLoginUserKey;
     public static Context context;
     //    private RefWatcher refWatcher;
     private static int MAX_MEM = (int) Runtime.getRuntime().maxMemory() / 4;
     //private static int MAX_MEM = 60 * ByteConstants.MB;
-    private static Gson gson;
-
-    public static Gson gsonInstance() {
-        if (gson == null) {
-            gson = new Gson();
-        }
-        return gson;
-    }
 
     private ImagePipelineConfig getConfigureCaches(Context context) {
         final MemoryCacheParams bitmapCacheParams = new MemoryCacheParams(
@@ -161,5 +157,21 @@ public class ZBformApplication extends Application {
 
 
 
+    }
+
+    public static String getmLoginUserId() {
+        return mLoginUserId;
+    }
+
+    public static void setmLoginUserId(String id) {
+        mLoginUserId = id;
+    }
+
+    public static String getmLoginUserKey() {
+        return mLoginUserKey;
+    }
+
+    public static void setmLoginUserKey(String key) {
+        mLoginUserKey = key;
     }
 }

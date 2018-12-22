@@ -8,37 +8,44 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import com.zbform.penform.R;
+import com.zbform.penform.fragment.FormListFragment;
 import com.zbform.penform.widget.LvMenuItem;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class MenuItemAdapter extends BaseAdapter {
+public class MenuItemAdapter extends ArrayAdapter<LvMenuItem>{
     private final int mIconSize;
     private LayoutInflater mInflater;
     private Context mContext;
+    private List<LvMenuItem> mItems;
 
     public MenuItemAdapter(Context context) {
+        super(context, R.layout.design_drawer_item);
         mInflater = LayoutInflater.from(context);
         mContext = context;
 
         mIconSize = context.getResources().getDimensionPixelSize(R.dimen.drawer_icon_size);//24dp
+
+        mItems = new ArrayList<>(
+                Arrays.asList(
+                        new LvMenuItem(R.mipmap.topmenu_icn_cloud,
+                                mContext.getResources().getString(R.string.menu_item_formlist)),
+                        new LvMenuItem(R.mipmap.topmenu_icn_free,
+                                mContext.getResources().getString(R.string.menu_item_formrecord)),
+                        new LvMenuItem(R.mipmap.topmenu_icn_set,
+                                mContext.getResources().getString(R.string.menu_item_setting)),
+                        new LvMenuItem(R.mipmap.topmenu_icn_vip,
+                                mContext.getResources().getString(R.string.menu_item_upd)),
+                        new LvMenuItem(R.mipmap.topmenu_icn_exit,
+                                mContext.getResources().getString(R.string.menu_item_exit))));
     }
-
-    private List<LvMenuItem> mItems = new ArrayList<LvMenuItem>(
-            Arrays.asList(
-                    new LvMenuItem(R.mipmap.topmenu_icn_skin, "个人信息"),
-                    new LvMenuItem(R.mipmap.topmenu_icn_cloud, "我的表单"),
-                    new LvMenuItem(R.mipmap.topmenu_icn_free, "表单记录"),
-                    new LvMenuItem(R.mipmap.topmenu_icn_set, "设置"),
-                    new LvMenuItem(R.mipmap.topmenu_icn_exit, "退出")
-
-            ));
 
 
     @Override
@@ -46,24 +53,20 @@ public class MenuItemAdapter extends BaseAdapter {
         return mItems.size();
     }
 
-
     @Override
-    public Object getItem(int position) {
+    public LvMenuItem getItem(int position) {
         return mItems.get(position);
     }
-
 
     @Override
     public long getItemId(int position) {
         return position;
     }
 
-    @Override
     public int getViewTypeCount() {
         return 3;
     }
 
-    @Override
     public int getItemViewType(int position) {
         return mItems.get(position).type;
     }
