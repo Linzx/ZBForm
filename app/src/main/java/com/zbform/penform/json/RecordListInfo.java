@@ -1,5 +1,7 @@
 package com.zbform.penform.json;
 
+import java.util.Arrays;
+
 public class RecordListInfo extends BaseInfo {
     public Results[] results;
 
@@ -48,6 +50,17 @@ public class RecordListInfo extends BaseInfo {
 
         public void setItems(RecordItem[] items) {
             this.items = items;
+        }
+
+        @Override
+        public String toString() {
+            return "Results{" +
+                    "code='" + code + '\'' +
+                    ", uuid='" + uuid + '\'' +
+                    ", group='" + group + '\'' +
+                    ", name='" + name + '\'' +
+                    ", items=" + Arrays.toString(items) +
+                    '}';
         }
     }
 }

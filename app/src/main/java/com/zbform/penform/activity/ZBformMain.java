@@ -2,20 +2,14 @@ package com.zbform.penform.activity;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Color;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -31,14 +25,11 @@ import com.bumptech.glide.Glide;
 import com.zbform.penform.R;
 import com.zbform.penform.account.GlideCircleTransform;
 import com.zbform.penform.adapter.MenuItemAdapter;
-//import com.zbform.penform.banner.BannerHttpUtils;
 import com.zbform.penform.fragment.BaseFragment;
 import com.zbform.penform.fragment.FormListFragment;
-import com.zbform.penform.net.ApiAddress;
+import com.zbform.penform.fragment.RecordListFragment;
 import com.zbform.penform.settings.Activity_Settings;
-import com.zbform.penform.task.GetFormListTask;
-import com.zbform.penform.update.UpdateAppManager;
-import com.zbform.penform.update.UpdateUtils;
+import com.zbform.penform.task.RecordListTask;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -105,11 +96,6 @@ public class ZBformMain extends BaseActivity{
 
                 switch (position) {
                     case 1:
-                        //个人信息
-//                        selectFragment(position);
-                        drawerLayout.closeDrawers();
-                        break;
-                    case 2:
                         // 表单列表
                         if (!(mCurrentFragmet instanceof FormListFragment)) {
                             mCurrentFragmet = new FormListFragment();
@@ -117,16 +103,22 @@ public class ZBformMain extends BaseActivity{
                         }
                         drawerLayout.closeDrawers();
                         break;
-                    case 3:
+                    case 2:
                         // 表单记录列表
+                        if (!(mCurrentFragmet instanceof RecordListFragment)) {
+                            mCurrentFragmet = new RecordListFragment();
+                            selectFragment(mCurrentFragmet);
+                        }
+                        drawerLayout.closeDrawers();
+                        break;
+                    case 3:
+                        // 设置
                         drawerLayout.closeDrawers();
                         break;
                     case 4:
-                        // 设置
-                        Intent intent = new Intent(ZBformMain.this,Activity_Settings.class);
-                        startActivity(intent);
+                        // 更新
+                        finish();
                         drawerLayout.closeDrawers();
-                        break;
                     case 5:
                         // 退出
                         finish();
@@ -140,9 +132,9 @@ public class ZBformMain extends BaseActivity{
     /**
      * 获取表单列表
      */
-    public void getFormList(String userId, String userKeyStr){
-        GetFormListTask getFormListTask = new GetFormListTask();
-        getFormListTask.getFormList(this,userId,userKeyStr);
+    public void getRecordsList(Context context, String formId){
+        RecordListTask getFormListTask = new RecordListTask(this, formId);
+        getFormListTask.getRecordList();
     }
 
     @Override

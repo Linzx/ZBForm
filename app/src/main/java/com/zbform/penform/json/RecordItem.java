@@ -92,4 +92,20 @@ public class RecordItem {
     public void setHwmodifydate(String hwmodifydate) {
         this.hwmodifydate = hwmodifydate;
     }
+
+    @Override
+    public String toString() {
+        return "RecordItem{" +
+                "hwcode='" + hwcode + '\'' +
+                ", hwuuid='" + hwuuid + '\'' +
+                ", hwgroup='" + hwgroup + '\'' +
+                ", hwname='" + hwname + '\'' +
+                ", hwsize=" + hwsize +
+                ", hwpage=" + hwpage +
+                ", hwheigh=" + hwheigh +
+                ", hwwidth=" + hwwidth +
+                ", hwcreatedate='" + hwcreatedate + '\'' +
+                ", hwmodifydate='" + hwmodifydate + '\'' +
+                '}';
+    }
 }
