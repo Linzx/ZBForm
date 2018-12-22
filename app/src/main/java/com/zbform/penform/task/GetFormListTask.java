@@ -8,7 +8,7 @@ import com.google.gson.reflect.TypeToken;
 import com.lidroid.xutils.exception.HttpException;
 import com.lidroid.xutils.http.ResponseInfo;
 import com.lidroid.xutils.http.client.HttpRequest;
-import com.zbform.penform.json.UserInfo;
+import com.zbform.penform.json.FormListInfo;
 import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.net.ErrorCode;
 import com.zbform.penform.net.IZBformNetBeanCallBack;
@@ -24,18 +24,18 @@ public class GetFormListTask implements IZBformNetBeanCallBack {
     private OnGetFormListListener mOnGetFormListListener;
 
     public interface OnGetFormListListener {
-        public void onStartLogin();
+        public void onStart();
 
-        public void onLoginSuccess();
+        public void onSuccess();
 
-        public void onLoginFail();
+        public void onFail();
     }
 
-    public void getFormList(Context context, String userId, String userKeyStr) {
+    public void getFormList(Context context, String formListId, String userKeyStr) {
         mContext = context;
-        mUserId = userId;
-        mUserKeyStr = userKeyStr;
-        String getFormListUrl = ApiAddress.getFormListUri(userId, userKeyStr);
+        mUserId = formListId;
+        mUserKeyStr = "aaaaaa";
+        String getFormListUrl = ApiAddress.getFormListUri(formListId, userKeyStr);
         ZBformNetBean getFormListTask = new ZBformNetBean(context, getFormListUrl,
                 HttpRequest.HttpMethod.GET);
         getFormListTask.setNetTaskCallBack(this);
@@ -49,7 +49,7 @@ public class GetFormListTask implements IZBformNetBeanCallBack {
     @Override
     public void onStart() {
         if (mOnGetFormListListener != null) {
-            mOnGetFormListListener.onStartLogin();
+            mOnGetFormListListener.onStart();
         }
     }
 
@@ -69,42 +69,41 @@ public class GetFormListTask implements IZBformNetBeanCallBack {
     public void onSuccess(ResponseInfo<String> responseInfo) {
         try {
             String resultGson = responseInfo.result;
-            Log.i("whd", "resultGson!!=" + resultGson);
+            Log.i(TAG, "resultGson!!=" + resultGson);
             Gson gson = new Gson();
-            UserInfo user = gson.fromJson(resultGson, new TypeToken<UserInfo>() {
-            }.getType());
+            FormListInfo formList = gson.fromJson(resultGson, new TypeToken<FormListInfo>(){}.getType());
 
-            if (user != null && user.header != null
-                    && user.results != null && user.results.length > 0) {
+            if (formList != null && formList.header != null
+                    && formList.results != null && formList.results.length > 0) {
 
-                Log.i("whd", "errorcode!!=" + user.header.getErrorCode());
-                Log.i("whd", "usercode!!=" + user.results[0].getUserCode());
-                if (user.header.getErrorCode().equals(ErrorCode.RESULT_OK)
-                        && user.results[0].getUserCode().equals(mUserId)) {
+                Log.i(TAG, "errorcode =" + formList.header.getErrorCode());
+                Log.i(TAG, "results conunt: "+ formList.header.getCount());
+                Log.i(TAG, "user code =" + formList.results[0].getCode());
+                if (formList.header.getErrorCode().equals(ErrorCode.RESULT_OK)) {
+                    for(FormListInfo.Results r: formList.results) {
+                        Log.i(TAG, r.toString());
+                    }
                     if (mOnGetFormListListener != null) {
-                        mOnGetFormListListener.onLoginSuccess();
+                        mOnGetFormListListener.onSuccess();
                     }
 
                 } else {
                     if (mOnGetFormListListener != null) {
-                        mOnGetFormListListener.onLoginFail();
+                        mOnGetFormListListener.onFail();
                     }
-                    //                    Toast.makeText(mContext, user.getmessage(),
-//                            Toast.LENGTH_SHORT).show();
                 }
             } else {
-                Log.i("whd", "user null");
                 if (mOnGetFormListListener != null) {
-                    mOnGetFormListListener.onLoginFail();
+                    mOnGetFormListListener.onFail();
                 }
             }
         } catch (Exception e) {
             Log.i(TAG, "e=" + e.getMessage());
 //            Toast.makeText(mContext,
-//                    mContext.getString(R.string.login_no_user),
+//                    mContext.getString(R.string.login_no_formList),
 //                    Toast.LENGTH_SHORT).show();
             if (mOnGetFormListListener != null) {
-                mOnGetFormListListener.onLoginFail();
+                mOnGetFormListListener.onFail();
             }
         }
     }
@@ -112,7 +111,7 @@ public class GetFormListTask implements IZBformNetBeanCallBack {
     @Override
     public void onFailure(HttpException error, String msg) {
         if (mOnGetFormListListener != null) {
-            mOnGetFormListListener.onLoginFail();
+            mOnGetFormListListener.onFail();
         }
     }
 }

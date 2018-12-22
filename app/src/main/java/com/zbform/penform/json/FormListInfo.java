@@ -149,6 +149,28 @@ public class FormListInfo extends BaseInfo {
         public void setModifyDate(String modifyDate) {
             this.modifyDate = modifyDate;
         }
+
+        @Override
+        public String toString() {
+            return "FormList Results{" +
+                    "code='" + code + '\'' +
+                    ", uuid='" + uuid + '\'' +
+                    ", group='" + group + '\'' +
+                    ", name='" + name + '\'' +
+                    ", size=" + size +
+                    ", page=" + page +
+                    ", heigh=" + heigh +
+                    ", width=" + width +
+                    ", conf='" + conf + '\'' +
+                    ", dataTable='" + dataTable + '\'' +
+                    ", state='" + state + '\'' +
+                    ", rinit='" + rinit + '\'' +
+                    ", rcount=" + rcount +
+                    ", version='" + version + '\'' +
+                    ", createDate='" + createDate + '\'' +
+                    ", modifyDate='" + modifyDate + '\'' +
+                    '}';
+        }
     }
 
 }

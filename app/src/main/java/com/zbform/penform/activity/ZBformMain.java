@@ -33,7 +33,9 @@ import com.zbform.penform.account.GlideCircleTransform;
 import com.zbform.penform.adapter.MenuItemAdapter;
 //import com.zbform.penform.banner.BannerHttpUtils;
 import com.zbform.penform.fragment.FormListFragment;
+import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.settings.Activity_Settings;
+import com.zbform.penform.task.GetFormListTask;
 import com.zbform.penform.update.UpdateAppManager;
 import com.zbform.penform.update.UpdateUtils;
 
@@ -96,34 +98,29 @@ public class ZBformMain extends BaseActivity{
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 switch (position) {
                     case 1:
-                        selectFragment(position);
+                        //个人信息
+//                        selectFragment(position);
                         drawerLayout.closeDrawers();
                         break;
                     case 2:
-//                        CardPickerDialog dialog = new CardPickerDialog();
-//                       // dialog.setClickListener(ZBformMain.this);
-//                        dialog.show(getSupportFragmentManager(), "theme");
-                        drawerLayout.closeDrawers();
+                        // 表单列表
+                        getFormList("ZB002", "aaaaaa");
+                        selectFragment(position);
 
+                        drawerLayout.closeDrawers();
                         break;
                     case 3:
-//                        TimingFragment fragment3 = new TimingFragment();
-//                        fragment3.show(getSupportFragmentManager(), "timing");
+                        // 表单记录列表
+                        drawerLayout.closeDrawers();
+                        break;
+                    case 4:
+                        // 设置
                         Intent intent = new Intent(ZBformMain.this,Activity_Settings.class);
                         startActivity(intent);
                         drawerLayout.closeDrawers();
-
-                        break;
-                    case 4:
-//                        BitSetFragment bfragment = new BitSetFragment();
-//                        bfragment.show(getSupportFragmentManager(), "bitset");
-//                        new CheckUpdateTask().execute(URLUtils.UPDATE_URL_PATH_JSON);
-                        drawerLayout.closeDrawers();
-
                         break;
                     case 5:
-                        //侧边栏退出按钮
-                        unbindService();
+                        // 退出
                         finish();
                         drawerLayout.closeDrawers();
 
@@ -132,6 +129,14 @@ public class ZBformMain extends BaseActivity{
         });
     }
 
+
+    /**
+     * 获取表单列表
+     */
+    public void getFormList(String userId, String userKeyStr){
+        GetFormListTask getFormListTask = new GetFormListTask();
+        getFormListTask.getFormList(this,userId,userKeyStr);
+    }
 
 
     public class CheckUpdateTask extends AsyncTask<String, Void, String> {
@@ -257,8 +262,18 @@ public class ZBformMain extends BaseActivity{
     }
 
     private void selectFragment(int position) {
+        Log.e(TAG, "select fragement: position = " + position);
+        switch (position) {
+            case 1:
+                break;
+            case 2:
+                break;
+            default:
+                break;
+        }
+
         FragmentTransaction transaction = fragmentManager.beginTransaction();
-       Fragment fragment = new FormListFragment();
+        Fragment fragment = new FormListFragment();
         transaction.replace(R.id.fragment_container, fragment);
         transaction.commit();
         //setTitle(title);

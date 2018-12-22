@@ -32,10 +32,10 @@ public class MenuItemAdapter extends BaseAdapter {
 
     private List<LvMenuItem> mItems = new ArrayList<LvMenuItem>(
             Arrays.asList(
+                    new LvMenuItem(R.mipmap.topmenu_icn_skin, "个人信息"),
                     new LvMenuItem(R.mipmap.topmenu_icn_cloud, "我的表单"),
-                    new LvMenuItem(R.mipmap.topmenu_icn_free, "所有表单记录"),
+                    new LvMenuItem(R.mipmap.topmenu_icn_free, "表单记录"),
                     new LvMenuItem(R.mipmap.topmenu_icn_set, "设置"),
-                    new LvMenuItem(R.mipmap.topmenu_icn_vip, "检查更新"),
                     new LvMenuItem(R.mipmap.topmenu_icn_exit, "退出")
 
             ));

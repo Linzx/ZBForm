@@ -59,17 +59,17 @@ public class ZBformNetBean {
         if (mHttp == null) {
             mHttp = getHttpObj();
         }
-        mHttp.send(mHttpMethod, mReqUrl, mLoginCallBack);
+        mHttp.send(mHttpMethod, mReqUrl, mRequestCallBack);
     }
     
     public void execute(RequestParams params) {
         if (mHttp == null) {
             mHttp = getHttpObj();
         }
-        mHttp.send(mHttpMethod, mReqUrl,params, mLoginCallBack);
+        mHttp.send(mHttpMethod, mReqUrl,params, mRequestCallBack);
     }
 
-    RequestCallBack<String> mLoginCallBack = new RequestCallBack<String>() {
+    RequestCallBack<String> mRequestCallBack = new RequestCallBack<String>() {
         @Override
         public void onStart() {
             if (mShowWaiting) {
