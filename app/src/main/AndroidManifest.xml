@@ -46,8 +46,9 @@
             android:screenOrientation="portrait">
         </activity>
         <activity
-            android:name="com.zbform.penform.activity.LoadingActivity"
-            android:screenOrientation="portrait" />
+            android:name="com.zbform.penform.activity.FormImgActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/FormImgThem"/>
 
         <receiver android:name="com.zbform.penform.receiver.MediaButtonIntentReceiver">
             <intent-filter>
@@ -64,6 +65,7 @@
         <activity
             android:name="com.zbform.penform.appintro.AppIntroduce"
             android:label="app_intro" />
+
 
         <!-- 广播注册 -->
         <receiver android:name="com.zbform.penform.update.InstallReceiver">

@@ -2,6 +2,7 @@ package com.zbform.penform.fragment;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.media.Image;
 import android.os.Bundle;
@@ -26,6 +27,7 @@ import com.pullrefresh.PtrFrameLayout;
 import com.pullrefresh.loadmore.GridViewWithHeaderAndFooter;
 import com.pullrefresh.loadmore.OnLoadMoreListener;
 import com.zbform.penform.R;
+import com.zbform.penform.activity.FormImgActivity;
 import com.zbform.penform.json.FormListInfo;
 import com.zbform.penform.task.FormListTask;
 import com.zbform.penform.view.GridDividerItemDecoration;
@@ -36,7 +38,6 @@ import java.util.List;
 public class FormListFragment extends BaseFragment implements FormListTask.OnFormTaskListener{
 
     private PtrClassicFrameLayout ptrClassicFrameLayout;
-//    private GridViewWithHeaderAndFooter mGridView;
     private RecyclerView mRecyclerView;
     private RecyclerViewAdapter mAdapter;
     private List<String> mData = new ArrayList<>();
@@ -65,6 +66,7 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
         ptrClassicFrameLayout = (PtrClassicFrameLayout) view.findViewById(R.id.form_grid_view_frame);
         mRecyclerView = (RecyclerView) view.findViewById(R.id.form_recycler_view);
         mRecyclerView.addItemDecoration(new GridDividerItemDecoration(mContext));
+//        mRecyclerView.set
     }
 
     private void initData() {
@@ -90,12 +92,6 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
                     @Override
                     public void run() {
                         mTask.execute(mContext);
-//                        page = 0;
-//                        mData.clear();
-//                        for (int i = 0; i < 40; i++) {
-//                            mData.add(new String("GridView item  -" + i));
-//                        }
-//                        mAdapter.notifyDataSetChanged();
 //                        ptrClassicFrameLayout.refreshComplete();
 //                        ptrClassicFrameLayout.setLoadMoreEnable(true);
                     }
@@ -111,12 +107,7 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
 
                     @Override
                     public void run() {
-//                        for (int i = 0; i < 4; i++) {
-//                            mData.add(new String("GridView item -- add" + page));
-//                        }
-//                        mAdapter.notifyDataSetChanged();
 //                        ptrClassicFrameLayout.loadMoreComplete(true);
-//                        page++;
                         Toast.makeText(mContext, "load more complete", Toast.LENGTH_SHORT).show();
                     }
                 }, 1000);
@@ -147,7 +138,8 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
     }
 
 
-    public class RecyclerViewAdapter extends RecyclerView.Adapter<ChildViewHolder> {
+    public class RecyclerViewAdapter extends RecyclerView.Adapter<ChildViewHolder> implements
+            View.OnClickListener {
         private List<FormListInfo.Results> datas;
         private LayoutInflater inflater;
 
@@ -167,21 +159,16 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
         @Override
         public ChildViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View view = inflater.inflate(R.layout.listitem_layout, null);
-            ChildViewHolder viewHolder = new ChildViewHolder(view);
-            viewHolder.itemImg.setOnClickListener(new View.OnClickListener(){
-
-                @Override
-                public void onClick(View v) {
-
-                }
-            });
-            return viewHolder;
+            return new ChildViewHolder(view);
         }
 
         @Override
         public void onBindViewHolder(@NonNull ChildViewHolder holder, int position) {
             FormListInfo.Results item = datas.get(position);
+            holder.formItem = item;
             holder.itemName.setText(item.getName());
+            holder.itemView.setTag(holder);
+            holder.itemView.setOnClickListener(this);
         }
 
         @Override
@@ -198,17 +185,6 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
             }
         }
 
-//        @Override
-//        public View getView(int position, View convertView, ViewGroup parent) {
-//            if (convertView == null) {
-//                convertView = inflater.inflate(R.layout.listitem_layout, parent, false);
-//            }
-//            TextView textView = (TextView) convertView.findViewById(R.id.form_name);
-//            FormListInfo.Results item = datas.get(position);
-//            textView.setText(item.getName());
-//            return convertView;
-//        }
-
         public List<FormListInfo.Results> getData() {
             return datas;
         }
@@ -217,14 +193,26 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
             datas = results;
         }
 
+        @Override
+        public void onClick(View v) {
+            if(v.getTag() == null) return;
+            ChildViewHolder holder = (ChildViewHolder) v.getTag();
+Log.i("whd","item="+holder.formItem.getName());
+Intent intent = new Intent(mContext,FormImgActivity.class);
+startActivity(intent);
+        }
     }
 
     public class ChildViewHolder extends RecyclerView.ViewHolder {
+        public View itemView;
         public TextView itemName;
         public ImageView itemImg;
+        public FormListInfo.Results formItem;
 
         public ChildViewHolder(View view) {
             super(view);
+            itemView = view;
+
             itemName = (TextView) view.findViewById(R.id.form_name);
             itemImg = (ImageView) view.findViewById(R.id.form_img);
         }

@@ -2,14 +2,19 @@ package com.zbform.penform.activity;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -42,6 +47,7 @@ public class ZBformMain extends BaseActivity{
     private ArrayList<TextView> tabs = new ArrayList<>();
     private DrawerLayout drawerLayout;
     private ListView mLvLeftMenu;
+    private TextView mTootBarTitle;
     private long time = 0;
 
     private FragmentManager fragmentManager;
@@ -63,8 +69,10 @@ public class ZBformMain extends BaseActivity{
         drawerLayout = (DrawerLayout) findViewById(R.id.fd);
         mLvLeftMenu = (ListView) findViewById(R.id.id_lv_left_menu);
 
+        mTootBarTitle = (TextView)findViewById(R.id.toolbar_title);
         setToolBar();
         setUpDrawer();
+        setmTootBarTitle(getString(R.string.menu_item_formlist));
         mCurrentFragmet = new FormListFragment();
         selectFragment(mCurrentFragmet);
     }
@@ -76,6 +84,10 @@ public class ZBformMain extends BaseActivity{
         mActionBar.setDisplayHomeAsUpEnabled(true);
         mActionBar.setHomeAsUpIndicator(R.drawable.ic_menu);
         mActionBar.setTitle("");
+    }
+
+    private void setmTootBarTitle(String title){
+        mTootBarTitle.setText(title);
     }
 
     private void setUpDrawer() {
