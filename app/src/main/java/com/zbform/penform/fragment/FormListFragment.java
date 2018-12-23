@@ -167,7 +167,15 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
         @Override
         public ChildViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View view = inflater.inflate(R.layout.listitem_layout, null);
-            return new ChildViewHolder(view);
+            ChildViewHolder viewHolder = new ChildViewHolder(view);
+            viewHolder.itemImg.setOnClickListener(new View.OnClickListener(){
+
+                @Override
+                public void onClick(View v) {
+
+                }
+            });
+            return viewHolder;
         }
 
         @Override

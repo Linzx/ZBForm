@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
@@ -34,6 +35,7 @@ public class RecordListFragment extends BaseFragment implements RecordListTask.O
     private PtrClassicFrameLayout ptrClassicFrameLayout;
     private ListView mListView;
     private ListViewAdapter mAdapter;
+    private List<RecordListInfo.Results> recordListResults = new ArrayList<>();
     private List<RecordItem> mData = new ArrayList<>();
     private Handler handler = new Handler();
     private RecordListTask mTask;
@@ -58,6 +60,12 @@ public class RecordListFragment extends BaseFragment implements RecordListTask.O
     private void initView(View view) {
         ptrClassicFrameLayout = view.findViewById(R.id.record_list_view_frame);
         mListView = view.findViewById(R.id.record_list_view);
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+            }
+        });
     }
 
     private void initData() {
@@ -124,8 +132,9 @@ public class RecordListFragment extends BaseFragment implements RecordListTask.O
 
     @Override
     public void onTaskSuccess(List<RecordListInfo.Results> results) {
-        if(results.size() > 0) {
-            mData = Arrays.asList(results.get(0).getItems());
+        recordListResults = results;
+        if(recordListResults.size() > 0) {
+            mData = Arrays.asList(recordListResults.get(0).getItems());
             mAdapter.setData(mData);
             mAdapter.notifyDataSetChanged();
         }
@@ -183,7 +192,7 @@ public class RecordListFragment extends BaseFragment implements RecordListTask.O
 
             holder.recordCode.setText(datas.get(position).getHwcode());
             holder.modifyDate.setText(convertDateFormat(datas.get(position).getHwmodifydate()));
-            holder.owner.setText(datas.get(position).getHwgroup());
+            holder.owner.setText(datas.get(position).getHwname());
             return convertView;
         }
 

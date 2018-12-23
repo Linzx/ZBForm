@@ -9,6 +9,7 @@ import com.lidroid.xutils.exception.HttpException;
 import com.lidroid.xutils.http.ResponseInfo;
 import com.lidroid.xutils.http.client.HttpRequest;
 import com.zbform.penform.ZBformApplication;
+import com.zbform.penform.json.RecordInfo;
 import com.zbform.penform.json.RecordListInfo;
 import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.net.ErrorCode;
@@ -18,12 +19,13 @@ import com.zbform.penform.net.ZBformNetBean;
 import java.util.Arrays;
 import java.util.List;
 
-public class RecordListTask implements IZBformNetBeanCallBack {
-    private static final String TAG = RecordListTask.class.getSimpleName();
+public class RecordTask implements IZBformNetBeanCallBack {
+    private static final String TAG = RecordTask.class.getSimpleName();
 
     private String mUserId;
     private String mUserKeyStr;
     private String mFormId;
+    private String mRecordId;
 
     private Context mContext;
     private OnTaskListener mOnTaskListener;
@@ -32,26 +34,27 @@ public class RecordListTask implements IZBformNetBeanCallBack {
     public interface OnTaskListener {
         void onTaskStart();
 
-        void onTaskSuccess(List<RecordListInfo.Results> results);
+        void onTaskSuccess(List<RecordInfo.Results> results);
 
         void onTaskFail();
     }
 
-    public RecordListTask(Context context, String formId){
+    public RecordTask(Context context, String formId, String recordId){
         mUserId = ZBformApplication.getmLoginUserId();
         mUserKeyStr = ZBformApplication.getmLoginUserKey();
         mContext = context;
         mFormId = "74fef293-e8c1-4c8a-ba3f-25321d1eabaf";
+        mRecordId = recordId;
     }
 
-    public void getRecordList() {
-        Log.i(TAG, "[getRecordList] begin");
-        String getRecordListUrl = ApiAddress.getRecordListUri(mUserId, mUserKeyStr, mFormId);
-        ZBformNetBean getRecordListTask = new ZBformNetBean(mContext, getRecordListUrl,
+    public void getRecord() {
+        Log.i(TAG, "[getRecord] begin");
+        String getRecordUrl = ApiAddress.getRecordUri(mUserId, mUserKeyStr, mFormId, mRecordId);
+        ZBformNetBean getRecordTask = new ZBformNetBean(mContext, getRecordUrl,
                 HttpRequest.HttpMethod.GET);
-        getRecordListTask.setNetTaskCallBack(this);
-        getRecordListTask.execute();
-        Log.i(TAG, "[getRecordList] end");
+        getRecordTask.setNetTaskCallBack(this);
+        getRecordTask.execute();
+        Log.i(TAG, "[getRecord] end");
 
     }
 
@@ -85,19 +88,16 @@ public class RecordListTask implements IZBformNetBeanCallBack {
             String resultGson = responseInfo.result;
             Log.i(TAG, "result json =" + resultGson);
             Gson gson = new Gson();
-            RecordListInfo recordList = gson.fromJson(resultGson, new TypeToken<RecordListInfo>(){}.getType());
+            RecordInfo record = gson.fromJson(resultGson, new TypeToken<RecordInfo>(){}.getType());
 
-            if (recordList != null && recordList.header != null
-                    && recordList.results != null && recordList.results.length > 0) {
+            if (record != null && record.header != null
+                    && record.results != null && record.results.length > 0) {
 
-                Log.i(TAG, "error code =" + recordList.header.getErrorCode());
-                Log.i(TAG, "results count: "+ recordList.header.getCount());
-                if (recordList.header.getErrorCode().equals(ErrorCode.RESULT_OK)) {
-                    for(RecordListInfo.Results r: recordList.results) {
-                        Log.i(TAG, r.toString());
-                    }
+                Log.i(TAG, "error code =" + record.header.getErrorCode());
+                Log.i(TAG, "results count: "+ record.header.getCount());
+                if (record.header.getErrorCode().equals(ErrorCode.RESULT_OK)) {
                     if (mOnTaskListener != null) {
-                        mOnTaskListener.onTaskSuccess(Arrays.asList(recordList.results));
+                        mOnTaskListener.onTaskSuccess(Arrays.asList(record.results));
                     }
 
                 } else {
