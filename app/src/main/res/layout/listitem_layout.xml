@@ -1,34 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/text_Grey"
+    android:padding="6dp">
+<android.support.constraint.ConstraintLayout
+    android:id="@+id/item_content"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:clickable="true"
     android:focusable="true"
     android:background="@drawable/linerlayout_water_selector">
-
+    <TextView
+        android:id="@+id/form_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:layout_marginTop="5dp"
+        app:layout_constraintEnd_toEndOf="@+id/form_img"
+        app:layout_constraintStart_toStartOf="@+id/form_img"
+        app:layout_constraintBottom_toTopOf="@+id/form_img"
+        android:minHeight="?android:attr/listPreferredItemHeightSmall"
+        android:paddingStart="?android:attr/listPreferredItemPaddingStart"
+        android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
+        android:textAppearance="?android:attr/textAppearanceListItemSmall"
+        android:textColor="@android:color/black" />
     <ImageView
         android:id="@+id/form_img"
         android:layout_width="150dp"
         android:layout_height="200dp"
         android:gravity="center_horizontal"
         android:src="@drawable/logo"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@id/view_record"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"/>
 
     <TextView
-        android:id="@+id/form_name"
+        android:id="@+id/view_record"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
+        android:gravity="center"
+        android:textAppearance="?android:attr/textAppearanceListItemSmall"
+        android:autoLink="all"
+        android:text="查看记录"
+        android:textColor="@color/colorPrimary"
         app:layout_constraintEnd_toEndOf="@+id/form_img"
         app:layout_constraintStart_toStartOf="@+id/form_img"
-        app:layout_constraintTop_toBottomOf="@+id/form_img"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:background="@drawable/linerlayout_water_selector"
         android:minHeight="?android:attr/listPreferredItemHeightSmall"
         android:paddingStart="?android:attr/listPreferredItemPaddingStart"
-        android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
-        android:textAppearance="?android:attr/textAppearanceListItemSmall"
-        android:textColor="@android:color/black" />
+        android:paddingEnd="?android:attr/listPreferredItemPaddingEnd" />
 </android.support.constraint.ConstraintLayout>
+</FrameLayout>

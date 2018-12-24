@@ -7,16 +7,17 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 
 /**
  * Desc:九宫格分割线   无最右边与最下边线
  */
-public class GridDividerItemDecoration extends RecyclerView.ItemDecoration {
+public class GridDividerItemDecorationEx extends RecyclerView.ItemDecoration {
     private static final int[] ATTRS = new int[]{android.R.attr.listDivider};
     private Drawable mDivider;
 
-    public GridDividerItemDecoration(Context context) {
+    public GridDividerItemDecorationEx(Context context) {
         final TypedArray a = context.obtainStyledAttributes(ATTRS);
         mDivider = a.getDrawable(0);
         a.recycle();
@@ -39,6 +40,7 @@ public class GridDividerItemDecoration extends RecyclerView.ItemDecoration {
     }
 
     public void drawHorizontal(Canvas c, RecyclerView parent) {
+        Log.i("whd","drawHorizontal");
         int childCount = parent.getChildCount();
         for (int i = 0; i < childCount; i++) {
             final View child = parent.getChildAt(i);
@@ -55,8 +57,10 @@ public class GridDividerItemDecoration extends RecyclerView.ItemDecoration {
     }
 
     public void drawVertical(Canvas c, RecyclerView parent) {
+        Log.i("whd","drawHorizontal1");
         final int childCount = parent.getChildCount();
         for (int i = 0; i < childCount; i++) {
+            Log.i("whd","drawHorizontal2");
             final View child = parent.getChildAt(i);
 
             final RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child

@@ -1,22 +1,17 @@
 package com.zbform.penform.fragment;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
-import android.media.Image;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
-import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -24,13 +19,13 @@ import android.widget.Toast;
 import com.pullrefresh.PtrClassicFrameLayout;
 import com.pullrefresh.PtrDefaultHandler;
 import com.pullrefresh.PtrFrameLayout;
-import com.pullrefresh.loadmore.GridViewWithHeaderAndFooter;
 import com.pullrefresh.loadmore.OnLoadMoreListener;
 import com.zbform.penform.R;
 import com.zbform.penform.activity.FormImgActivity;
 import com.zbform.penform.json.FormListInfo;
 import com.zbform.penform.task.FormListTask;
-import com.zbform.penform.view.GridDividerItemDecoration;
+//import com.zbform.penform.view.GridDividerItemDecoration;
+import com.zbform.penform.view.GridDividerItemDecorationEx;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +60,7 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
     private void initView(View view) {
         ptrClassicFrameLayout = (PtrClassicFrameLayout) view.findViewById(R.id.form_grid_view_frame);
         mRecyclerView = (RecyclerView) view.findViewById(R.id.form_recycler_view);
-        mRecyclerView.addItemDecoration(new GridDividerItemDecoration(mContext));
+//        mRecyclerView.addItemDecoration(new GridDividerItemDecorationEx(mContext));
 //        mRecyclerView.set
     }
 
@@ -166,9 +161,10 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
         public void onBindViewHolder(@NonNull ChildViewHolder holder, int position) {
             FormListInfo.Results item = datas.get(position);
             holder.formItem = item;
-            holder.itemName.setText(item.getName());
-            holder.itemView.setTag(holder);
-            holder.itemView.setOnClickListener(this);
+            holder.itemName.setText(item.getName().replace(".pdf",""));
+            holder.itemContent.setTag(holder);
+            holder.itemContent.setOnClickListener(this);
+            holder.itemViewRecord.setOnClickListener(this);
         }
 
         @Override
@@ -195,17 +191,23 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
 
         @Override
         public void onClick(View v) {
-            if(v.getTag() == null) return;
-            ChildViewHolder holder = (ChildViewHolder) v.getTag();
-Log.i("whd","item="+holder.formItem.getName());
-Intent intent = new Intent(mContext,FormImgActivity.class);
-startActivity(intent);
+            if(v.getId() == R.id.item_content) {
+                if (v.getTag() == null) return;
+                ChildViewHolder holder = (ChildViewHolder) v.getTag();
+                Log.i("whd", "item=" + holder.formItem.getName());
+                Intent intent = new Intent(mContext, FormImgActivity.class);
+                startActivity(intent);
+            } else if (v.getId() == R.id.view_record){
+                Log.i("whd", "view record");
+            }
         }
     }
 
     public class ChildViewHolder extends RecyclerView.ViewHolder {
         public View itemView;
+        public View itemContent;
         public TextView itemName;
+        public TextView itemViewRecord;
         public ImageView itemImg;
         public FormListInfo.Results formItem;
 
@@ -213,8 +215,12 @@ startActivity(intent);
             super(view);
             itemView = view;
 
+            itemContent= itemView.findViewById(R.id.item_content);
             itemName = (TextView) view.findViewById(R.id.form_name);
             itemImg = (ImageView) view.findViewById(R.id.form_img);
+            itemViewRecord =  (TextView) view.findViewById(R.id.view_record);
+            itemViewRecord.getPaint().setFlags(Paint.UNDERLINE_TEXT_FLAG); //下划线
+            itemViewRecord.getPaint().setAntiAlias(true);//抗锯
         }
 
     }

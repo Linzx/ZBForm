@@ -112,6 +112,7 @@ public class ZBformMain extends BaseActivity{
                         if (!(mCurrentFragmet instanceof FormListFragment)) {
                             mCurrentFragmet = new FormListFragment();
                             selectFragment(mCurrentFragmet);
+                            setmTootBarTitle(getString(R.string.menu_item_formlist));
                         }
                         drawerLayout.closeDrawers();
                         break;
@@ -120,6 +121,7 @@ public class ZBformMain extends BaseActivity{
                         if (!(mCurrentFragmet instanceof RecordListFragment)) {
                             mCurrentFragmet = new RecordListFragment();
                             selectFragment(mCurrentFragmet);
+                            setmTootBarTitle(getString(R.string.menu_item_formrecord));
                         }
                         drawerLayout.closeDrawers();
                         break;
