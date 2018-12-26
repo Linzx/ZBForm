@@ -39,14 +39,15 @@ public class RecordListFragment extends BaseFragment implements RecordListTask.O
     private List<RecordItem> mData = new ArrayList<>();
     private Handler handler = new Handler();
     private RecordListTask mTask;
+    private String mFormId;
 
     private Context mContext;
-
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
         mContext = context;
+        mFormId = (String)getArguments().get("formId");
     }
 
     @Override
@@ -69,7 +70,7 @@ public class RecordListFragment extends BaseFragment implements RecordListTask.O
     }
 
     private void initData() {
-        mTask = new RecordListTask(mContext, "");
+        mTask = new RecordListTask(mContext, mFormId);
         mTask.setTaskListener(this);
 
         mAdapter = new ListViewAdapter(mContext);

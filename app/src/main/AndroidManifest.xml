@@ -50,22 +50,6 @@
             android:screenOrientation="portrait"
             android:theme="@style/FormImgThem"/>
 
-        <receiver android:name="com.zbform.penform.receiver.MediaButtonIntentReceiver">
-            <intent-filter>
-                <action android:name="android.intent.action.MEDIA_BUTTON" />
-                <action android:name="android.media.AUDIO_BECOMING_NOISY" />
-            </intent-filter>
-        </receiver>
-        <receiver android:name="com.zbform.penform.receiver.LaunchNowPlayingReceiver">
-            <intent-filter>
-                <action android:name="com.foxconn.smartbox.LAUNCH_NOW_PLAYING_ACTION" />
-            </intent-filter>
-        </receiver>
-
-        <activity
-            android:name="com.zbform.penform.appintro.AppIntroduce"
-            android:label="app_intro" />
-
 
         <!-- 广播注册 -->
         <receiver android:name="com.zbform.penform.update.InstallReceiver">

@@ -32,14 +32,13 @@ import com.zbform.penform.account.GlideCircleTransform;
 import com.zbform.penform.adapter.MenuItemAdapter;
 import com.zbform.penform.fragment.BaseFragment;
 import com.zbform.penform.fragment.FormListFragment;
+import com.zbform.penform.fragment.OnFragmentChangeListener;
 import com.zbform.penform.fragment.RecordListFragment;
-import com.zbform.penform.settings.Activity_Settings;
-import com.zbform.penform.task.RecordListTask;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ZBformMain extends BaseActivity{
+public class ZBformMain extends BaseActivity implements OnFragmentChangeListener {
 
     private static final String TAG = "ZBformMain";
 
@@ -118,11 +117,7 @@ public class ZBformMain extends BaseActivity{
                         break;
                     case 2:
                         // 表单记录列表
-                        if (!(mCurrentFragmet instanceof RecordListFragment)) {
-                            mCurrentFragmet = new RecordListFragment();
-                            selectFragment(mCurrentFragmet);
-                            setmTootBarTitle(getString(R.string.menu_item_formrecord));
-                        }
+
                         drawerLayout.closeDrawers();
                         break;
                     case 3:
@@ -141,14 +136,6 @@ public class ZBformMain extends BaseActivity{
                 }
             }
         });
-    }
-
-    /**
-     * 获取表单列表
-     */
-    public void getRecordsList(Context context, String formId){
-        RecordListTask getFormListTask = new RecordListTask(this, formId);
-        getFormListTask.getRecordList();
     }
 
     @Override
@@ -172,13 +159,19 @@ public class ZBformMain extends BaseActivity{
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if ((System.currentTimeMillis() - time > 1000)) {
-                Toast.makeText(this, "再按一次返回桌面", Toast.LENGTH_SHORT).show();
-                time = System.currentTimeMillis();
+            Log.i(TAG, "Fragments size = "+fragmentManager.getFragments().size());
+            if (fragmentManager.getFragments().size() > 1 && mCurrentFragmet instanceof RecordListFragment) {
+                fragmentManager.popBackStack();
+                setmTootBarTitle(getString(R.string.menu_item_formlist));
             } else {
-                Intent intent = new Intent(Intent.ACTION_MAIN);
-                intent.addCategory(Intent.CATEGORY_HOME);
-                startActivity(intent);
+                if ((System.currentTimeMillis() - time > 1000)) {
+                    Toast.makeText(this, "再按一次返回桌面", Toast.LENGTH_SHORT).show();
+                    time = System.currentTimeMillis();
+                } else {
+                    Intent intent = new Intent(Intent.ACTION_MAIN);
+                    intent.addCategory(Intent.CATEGORY_HOME);
+                    startActivity(intent);
+                }
             }
             return true;
         } else {
@@ -203,11 +196,31 @@ public class ZBformMain extends BaseActivity{
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+
     }
 
     private void selectFragment(BaseFragment fragment) {
         FragmentTransaction transaction = fragmentManager.beginTransaction();
         transaction.replace(R.id.fragment_container,  fragment);
+        if(fragment instanceof RecordListFragment) {
+            transaction.addToBackStack(fragment.getClass().getSimpleName());
+        }
         transaction.commit();
     }
+
+    @Override
+    public void onRecordListFragmentSelect(String formId) {
+        mCurrentFragmet = new RecordListFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString("formId", formId);
+        mCurrentFragmet.setArguments(bundle);
+        selectFragment(mCurrentFragmet);
+        setmTootBarTitle(getString(R.string.menu_item_formrecord));
+    }
+
+    @Override
+    public void onRecordFragmentSelect(String formId, String RecordId) {
+
+    }
+
 }

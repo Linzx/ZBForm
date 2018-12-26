@@ -24,14 +24,13 @@ import com.zbform.penform.R;
 import com.zbform.penform.activity.FormImgActivity;
 import com.zbform.penform.json.FormListInfo;
 import com.zbform.penform.task.FormListTask;
-//import com.zbform.penform.view.GridDividerItemDecoration;
-import com.zbform.penform.view.GridDividerItemDecorationEx;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class FormListFragment extends BaseFragment implements FormListTask.OnFormTaskListener{
 
+    public static final String TAG = FormListFragment.class.getSimpleName();
     private PtrClassicFrameLayout ptrClassicFrameLayout;
     private RecyclerView mRecyclerView;
     private RecyclerViewAdapter mAdapter;
@@ -42,11 +41,14 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
     private int page = 0;
     private Context mContext;
 
+    private OnFragmentChangeListener mFragmentChangeCallBack;
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
         mContext = context;
+        Log.i(TAG, "onAttach, set fragment change listener");
+        mFragmentChangeCallBack = (OnFragmentChangeListener) context;
     }
 
     @Override
@@ -154,7 +156,10 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
         @Override
         public ChildViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View view = inflater.inflate(R.layout.listitem_layout, null);
-            return new ChildViewHolder(view);
+            ChildViewHolder viewHolder = new ChildViewHolder(view);
+            TextView viewRecord = view.findViewById(R.id.view_record);
+            viewRecord.setTag(viewHolder);
+            return viewHolder;
         }
 
         @Override
@@ -181,6 +186,11 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
             }
         }
 
+        @Override
+        public void onViewRecycled(@NonNull ChildViewHolder holder) {
+            super.onViewRecycled(holder);
+        }
+
         public List<FormListInfo.Results> getData() {
             return datas;
         }
@@ -198,7 +208,13 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
                 Intent intent = new Intent(mContext, FormImgActivity.class);
                 startActivity(intent);
             } else if (v.getId() == R.id.view_record){
-                Log.i("whd", "view record");
+                Log.i(TAG, "onclick view record");
+                if(v.getTag() != null) {
+                    ChildViewHolder viewHolder = (ChildViewHolder)v.getTag();
+                    String formId = viewHolder.formItem.getUuid();
+                    Log.i(TAG, "form onclick formId = " + formId);
+                    mFragmentChangeCallBack.onRecordListFragmentSelect(formId);
+                }
             }
         }
     }
@@ -224,4 +240,5 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
         }
 
     }
+
 }
