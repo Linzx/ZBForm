@@ -2,7 +2,12 @@ package com.zbform.penform.fragment;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.TransitionDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -16,14 +21,24 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.lidroid.xutils.BitmapUtils;
+import com.lidroid.xutils.bitmap.BitmapDisplayConfig;
+import com.lidroid.xutils.bitmap.callback.BitmapLoadFrom;
+import com.lidroid.xutils.bitmap.callback.DefaultBitmapLoadCallBack;
 import com.pullrefresh.PtrClassicFrameLayout;
 import com.pullrefresh.PtrDefaultHandler;
 import com.pullrefresh.PtrFrameLayout;
 import com.pullrefresh.loadmore.OnLoadMoreListener;
 import com.zbform.penform.R;
+import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.activity.FormImgActivity;
 import com.zbform.penform.json.FormListInfo;
+import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.task.FormListTask;
+//import com.zbform.penform.view.GridDividerItemDecoration;
+import com.zbform.penform.task.TestTask;
+import com.zbform.penform.util.BitmapHelp;
+import com.zbform.penform.view.GridDividerItemDecorationEx;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,9 +55,9 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
 
     private int page = 0;
     private Context mContext;
-
+    private BitmapUtils mBitmapUtils;
+    private static final ColorDrawable TRANSPARENT_DRAWABLE = new ColorDrawable(android.R.color.transparent);
     private OnFragmentChangeListener mFragmentChangeCallBack;
-
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
@@ -67,6 +82,11 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
     }
 
     private void initData() {
+//        new TestTask().execute(mContext);
+        mBitmapUtils = BitmapHelp.getBitmapUtils(mContext);
+        mBitmapUtils.configDefaultLoadingImage(R.drawable.no_banner);
+        mBitmapUtils.configDefaultLoadFailedImage(R.drawable.no_banner);
+        mBitmapUtils.configDefaultBitmapConfig(Bitmap.Config.RGB_565);
         mTask = new FormListTask();
         mTask.setOnFormTaskListener(this);
 
@@ -170,6 +190,10 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
             holder.itemContent.setTag(holder);
             holder.itemContent.setOnClickListener(this);
             holder.itemViewRecord.setOnClickListener(this);
+
+            String url = ApiAddress.getFormImgUri(ZBformApplication.getmLoginUserId(),
+                    ZBformApplication.getmLoginUserId(),item.getUuid(),item.getPage());
+            mBitmapUtils.display(holder.itemImg,url,new CustomBitmapLoadCallBack(holder));
         }
 
         @Override
@@ -206,16 +230,50 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
                 ChildViewHolder holder = (ChildViewHolder) v.getTag();
                 Log.i("whd", "item=" + holder.formItem.getName());
                 Intent intent = new Intent(mContext, FormImgActivity.class);
+                intent.putExtra("info",holder.formBitmap);
                 startActivity(intent);
             } else if (v.getId() == R.id.view_record){
-                Log.i(TAG, "onclick view record");
+               Log.i(TAG, "onclick view record");
                 if(v.getTag() != null) {
                     ChildViewHolder viewHolder = (ChildViewHolder)v.getTag();
                     String formId = viewHolder.formItem.getUuid();
                     Log.i(TAG, "form onclick formId = " + formId);
                     mFragmentChangeCallBack.onRecordListFragmentSelect(formId);
                 }
+
             }
+        }
+    }
+
+    public class CustomBitmapLoadCallBack extends DefaultBitmapLoadCallBack<ImageView> {
+        private final ChildViewHolder holder;
+
+        public CustomBitmapLoadCallBack(ChildViewHolder holder) {
+            this.holder = holder;
+        }
+
+        @Override
+        public void onLoading(ImageView container, String uri, BitmapDisplayConfig config, long total, long current) {
+//            this.holder.imgPb.setProgress((int) (current * 100 / total));
+        }
+
+        @Override
+        public void onLoadCompleted(ImageView container, String uri, Bitmap bitmap, BitmapDisplayConfig config, BitmapLoadFrom from) {
+            //super.onLoadCompleted(container, uri, bitmap, config, from);
+            //override super, handle pic self
+            holder.formBitmap = bitmap;
+            fadeInDisplay(container, bitmap);
+//            this.holder.imgPb.setProgress(100);
+        }
+
+        private void fadeInDisplay(ImageView imageView, Bitmap bitmap) {
+            final TransitionDrawable transitionDrawable =
+                    new TransitionDrawable(new Drawable[]{
+                            TRANSPARENT_DRAWABLE,
+                            new BitmapDrawable(imageView.getResources(), bitmap)
+                    });
+            imageView.setImageDrawable(transitionDrawable);
+            transitionDrawable.startTransition(500);
         }
     }
 
@@ -226,6 +284,7 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
         public TextView itemViewRecord;
         public ImageView itemImg;
         public FormListInfo.Results formItem;
+        public Bitmap formBitmap;
 
         public ChildViewHolder(View view) {
             super(view);

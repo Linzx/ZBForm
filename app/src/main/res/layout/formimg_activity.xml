@@ -7,9 +7,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
     <ImageView
+        android:id="@+id/form_img"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/def_background"
+        android:src="@drawable/no_banner"
         />
 
     <ProgressBar
