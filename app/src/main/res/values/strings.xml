@@ -148,5 +148,7 @@
     <string name="about_us">About us</string>
     <string name="pic_quality">Picture Quality</string>
 
+    <string name="connect_pen">连接蓝牙笔</string>
+
 
 </resources>

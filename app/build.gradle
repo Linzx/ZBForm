@@ -38,4 +38,5 @@ dependencies {
     implementation 'in.srain.cube:ultra-ptr:1.0.11'
     implementation 'com.wang.avi:library:1.0.5'
     implementation 'com.github.paolorotolo:appintro:4.1.0'
+    implementation files('libs/Tstudy_TD602_V111.jar')
 }

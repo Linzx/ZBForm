@@ -12,9 +12,7 @@ import android.graphics.RectF;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Display;
-import android.view.View;
 import android.view.WindowManager;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.tstudy.blepenlib.BlePenManager;
@@ -49,9 +47,6 @@ public class ZBFormBlePenManager {
     }
 
     public interface IZBFormBlePenCallBack{
-        /*
-
-         */
         public void onRemainBattery(final int percent);
         public void onMemoryFillLevel(final int percent, final int byteNum);
         public void onReadPageAddress(String address);
