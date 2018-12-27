@@ -21,6 +21,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.model.stream.HttpUrlGlideUrlLoader;
+import com.bumptech.glide.request.target.BitmapImageViewTarget;
 import com.lidroid.xutils.BitmapUtils;
 import com.lidroid.xutils.bitmap.BitmapDisplayConfig;
 import com.lidroid.xutils.bitmap.callback.BitmapLoadFrom;
@@ -40,6 +43,7 @@ import com.zbform.penform.task.TestTask;
 import com.zbform.penform.util.BitmapHelp;
 import com.zbform.penform.view.GridDividerItemDecorationEx;
 
+import com.bumptech.glide.request.target.Target;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -87,6 +91,7 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
         mBitmapUtils.configDefaultLoadingImage(R.drawable.no_banner);
         mBitmapUtils.configDefaultLoadFailedImage(R.drawable.no_banner);
         mBitmapUtils.configDefaultBitmapConfig(Bitmap.Config.RGB_565);
+        mBitmapUtils.configMemoryCacheEnabled(true);
         mTask = new FormListTask();
         mTask.setOnFormTaskListener(this);
 
@@ -191,9 +196,12 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
             holder.itemContent.setOnClickListener(this);
             holder.itemViewRecord.setOnClickListener(this);
 
+
             String url = ApiAddress.getFormImgUri(ZBformApplication.getmLoginUserId(),
                     ZBformApplication.getmLoginUserId(),item.getUuid(),item.getPage());
-            mBitmapUtils.display(holder.itemImg,url,new CustomBitmapLoadCallBack(holder));
+            holder.url = url;
+            Glide.with(mContext).load(url).crossFade().thumbnail(0.2f).into(holder.itemImg);
+//            mBitmapUtils.display(holder.itemImg,url,new CustomBitmapLoadCallBack(holder));
         }
 
         @Override
@@ -230,7 +238,7 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
                 ChildViewHolder holder = (ChildViewHolder) v.getTag();
                 Log.i("whd", "item=" + holder.formItem.getName());
                 Intent intent = new Intent(mContext, FormImgActivity.class);
-                intent.putExtra("info",holder.formBitmap);
+                intent.putExtra("info",holder.url);
                 startActivity(intent);
             } else if (v.getId() == R.id.view_record){
                Log.i(TAG, "onclick view record");
@@ -285,6 +293,7 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
         public ImageView itemImg;
         public FormListInfo.Results formItem;
         public Bitmap formBitmap;
+        public String url;
 
         public ChildViewHolder(View view) {
             super(view);
@@ -299,5 +308,4 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
         }
 
     }
-
 }
