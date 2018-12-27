@@ -49,7 +49,11 @@
             android:name="com.zbform.penform.activity.FormImgActivity"
             android:screenOrientation="portrait"
             android:theme="@style/FormImgThem"/>
-
+        <activity
+            android:name="com.zbform.penform.activity.SettingActivity"
+            android:screenOrientation="portrait"
+            android:label="@string/menu_item_setting"
+            android:theme="@style/SettingTheme"/>
 
         <!-- 广播注册 -->
         <receiver android:name="com.zbform.penform.update.InstallReceiver">

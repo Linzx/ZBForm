@@ -48,6 +48,15 @@
 
     </style>
 
+    <style name="SettingTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <!--控制各个控件被选中时的颜色-->
+        <item name="colorAccent">@color/colorAccent</item>
+        <!--Appbar背景色-->
+        <item name="colorPrimary">@color/colorPrimary</item>
+
+    </style>
+
     <style name="SignTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <!--控制各个控件被选中时的颜色-->

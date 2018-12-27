@@ -18,6 +18,21 @@
     <string name="pref_header_account">个人信息</string>
     <string name="pref_header_pen_manage">蓝牙笔管理</string>
 
+    <!-- 设置：个人账号信息-->
+    <string name="setting_account_code_name">用户名</string>
+    <string name="setting_account_group">组织</string>
+    <string name="setting_account_email">邮件</string>
+    <string name="setting_account_phone">电话</string>
+    <string name="setting_account_user_name">姓名</string>
+
+    <string name="setting_pref_category_key">setting_category</string>
+    <string name="setting_pref_codename_key">setting_pref_codename</string>
+    <string name="setting_pref_group_key">setting_pref_group</string>
+    <string name="setting_pref_email_key">setting_pref_email</string>
+    <string name="setting_pref_phone_key">setting_pref_phone</string>
+    <string name="setting_pref_username_key">setting_pref_username</string>
+
+
 
     <string name="cube_ptr_pull_down">下拉</string>
     <string name="cube_ptr_pull_down_to_refresh">下拉刷新</string>

@@ -122,6 +122,8 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
                         break;
                     case 3:
                         // 设置
+                        Intent intent = new Intent(ZBformMain.this, SettingActivity.class);
+                        startActivity(intent);
                         drawerLayout.closeDrawers();
                         break;
                     case 4:

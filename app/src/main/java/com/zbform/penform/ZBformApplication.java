@@ -16,6 +16,7 @@ import com.facebook.imagepipeline.core.ImagePipeline;
 import com.facebook.imagepipeline.core.ImagePipelineConfig;
 import com.google.gson.Gson;
 import com.zbform.penform.handler.UnceHandler;
+import com.zbform.penform.json.UserInfo;
 import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.permissions.Nammu;
 //import com.zbform.penform.provider.PlaylistInfo;
@@ -30,7 +31,10 @@ import java.security.NoSuchAlgorithmException;
  */
 public class ZBformApplication extends Application {
 
-
+    /**
+     * mUser: 记录登录用户账号信息
+     * */
+    public static UserInfo.Results mUser;
     private static String mLoginUserId;
     private static String mLoginUserKey;
     public static Context context;
@@ -173,5 +177,9 @@ public class ZBformApplication extends Application {
 
     public static void setmLoginUserKey(String key) {
         mLoginUserKey = key;
+    }
+
+    public static void setUser(UserInfo.Results mUser) {
+        ZBformApplication.mUser = mUser;
     }
 }

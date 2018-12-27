@@ -2,12 +2,12 @@ package com.zbform.penform.activity;
 
 import android.animation.Animator;
 import android.animation.AnimatorInflater;
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.ImageView;
+
 import com.zbform.penform.R;
 import com.zbform.penform.appintro.FadeAnimation;
 

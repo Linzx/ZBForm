@@ -1,33 +1,72 @@
 package com.zbform.penform.fragment;
 
 import android.os.Bundle;
+import android.preference.Preference;
 import android.preference.PreferenceFragment;
-import android.view.MenuItem;
+import android.support.annotation.Nullable;
+import android.text.TextUtils;
+import android.widget.ListView;
 
 import com.zbform.penform.R;
+import com.zbform.penform.ZBformApplication;
+import com.zbform.penform.settings.SettingPreferenceCategory;
 
 public class AccountFragment extends PreferenceFragment {
+
+    SettingPreferenceCategory userCodePreference;
+    Preference groupPreference;
+    Preference namePreference;
+    Preference emailPreference;
+    Preference phonePreference;
+
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.pref_account_fragment);
-        setHasOptionsMenu(true);
 
-        // Bind the summaries of EditText/List/Dialog/Ringtone preferences
-        // to their values. When their values change, their summaries are
-        // updated to reflect the new value, per the Android Design
-        // guidelines.
-//        bindPreferenceSummaryToValue(findPreference("example_text"));
-//        bindPreferenceSummaryToValue(findPreference("example_list"));
+        if(ZBformApplication.mUser != null) {
+            setPreferenceValues();
+        }
+
+//        ListView list = getView().findViewById(android.R.id.list);
+//        list.setDivider(null);
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        if (id == android.R.id.home) {
-//            startActivity(new Intent(getActivity(), SettingsActivity.class));
-            return true;
+    private void setPreferenceValues() {
+        String userCode = ZBformApplication.mUser.getUserCode();
+        String group = ZBformApplication.mUser.getGroup();
+        String name = ZBformApplication.mUser.getName();
+        String email = ZBformApplication.mUser.getEmail();
+        String phone = ZBformApplication.mUser.getPhone();
+
+        userCodePreference = (SettingPreferenceCategory)findPreference(getString(R.string.setting_pref_category_key));
+        groupPreference = findPreference(getString(R.string.setting_pref_group_key));
+        namePreference = findPreference(getString(R.string.setting_pref_username_key));
+        phonePreference = findPreference(getString(R.string.setting_pref_phone_key));
+        emailPreference = findPreference(getString(R.string.setting_pref_email_key));
+
+        userCodePreference.setTitle(userCode);
+        if(!TextUtils.isEmpty(group)) {
+            groupPreference.setSummary(group);
+        } else {
+            getPreferenceScreen().removePreference(groupPreference);
         }
-        return super.onOptionsItemSelected(item);
+        if(!TextUtils.isEmpty(name)) {
+            namePreference.setSummary(name);
+        } else {
+            getPreferenceScreen().removePreference(namePreference);
+        }
+        if(!TextUtils.isEmpty(email)) {
+            emailPreference.setSummary(email);
+        } else {
+            getPreferenceScreen().removePreference(emailPreference);
+
+        }
+        if(!TextUtils.isEmpty(phone)) {
+            phonePreference.setSummary(phone);
+        } else {
+            getPreferenceScreen().removePreference(phonePreference);
+        }
+
     }
 }
