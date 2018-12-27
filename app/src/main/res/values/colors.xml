@@ -12,6 +12,8 @@
     <color name="white_text">#fafafa</color>
     <color name="text_Grey">#c1c1c2</color>
     <color name="colorWhite">#ffffff</color>
+    <color name="thub_normal">#FFF2F4F5</color>
+
 
     <!-- notification text -->
     <color name="bottom_text">#c1c0c0</color>

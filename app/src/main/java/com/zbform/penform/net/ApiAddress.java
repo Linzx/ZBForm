@@ -46,6 +46,12 @@ public class ApiAddress {
     /// 获取单个表单
     /// </summary>
     public static String Form_Get = BaseHttpUrl + "form/get";
+
+    /// <summary>
+    /// 获取表单的图片
+    /// </summary>
+    public static String Form_Get_Img = DownLoadPdfUrlBase;
+
     /// <summary>
     /// 获取书写记录列表
     /// </summary>
@@ -87,6 +93,24 @@ public class ApiAddress {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd HH:mm:ss.SSS");// HH:mm:ss
         Date date = new Date(System.currentTimeMillis());
         return simpleDateFormat.format(date);
+    }
+
+    public static String getFormImgUri(String userid, String userkey, String uuid, int page) {
+        String signCode = getSignCode(userid+userkey+SYSTEM_KEY);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(ApiAddress.Form_Get_Img);
+        sb.append("?signcode=");
+        sb.append(Uri.encode(signCode));
+        sb.append("&timestamp=");
+        sb.append(Uri.encode(getTimeStamp()));
+        sb.append("&uuid=");
+        sb.append(Uri.encode(uuid));
+        sb.append("&page=");
+        sb.append(Uri.encode(String.valueOf(page)));
+
+        Log.i(TAG, "get form img url=" + sb.toString());
+        return sb.toString();
     }
 
     public static String getFormListUri(String userid, String userkey) {
