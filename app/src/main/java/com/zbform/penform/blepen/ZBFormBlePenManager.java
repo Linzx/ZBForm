@@ -91,13 +91,13 @@ public class ZBFormBlePenManager {
         //获取屏幕的宽高
         mContext =  context;
         WindowManager systemService = (WindowManager) context.getSystemService(WINDOW_SERVICE);
-        if (systemService != null) {
-            Display dis = systemService.getDefaultDisplay();
-            mWidth = dis.getWidth();
-            mHeight = dis.getHeight();
-        }
+//        if (systemService != null) {
+//            Display dis = systemService.getDefaultDisplay();
+//            mWidth = dis.getWidth();
+//            mHeight = dis.getHeight();
+//        }
 
-        mStreamingController = new StreamingController(mWidth, mHeight);
+
 
         initListener();
         initBle();
@@ -108,16 +108,24 @@ public class ZBFormBlePenManager {
     }
 
     public void setBleDevice(BleDevice device){
+        Log.i("whd","setBleDevice");
         bleDevice = device;
         mBleDeviceName = bleDevice.getName();
         mBleDeviceMac = bleDevice.getMac();
+        initBle();
+
+        BlePenStreamManager.getInstance().setStandMode();
     }
 
-    public void setDrawView(TouchImageView view){
+    public void setDrawView(TouchImageView view, Bitmap bitmap, int width, int height){
         mImageView = view;
         mImageView.getDrawingCache(true);
-        mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
-        mImageView.setImageBitmap(mBitmap);
+        mWidth = width;
+        mHeight = height;
+        mStreamingController = new StreamingController(mWidth, mHeight);
+        mBitmap =bitmap;
+//        mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
+//        mImageView.setImageBitmap(mBitmap);
     }
 
     private void initListener() {
@@ -169,6 +177,7 @@ public class ZBFormBlePenManager {
                 //runOnUiThread(new Runnable() {
                    // @Override
                    // public void run() {
+                Log.i("whd","onCoordDraw1");
                         switch (state) {
                             case PEN_DOWN_MESSAGE:
                                 writeString = "down";
@@ -210,7 +219,7 @@ public class ZBFormBlePenManager {
 //                            txt_progress.setVisibility(View.GONE);
 //                            Log.d(TAG, "run:离线传输完毕 ");
                        // }
-
+                Log.i("whd","onCoordDraw2");
 
                         drawBitmap();
                         Log.d(TAG, "onCoordDraw: " + writeString);
@@ -231,6 +240,7 @@ public class ZBFormBlePenManager {
                 ///runOnUiThread(new Runnable() {
                   //  @Override
                     //public void run() {
+                Log.i("whd","onOffLineCoordDraw");
                         switch (state) {
                             case PEN_DOWN_MESSAGE:
                                 writeString = "outline down";
@@ -262,6 +272,7 @@ public class ZBFormBlePenManager {
                             default:
                                 writeString = "outline  up ";
                         }
+                Log.i("whd","onOffLineCoordDraw2");
                         drawBitmap();
 //                        if (myProgress.getVisibility() == View.GONE) {
 //                            Log.d(TAG, "run:离线传输开始 ");
@@ -490,7 +501,9 @@ public class ZBFormBlePenManager {
     }
 
     private void initBle() {
+        Log.i("whd","initBle");
         if (BlePenManager.getInstance().isConnected(bleDevice)) {
+            Log.i("whd","initBle2");
             isConnectedNow = true;
             //开启笔输出流
             BlePenStreamManager.getInstance().openPenStream(bleDevice, mBlePenStreamCallback);

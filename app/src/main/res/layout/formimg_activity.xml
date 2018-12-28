@@ -6,7 +6,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-    <ImageView
+    <com.zbform.penform.blepen.TouchImageView
         android:id="@+id/form_img"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

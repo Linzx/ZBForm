@@ -24,11 +24,13 @@ import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.target.Target;
 import com.zbform.penform.R;
+import com.zbform.penform.blepen.TouchImageView;
+import com.zbform.penform.blepen.ZBFormBlePenManager;
 
 public class FormImgActivity extends BaseActivity {
     private static final ColorDrawable TRANSPARENT_DRAWABLE = new ColorDrawable(android.R.color.transparent);
     String url;
-    ImageView mImgView;
+    TouchImageView mImgView;
     ViewGroup parent;
     ProgressBar progressBar;
     @Override
@@ -40,7 +42,7 @@ public class FormImgActivity extends BaseActivity {
 url = getIntent().getStringExtra("info");
 //        Bitmap img =  (Bitmap) getIntent().getParcelableExtra("info");
 //        parent = findViewById(R.id.content);
-        mImgView = (ImageView) findViewById(R.id.form_img);
+        mImgView = (TouchImageView) findViewById(R.id.form_img);
         progressBar = (ProgressBar) findViewById(R.id.progress_img);
 
 //        fadeInDisplay(view,img);
@@ -129,10 +131,14 @@ url = getIntent().getStringExtra("info");
         image.setImageBitmap(bitmap);
 //        parent.addView(image);
         progressBar.setVisibility(View.INVISIBLE);
-        if (bitmap != null && bitmap.isRecycled()) {
-            bitmap.recycle();
-        }
-        Log.i("whd", "set done");
+//        if (bitmap != null && bitmap.isRecycled()) {
+//            bitmap.recycle();
+//        }
+        Log.i("whd", "set done W="+image.getWidth());
+        Log.i("whd", "set done H="+image.getHeight());
+        ZBFormBlePenManager manager = ZBFormBlePenManager.getInstance(FormImgActivity.this);
+
+        manager.setDrawView(mImgView,bitmap,image.getWidth(), image.getHeight());
     }
 
 }

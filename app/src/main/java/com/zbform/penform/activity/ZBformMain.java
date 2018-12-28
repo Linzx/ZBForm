@@ -27,6 +27,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.zbform.penform.MainActivity;
 import com.zbform.penform.R;
 import com.zbform.penform.account.GlideCircleTransform;
 import com.zbform.penform.adapter.MenuItemAdapter;
@@ -117,7 +118,8 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
                         break;
                     case 2:
                         // 表单记录列表
-
+                        Intent intent1 = new Intent(ZBformMain.this, MainActivity.class);
+                        startActivity(intent1);
                         drawerLayout.closeDrawers();
                         break;
                     case 3:
@@ -128,7 +130,7 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
                         break;
                     case 4:
                         // 更新
-                        finish();
+//                        finish();
                         drawerLayout.closeDrawers();
                     case 5:
                         // 退出
