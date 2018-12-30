@@ -150,7 +150,7 @@ public class TouchImageView extends ImageView {
     	super.setImageBitmap(bm);
     	setImageCalled();
     	savePreviousImageValues();
-    	fitImageToView();
+//    	fitImageToView();
     }
     
     @Override
@@ -392,7 +392,7 @@ public class TouchImageView extends ImageView {
         //
         // Fit content within view
         //
-        fitImageToView();
+//        fitImageToView();
     }
     
     /**

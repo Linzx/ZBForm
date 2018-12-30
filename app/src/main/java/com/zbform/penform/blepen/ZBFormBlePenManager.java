@@ -11,8 +11,6 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.Display;
-import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -37,28 +35,33 @@ import static com.tstudy.blepenlib.constant.Constant.PEN_DOWN_MESSAGE;
 import static com.tstudy.blepenlib.constant.Constant.PEN_UP_MESSAGE;
 import static com.tstudy.blepenlib.constant.Constant.WARN_BATTERY;
 import static com.tstudy.blepenlib.constant.Constant.WARN_MEMORY;
-
+/*
+  ZBFormBlePenManager Must run in UI thread
+ */
 public class ZBFormBlePenManager {
     private static ZBFormBlePenManager mZBFormBlePenManager;
-    public static ZBFormBlePenManager getInstance(Context context){
-        if(mZBFormBlePenManager == null){
+
+    public static ZBFormBlePenManager getInstance(Context context) {
+        if (mZBFormBlePenManager == null) {
             mZBFormBlePenManager = new ZBFormBlePenManager(context);
         }
 
         return mZBFormBlePenManager;
     }
 
-    public interface IZBFormBlePenCallBack{
+    public interface IZBFormBlePenCallBack {
         /*
 
          */
         public void onRemainBattery(final int percent);
+
         public void onMemoryFillLevel(final int percent, final int byteNum);
+
         public void onReadPageAddress(String address);
     }
 
     public static final String KEY_DATA = "DEVICE_DATA";
-    private TouchImageView mImageView;
+    private ImageView mImageView;
     private BleDevice bleDevice;
     private static final String TAG = "DrawActivity_tag";
     private StreamingController mStreamingController;
@@ -71,13 +74,13 @@ public class ZBFormBlePenManager {
     private BlePenStreamCallback mBlePenStreamCallback;
     private String writeString;
     private boolean openStandardMode;
-//    private ImageView imgHold;
+    //    private ImageView imgHold;
     private Context mContext;
     private BleScanCallback mBleScanCallback;
     private BleGattCallback mBleGattCallback;
     private String mBleDeviceMac;
     private final int MAG_SCAN = 1;
-//    private MyHandle myHandle;
+    //    private MyHandle myHandle;
     private boolean isConnectedNow;
     private boolean isReConnected;
     private boolean isResume;
@@ -89,14 +92,13 @@ public class ZBFormBlePenManager {
     private ZBFormBlePenManager(Context context) {
         //绘图背景初始化
         //获取屏幕的宽高
-        mContext =  context;
+        mContext = context;
         WindowManager systemService = (WindowManager) context.getSystemService(WINDOW_SERVICE);
 //        if (systemService != null) {
 //            Display dis = systemService.getDefaultDisplay();
 //            mWidth = dis.getWidth();
 //            mHeight = dis.getHeight();
 //        }
-
 
 
         initListener();
@@ -107,8 +109,8 @@ public class ZBFormBlePenManager {
         mIZBFormBlePenCallBack = callBack;
     }
 
-    public void setBleDevice(BleDevice device){
-        Log.i("whd","setBleDevice");
+    public void setBleDevice(BleDevice device) {
+        Log.i("whd", "setBleDevice");
         bleDevice = device;
         mBleDeviceName = bleDevice.getName();
         mBleDeviceMac = bleDevice.getMac();
@@ -117,15 +119,25 @@ public class ZBFormBlePenManager {
         BlePenStreamManager.getInstance().setStandMode();
     }
 
-    public void setDrawView(TouchImageView view, Bitmap bitmap, int width, int height){
+    public void setDrawView(ImageView view, Bitmap bitmap, int width, int height) {
         mImageView = view;
         mImageView.getDrawingCache(true);
         mWidth = width;
         mHeight = height;
         mStreamingController = new StreamingController(mWidth, mHeight);
-        mBitmap =bitmap;
+        mBitmap = bitmap;
 //        mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
 //        mImageView.setImageBitmap(mBitmap);
+    }
+
+    private void initBle() {
+        Log.i("whd", "initBle");
+        if (BlePenManager.getInstance().isConnected(bleDevice)) {
+            Log.i("whd", "initBle2");
+            isConnectedNow = true;
+            //开启笔输出流
+            BlePenStreamManager.getInstance().openPenStream(bleDevice, mBlePenStreamCallback);
+        }
     }
 
     private void initListener() {
@@ -145,13 +157,7 @@ public class ZBFormBlePenManager {
             @Override
             public void onRemainBattery(final int percent) {
                 Log.d(TAG, "onRemainBattery: " + percent + "%");
-//                runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        txt_battery.setText(percent + "%");
-//                    }
-//                });
-                if (mIZBFormBlePenCallBack != null){
+                if (mIZBFormBlePenCallBack != null) {
                     mIZBFormBlePenCallBack.onRemainBattery(percent);
                 }
 
@@ -160,144 +166,95 @@ public class ZBFormBlePenManager {
             @Override
             public void onMemoryFillLevel(final int percent, final int byteNum) {
                 Log.d(TAG, "onMemoryFillLevel: " + percent + "%");
-//                runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        txt_memory.setText(percent + "%，已使用字节数：" + byteNum);
-//                    }
-//                });
-                if (mIZBFormBlePenCallBack != null){
-                    mIZBFormBlePenCallBack.onMemoryFillLevel(percent,byteNum);
+                if (mIZBFormBlePenCallBack != null) {
+                    mIZBFormBlePenCallBack.onMemoryFillLevel(percent, byteNum);
                 }
 
             }
 
             @Override
             public void onCoordDraw(final int state, final String pageAddress, final int nX, final int nY, final int nForce, int strokeNum, final long time) {
-                //runOnUiThread(new Runnable() {
-                   // @Override
-                   // public void run() {
-                Log.i("whd","onCoordDraw1");
-                        switch (state) {
-                            case PEN_DOWN_MESSAGE:
-                                writeString = "down";
-                                synchronized (mSyncObject) {
-                                    mStreamingController.penDown();
-                                }
-                                break;
-                            case PEN_COODINAT_MESSAGE:
-                                writeString = "move";
-                                synchronized (mSyncObject) {
-                                    if (nX > 0 && nY > 0 && nForce > 0) {
-                                        mStreamingController.addCoordinate(nX, nY, nForce, pageAddress);
-                                    }
-                                }
-                                if (!TextUtils.isEmpty(pageAddress)){
-                                    if (!"0.0.0.0".equals(mPageAddress) && !mPageAddress.equals(pageAddress)) {
-                                        drawClear();
-                                    }
-                                    mPageAddress = pageAddress;
-                                    if (mIZBFormBlePenCallBack != null){
-                                        mIZBFormBlePenCallBack.onReadPageAddress(mPageAddress);
-                                    }
-                                }
-
-                                break;
-                            case PEN_UP_MESSAGE:
-                                writeString = " up ";
-                                synchronized (mSyncObject) {
-                                    mStreamingController.penUp();
-                                }
-
-                                break;
-                            default:
-                                writeString = " up ";
+                Log.i("whd", "onCoordDraw1");
+                switch (state) {
+                    case PEN_DOWN_MESSAGE:
+                        writeString = "down";
+                        synchronized (mSyncObject) {
+                            mStreamingController.penDown();
+                        }
+                        break;
+                    case PEN_COODINAT_MESSAGE:
+                        writeString = "move";
+                        synchronized (mSyncObject) {
+                            if (nX > 0 && nY > 0 && nForce > 0) {
+                                mStreamingController.addCoordinate(nX, nY, nForce, pageAddress);
+                            }
+                        }
+                        if (!TextUtils.isEmpty(pageAddress)) {
+                            if (!"0.0.0.0".equals(mPageAddress) && !mPageAddress.equals(pageAddress)) {
+                                drawClear();
+                            }
+                            mPageAddress = pageAddress;
+                            if (mIZBFormBlePenCallBack != null) {
+                                mIZBFormBlePenCallBack.onReadPageAddress(mPageAddress);
+                            }
                         }
 
-//                        if (myProgress.getVisibility() == View.VISIBLE) {
-//                            myProgress.setVisibility(View.GONE);
-//                            txt_progress.setVisibility(View.GONE);
-//                            Log.d(TAG, "run:离线传输完毕 ");
-                       // }
-                Log.i("whd","onCoordDraw2");
+                        break;
+                    case PEN_UP_MESSAGE:
+                        writeString = " up ";
+                        synchronized (mSyncObject) {
+                            mStreamingController.penUp();
+                        }
 
-                        drawBitmap();
-                        Log.d(TAG, "onCoordDraw: " + writeString);
-//                        txt_time.setText("time:" + simpleDateFormat.format(new Date(time)));
-//                        txt_write.setText(writeString);
-//                        txt_coordinate.setText(nX + "/" + nY);
-//                        txt_force.setText(nForce + "");
-//                        txt_paper_addres.setText(pageAddress);
-//                        imgHold.setTranslationX(nX * mStreamingController.m_scaleX - imgHold.getHeight() / 2);
-//                        imgHold.setTranslationY(nY * mStreamingController.m_scaleY - imgHold.getWidth());
+                        break;
+                    default:
+                        writeString = " up ";
+                }
 
-                  //  }
-                //});
+                Log.i("whd", "onCoordDraw2");
+
+                drawBitmap();
+                Log.d(TAG, "onCoordDraw: " + writeString);
             }
 
             @Override
             public void onOffLineCoordDraw(final int state, final String pageAddress, final int nX, final int nY, final int nForce, int strokeNum, final long time, final int offLineDataAllSize, final int offLineDateCurrentSize) {
-                ///runOnUiThread(new Runnable() {
-                  //  @Override
-                    //public void run() {
-                Log.i("whd","onOffLineCoordDraw");
-                        switch (state) {
-                            case PEN_DOWN_MESSAGE:
-                                writeString = "outline down";
-                                synchronized (mSyncObject) {
-                                    mStreamingController.penDown();
-                                }
-                                break;
-                            case PEN_COODINAT_MESSAGE:
-                                writeString = "outline move";
-                                synchronized (mSyncObject) {
-                                    if (nX > 0 && nY > 0 && nForce > 0) {
-                                        mStreamingController.addCoordinate(nX, nY, nForce, pageAddress);
-                                    }
-                                }
-                                if (!TextUtils.isEmpty(pageAddress)){
-                                    if (!"0.0.0.0".equals(mPageAddress) && !mPageAddress.equals(pageAddress)) {
-                                        drawClear();
-                                    }
-                                    mPageAddress = pageAddress;
-                                }
 
-                                break;
-                            case PEN_UP_MESSAGE:
-                                writeString = "outline  up ";
-                                synchronized (mSyncObject) {
-                                    mStreamingController.penUp();
-                                }
-                                break;
-                            default:
-                                writeString = "outline  up ";
+                Log.i("whd", "onOffLineCoordDraw");
+                switch (state) {
+                    case PEN_DOWN_MESSAGE:
+                        writeString = "outline down";
+                        synchronized (mSyncObject) {
+                            mStreamingController.penDown();
                         }
-                Log.i("whd","onOffLineCoordDraw2");
-                        drawBitmap();
-//                        if (myProgress.getVisibility() == View.GONE) {
-//                            Log.d(TAG, "run:离线传输开始 ");
-//                            myProgress.setVisibility(View.VISIBLE);
-//                            txt_progress.setVisibility(View.VISIBLE);
-//                        }
-//                        myProgress.setProgress(100 * offLineDateCurrentSize / offLineDataAllSize);
-//                        txt_progress.setText(" 上传进度：" + offLineDateCurrentSize + "/" + offLineDataAllSize);
-//                        Log.d(TAG, "onOffLineCoordDraw: " + writeString);
-//
-//                        txt_time.setText("time:" + simpleDateFormat.format(new Date(time)));
-//                        txt_write.setText(writeString);
-//                        txt_coordinate.setText(nX + "/" + nY);
-//                        txt_force.setText(nForce + "");
-//                        txt_paper_addres.setText(pageAddress);
-//                        imgHold.setTranslationX(nX * mStreamingController.m_scaleX - imgHold.getHeight() / 2);
-//                        imgHold.setTranslationY(nY * mStreamingController.m_scaleY - imgHold.getWidth());
+                        break;
+                    case PEN_COODINAT_MESSAGE:
+                        writeString = "outline move";
+                        synchronized (mSyncObject) {
+                            if (nX > 0 && nY > 0 && nForce > 0) {
+                                mStreamingController.addCoordinate(nX, nY, nForce, pageAddress);
+                            }
+                        }
+                        if (!TextUtils.isEmpty(pageAddress)) {
+                            if (!"0.0.0.0".equals(mPageAddress) && !mPageAddress.equals(pageAddress)) {
+                                drawClear();
+                            }
+                            mPageAddress = pageAddress;
+                        }
 
-//                        if (offLineDateCurrentSize == offLineDataAllSize && myProgress.getVisibility() == View.VISIBLE) {
-//                            myProgress.setVisibility(View.GONE);
-//                            txt_progress.setVisibility(View.GONE);
-//                            Log.d(TAG, "run:离线传输完毕 ");
-//                        }
-                //    }
-                //});
+                        break;
+                    case PEN_UP_MESSAGE:
+                        writeString = "outline  up ";
+                        synchronized (mSyncObject) {
+                            mStreamingController.penUp();
+                        }
+                        break;
+                    default:
+                        writeString = "outline  up ";
+                }
+                Log.i("whd", "onOffLineCoordDraw2");
+                drawBitmap();
+
             }
 
             @Override
@@ -305,7 +262,7 @@ public class ZBFormBlePenManager {
                 Log.d(TAG, "onDisConnected: isActiveDisConnected   " + isActiveDisConnected);
                 //笔端关机按钮时回调重连
                 if (isActiveDisConnected) {
-                  //  txt_connect_status.setText(getString(R.string.active_disconnected));
+                    //  txt_connect_status.setText(getString(R.string.active_disconnected));
 //                    if (isResume) {
 //                        isConnectedNow = false;
 //                        BlePenStreamManager.getInstance().closePenStream();
@@ -500,15 +457,5 @@ public class ZBFormBlePenManager {
         BlePenManager.getInstance().connect(bleDevice, mBleGattCallback);
     }
 
-    private void initBle() {
-        Log.i("whd","initBle");
-        if (BlePenManager.getInstance().isConnected(bleDevice)) {
-            Log.i("whd","initBle2");
-            isConnectedNow = true;
-            //开启笔输出流
-            BlePenStreamManager.getInstance().openPenStream(bleDevice, mBlePenStreamCallback);
-//            myHandle.removeMessages(MAG_SCAN);
-        }
-    }
 
 }
