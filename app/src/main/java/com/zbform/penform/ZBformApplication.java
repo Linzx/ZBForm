@@ -12,6 +12,7 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.tstudy.blepenlib.BlePenManager;
 import com.zbform.penform.blepen.MyLicense;
+import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.handler.UnceHandler;
 import com.zbform.penform.json.UserInfo;
 import com.zbform.penform.net.ApiAddress;
@@ -49,17 +50,13 @@ public class ZBformApplication extends Application {
 
         context = this;
 
-        initBlePen();
+        BlePenManager.getInstance().init(this,MyLicense.getBytes());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             Nammu.init(this);
         }
         // refWatcher = LeakCanary.install(this);
         //       LeakCanary.install(this);
         initCatchException();
-    }
-
-    private void initBlePen(){
-        BlePenManager.getInstance().init(this, MyLicense.getBytes());
     }
 
     public static String getmLoginUserId() {

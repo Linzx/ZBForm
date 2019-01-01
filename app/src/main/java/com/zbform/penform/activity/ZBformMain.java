@@ -219,7 +219,7 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
         bundle.putString("formId", formId);
         mCurrentFragmet.setArguments(bundle);
         selectFragment(mCurrentFragmet);
-        setmTootBarTitle(getString(R.string.menu_item_formrecord));
+        setmTootBarTitle(getString(R.string.title_record_list));
     }
 
     @Override

@@ -1,15 +1,142 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
+    android:animateLayoutChanges="true"
     android:orientation="vertical">
-
-    
-    <Button
-        android:id="@+id/connect_pen"
+    <LinearLayout
+        android:id="@+id/scan"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/connect_pen"/>
+        android:orientation="vertical"
+        android:padding="10dp">
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="10dp">
+
+            <Button
+                android:id="@+id/btn_scan"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_btn_test"
+                android:text="@string/start_scan" />
+
+            <ImageView
+                android:id="@+id/img_loading"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:layout_marginRight="10dp"
+                android:src="@mipmap/ic_loading_test"
+                android:visibility="invisible" />
+
+        </RelativeLayout>
+
+        <ListView
+            android:id="@+id/list_device"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:divider="@color/colorPrimary"
+            android:dividerHeight="1dp"
+            android:paddingEnd="5dp"
+            android:paddingStart="5dp"
+            android:scrollbars="none" />
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/pen_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:padding="32dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/pen_info_item_height"
+            android:orientation="horizontal"
+            android:padding="10dp">
+            <TextView
+                android:id="@+id/pen_name_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/pen_name_title"
+                android:textColor="@color/colorPrimary"
+                android:textSize="@dimen/pen_info_title_size"/>
+            <TextView
+                android:id="@+id/pen_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/pen_info_content_size"
+                android:gravity="right"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/pen_info_item_height"
+            android:orientation="horizontal"
+            android:padding="10dp">
+
+            <TextView
+                android:id="@+id/pen_mac_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/pen_mac_title"
+                android:textColor="@color/colorPrimary"
+                android:textSize="@dimen/pen_info_title_size"/>
+            <TextView
+                android:id="@+id/pen_mac"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/pen_info_content_size"
+                android:gravity="right" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/pen_info_item_height"
+            android:orientation="horizontal"
+            android:padding="10dp">
+            <TextView
+                android:id="@+id/pen_power_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/pen_power_title"
+                android:textColor="@color/colorPrimary"
+                android:textSize="@dimen/pen_info_title_size"/>
+            <TextView
+                android:id="@+id/pen_power"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/pen_info_content_size"
+                android:gravity="right"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/pen_info_item_height"
+            android:orientation="horizontal"
+            android:padding="10dp">
+            <TextView
+                android:id="@+id/pen_version_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/pen_version_title"
+                android:textColor="@color/colorPrimary"
+                android:textSize="@dimen/pen_info_title_size"/>
+            <TextView
+                android:id="@+id/pen_version"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/pen_info_content_size"
+                android:gravity="right"/>
+        </LinearLayout>
+
+    </LinearLayout>
 </LinearLayout>

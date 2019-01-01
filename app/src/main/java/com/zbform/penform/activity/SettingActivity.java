@@ -2,6 +2,8 @@ package com.zbform.penform.activity;
 
 import android.os.Bundle;
 import android.preference.PreferenceFragment;
+import android.support.v7.app.ActionBar;
+import android.view.MenuItem;
 
 import com.zbform.penform.R;
 import com.zbform.penform.fragment.AccountFragment;
@@ -14,6 +16,8 @@ public class SettingActivity extends AppCompatPreferenceActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setDisplayHomeAsUpEnabled(true);
     }
 
     @Override
@@ -25,5 +29,17 @@ public class SettingActivity extends AppCompatPreferenceActivity {
         return PreferenceFragment.class.getName().equals(fragmentName)
                 || AccountFragment.class.getName().equals(fragmentName)
                 || PenFragment.class.getName().equals(fragmentName);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch(item.getItemId()) {
+            case android.R.id.home:
+                finish();
+                return true;
+            default:
+                break;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }

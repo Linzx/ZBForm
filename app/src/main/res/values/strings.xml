@@ -21,21 +21,34 @@
     <string name="login_success">登录成功</string>
     <string name="login_fail">登录失败，请检查用户名密码！</string>
 
+    <!-- 导航菜单 -->
     <string name="menu_item_formlist">表单列表</string>
     <string name="menu_item_formrecord">测试选项</string>
     <string name="menu_item_setting">系统设置</string>
     <string name="menu_item_upd">检查更新</string>
     <string name="menu_item_exit">退出系统</string>
 
+    <!-- 表单记录列表 -->
+    <string name="title_record_list">表单记录列表</string>
+
+    <!-- 设置 -->
     <string name="pref_header_account">个人信息</string>
     <string name="pref_header_pen_manage">蓝牙笔管理</string>
 
     <!-- 设置：个人账号信息-->
     <string name="setting_account_code_name">用户名</string>
-    <string name="setting_account_group">组织</string>
+    <string name="setting_account_group">公司</string>
     <string name="setting_account_email">邮件</string>
     <string name="setting_account_phone">电话</string>
     <string name="setting_account_user_name">姓名</string>
+
+    <!-- 设置：蓝牙笔管理-笔的基本信息 -->
+    <string name="pen_name_title">蓝牙笔：</string>
+    <string name="pen_power_title">剩余电量：</string>
+    <string name="pen_mac_title">MAC：</string>
+    <string name="pen_version_title">固件版本：</string>
+
+
 
     <string name="setting_pref_category_key">setting_category</string>
     <string name="setting_pref_codename_key">setting_pref_codename</string>
@@ -58,6 +71,6 @@
     <string name="cube_ptr_hours_ago">&#160;小时之前</string>
 
 
-    <string name="connect_pen">连接蓝牙笔</string>
+    <string name="connect_pen">开始扫描蓝牙笔</string>
 
 </resources>

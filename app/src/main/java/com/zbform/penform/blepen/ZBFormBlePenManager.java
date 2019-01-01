@@ -1,5 +1,6 @@
 package com.zbform.penform.blepen;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothGatt;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -63,7 +64,7 @@ public class ZBFormBlePenManager {
     public static final String KEY_DATA = "DEVICE_DATA";
     private ImageView mImageView;
     private BleDevice bleDevice;
-    private static final String TAG = "DrawActivity_tag";
+    private static final String TAG = "ZBFormBlePenManager";
     private StreamingController mStreamingController;
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS", Locale.CHINA);
     private Bitmap mBitmap;
@@ -79,6 +80,8 @@ public class ZBFormBlePenManager {
     private BleScanCallback mBleScanCallback;
     private BleGattCallback mBleGattCallback;
     private String mBleDeviceMac;
+    private String mBleDevicePower;
+    private String mBleDeviceVersion;
     private final int MAG_SCAN = 1;
     //    private MyHandle myHandle;
     private boolean isConnectedNow;
@@ -88,6 +91,8 @@ public class ZBFormBlePenManager {
     private String mUrlData;
     private Handler mUIHander;
     private IZBFormBlePenCallBack mIZBFormBlePenCallBack;
+
+    private boolean isBleInitSuccess = false;
 
     private ZBFormBlePenManager(Context context) {
         //绘图背景初始化
@@ -99,7 +104,6 @@ public class ZBFormBlePenManager {
 //            mWidth = dis.getWidth();
 //            mHeight = dis.getHeight();
 //        }
-
 
         initListener();
         initBle();
@@ -157,6 +161,7 @@ public class ZBFormBlePenManager {
             @Override
             public void onRemainBattery(final int percent) {
                 Log.d(TAG, "onRemainBattery: " + percent + "%");
+                mBleDevicePower = percent+"%";
                 if (mIZBFormBlePenCallBack != null) {
                     mIZBFormBlePenCallBack.onRemainBattery(percent);
                 }
@@ -296,6 +301,7 @@ public class ZBFormBlePenManager {
 
             @Override
             public void onNewSession(final String hardVersion, final String softVersion, final String syncNum) {
+                mBleDeviceVersion = hardVersion;
                 //Version serial number
                 final String msg = "hardVersion：" + hardVersion + "  softVersion:" + softVersion + "   syncNum:" + syncNum;
 //                runOnUiThread(new Runnable() {
@@ -457,5 +463,19 @@ public class ZBFormBlePenManager {
         BlePenManager.getInstance().connect(bleDevice, mBleGattCallback);
     }
 
+    public String getmBleDeviceName() {
+        return mBleDeviceName;
+    }
 
+    public String getmBleDeviceMac() {
+        return mBleDeviceMac;
+    }
+
+    public String getmBleDevicePower() {
+        return mBleDevicePower;
+    }
+
+    public String getmBleDeviceVersion() {
+        return mBleDeviceVersion;
+    }
 }
