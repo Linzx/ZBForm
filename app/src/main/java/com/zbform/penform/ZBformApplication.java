@@ -29,6 +29,8 @@ import java.security.NoSuchAlgorithmException;
  */
 public class ZBformApplication extends Application {
 
+    public static final String TAG = "ZBform";
+
     /**
      * mUser: 记录登录用户账号信息
      * */
@@ -36,6 +38,11 @@ public class ZBformApplication extends Application {
     private static String mLoginUserId;
     private static String mLoginUserKey;
     public static Context context;
+
+    /**
+     * mZBFormBlePenManager 全局唯一
+     * */
+    public static ZBFormBlePenManager sBlePenManager;
 
     //捕获全局Exception 重启界面
     public void initCatchException() {
@@ -50,13 +57,20 @@ public class ZBformApplication extends Application {
 
         context = this;
 
-        BlePenManager.getInstance().init(this,MyLicense.getBytes());
+        initZBFormBlePenManager();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             Nammu.init(this);
         }
         // refWatcher = LeakCanary.install(this);
         //       LeakCanary.install(this);
         initCatchException();
+    }
+
+    private void initZBFormBlePenManager(){
+        mZBFormBlePenManager = ZBFormBlePenManager.getInstance(context);
+        boolean initSuccess = BlePenManager.getInstance().init(this, MyLicense.getBytes());
+        Log.i(TAG, "ble init success = "+initSuccess);
+        mZBFormBlePenManager.setBleInitSuccess(initSuccess);
     }
 
     public static String getmLoginUserId() {

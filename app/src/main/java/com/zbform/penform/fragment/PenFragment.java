@@ -36,6 +36,7 @@ import com.tstudy.blepenlib.callback.BleScanCallback;
 import com.tstudy.blepenlib.data.BleDevice;
 import com.tstudy.blepenlib.exception.BleException;
 import com.zbform.penform.R;
+import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.blepen.MyLicense;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.settings.DeviceAdapter;
@@ -69,7 +70,7 @@ public class PenFragment extends Fragment implements View.OnClickListener  {
     private String mBlePenVersion;
     private String mBlePenPower;
 
-    private ZBFormBlePenManager mBlePenManager;
+    private ZBFormBlePenManager mBlePenManager = ZBformApplication.sBlePenManager;
 
     @Override
     public void onAttach(Context context) {
@@ -82,7 +83,7 @@ public class PenFragment extends Fragment implements View.OnClickListener  {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_penmanager, container, false);
         initView(view);
-        boolean initSuccess = BlePenManager.getInstance().init(((Activity) mContext).getApplication(), MyLicense.getBytes());
+        boolean initSuccess = mBlePenManager.isBleInitSuccess();
         if (initSuccess) {
             Log.i(TAG,"initSuccess");
             BlePenManager.getInstance().enableLog(true);
@@ -96,8 +97,6 @@ public class PenFragment extends Fragment implements View.OnClickListener  {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        BlePenStreamManager.getInstance().closePenStream();
-        BlePenManager.getInstance().disconnect(mBleDevice);
     }
 
     @Override
@@ -147,9 +146,7 @@ public class PenFragment extends Fragment implements View.OnClickListener  {
             public void onDetail(BleDevice bleDevice) {
                 if (BlePenManager.getInstance().isConnected(bleDevice)) {
                     //跳到绘制界面
-//                    Intent intent = new Intent(MainActivity.this, DrawActivity.class);
-//                    intent.putExtra(DrawActivity.KEY_DATA, bleDevice);
-//                    startActivity(intent);
+                    Log.i(TAG, "connected: onDetail clicked.");
                 }
             }
         });

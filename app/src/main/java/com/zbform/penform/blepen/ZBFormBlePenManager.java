@@ -1,6 +1,5 @@
 package com.zbform.penform.blepen;
 
-import android.app.Activity;
 import android.bluetooth.BluetoothGatt;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -40,6 +39,8 @@ import static com.tstudy.blepenlib.constant.Constant.WARN_MEMORY;
   ZBFormBlePenManager Must run in UI thread
  */
 public class ZBFormBlePenManager {
+    private static final String TAG = "ZBFormBlePenManager";
+
     private static ZBFormBlePenManager mZBFormBlePenManager;
 
     public static ZBFormBlePenManager getInstance(Context context) {
@@ -51,20 +52,17 @@ public class ZBFormBlePenManager {
     }
 
     public interface IZBFormBlePenCallBack {
-        /*
+        void onRemainBattery(final int percent);
 
-         */
-        public void onRemainBattery(final int percent);
+        void onMemoryFillLevel(final int percent, final int byteNum);
 
-        public void onMemoryFillLevel(final int percent, final int byteNum);
+        void onReadPageAddress(String address);
 
-        public void onReadPageAddress(String address);
+        void onNewSession(final String hardVersion, final String softVersion, final String syncNum);
     }
 
-    public static final String KEY_DATA = "DEVICE_DATA";
     private ImageView mImageView;
-    private BleDevice bleDevice;
-    private static final String TAG = "ZBFormBlePenManager";
+    private BleDevice mBleDevice;
     private StreamingController mStreamingController;
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS", Locale.CHINA);
     private Bitmap mBitmap;
@@ -75,13 +73,25 @@ public class ZBFormBlePenManager {
     private BlePenStreamCallback mBlePenStreamCallback;
     private String writeString;
     private boolean openStandardMode;
+
     //    private ImageView imgHold;
+
     private Context mContext;
     private BleScanCallback mBleScanCallback;
     private BleGattCallback mBleGattCallback;
+
+    // 笔的一些基本信息
     private String mBleDeviceMac;
-    private String mBleDevicePower;
-    private String mBleDeviceVersion;
+    private String mBleDeviceHwVersion;
+    private String mBleDeviceSwVersion;
+    private String mBleDeviceSyncNum;
+    private int mBleDevicePower;
+    private int mBleDeviceUsedMemory;
+    private int mBleDeviceUsedBytes;
+    private boolean isLowMemory = false;
+    private boolean isLowBattery = false;
+    private boolean isBleInitSuccess = false;
+
     private final int MAG_SCAN = 1;
     //    private MyHandle myHandle;
     private boolean isConnectedNow;
@@ -92,21 +102,20 @@ public class ZBFormBlePenManager {
     private Handler mUIHander;
     private IZBFormBlePenCallBack mIZBFormBlePenCallBack;
 
-    private boolean isBleInitSuccess = false;
 
     private ZBFormBlePenManager(Context context) {
         //绘图背景初始化
         //获取屏幕的宽高
         mContext = context;
-        WindowManager systemService = (WindowManager) context.getSystemService(WINDOW_SERVICE);
-//        if (systemService != null) {
-//            Display dis = systemService.getDefaultDisplay();
+        WindowManager windowManager = (WindowManager) context.getSystemService(WINDOW_SERVICE);
+//        if (windowManager != null) {
+//            Display dis = windowManager.getDefaultDisplay();
 //            mWidth = dis.getWidth();
 //            mHeight = dis.getHeight();
 //        }
 
         initListener();
-        initBle();
+        initBlePenStream();
     }
 
     public void setIZBFormBlePenCallBack(IZBFormBlePenCallBack callBack) {
@@ -115,10 +124,10 @@ public class ZBFormBlePenManager {
 
     public void setBleDevice(BleDevice device) {
         Log.i("whd", "setBleDevice");
-        bleDevice = device;
-        mBleDeviceName = bleDevice.getName();
-        mBleDeviceMac = bleDevice.getMac();
-        initBle();
+        mBleDevice = device;
+        mBleDeviceName = mBleDevice.getName();
+        mBleDeviceMac = mBleDevice.getMac();
+        initBlePenStream();
 
         BlePenStreamManager.getInstance().setStandMode();
     }
@@ -134,13 +143,13 @@ public class ZBFormBlePenManager {
 //        mImageView.setImageBitmap(mBitmap);
     }
 
-    private void initBle() {
+    private void initBlePenStream() {
         Log.i("whd", "initBle");
-        if (BlePenManager.getInstance().isConnected(bleDevice)) {
+        if (mBleDevice != null && BlePenManager.getInstance().isConnected(mBleDevice)) {
             Log.i("whd", "initBle2");
             isConnectedNow = true;
             //开启笔输出流
-            BlePenStreamManager.getInstance().openPenStream(bleDevice, mBlePenStreamCallback);
+            BlePenStreamManager.getInstance().openPenStream(mBleDevice, mBlePenStreamCallback);
         }
     }
 
@@ -154,14 +163,14 @@ public class ZBFormBlePenManager {
 
             @Override
             public void onOpenPenStreamFailure(BleException exception) {
-                BlePenManager.getInstance().disconnect(bleDevice);
+                BlePenManager.getInstance().disconnect(mBleDevice);
                 Log.d(TAG, "onOpenPenStreamFailure: " + exception.getDescription());
             }
 
             @Override
             public void onRemainBattery(final int percent) {
                 Log.d(TAG, "onRemainBattery: " + percent + "%");
-                mBleDevicePower = percent+"%";
+                mBleDevicePower = percent;
                 if (mIZBFormBlePenCallBack != null) {
                     mIZBFormBlePenCallBack.onRemainBattery(percent);
                 }
@@ -171,6 +180,10 @@ public class ZBFormBlePenManager {
             @Override
             public void onMemoryFillLevel(final int percent, final int byteNum) {
                 Log.d(TAG, "onMemoryFillLevel: " + percent + "%");
+
+                mBleDeviceUsedMemory = percent;
+                mBleDeviceUsedBytes = byteNum;
+
                 if (mIZBFormBlePenCallBack != null) {
                     mIZBFormBlePenCallBack.onMemoryFillLevel(percent, byteNum);
                 }
@@ -280,7 +293,7 @@ public class ZBFormBlePenManager {
                 } else {
 //                    txt_connect_status.setText(getString(R.string.disconnected));
                     BlePenStreamManager.getInstance().closePenStream();
-                    BlePenManager.getInstance().disconnect(bleDevice);
+                    BlePenManager.getInstance().disconnect(mBleDevice);
 
                 }
             }
@@ -290,9 +303,11 @@ public class ZBFormBlePenManager {
                 //0x05  电池电量低警告  0x08 存储空间警告
                 switch (statusNum) {
                     case WARN_BATTERY:
+                        isLowBattery = true;
                         Log.d(TAG, "handleActiveReport: 电池电量低警告");
                         break;
                     case WARN_MEMORY:
+                        isLowMemory = true;
                         Log.d(TAG, "handleActiveReport: 存储空间警告");
                         break;
                     default:
@@ -301,19 +316,14 @@ public class ZBFormBlePenManager {
 
             @Override
             public void onNewSession(final String hardVersion, final String softVersion, final String syncNum) {
-                mBleDeviceVersion = hardVersion;
-                //Version serial number
-                final String msg = "hardVersion：" + hardVersion + "  softVersion:" + softVersion + "   syncNum:" + syncNum;
-//                runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        txt_errorCount.setText(hardVersion);
-//                        if (!TextUtils.isEmpty(softVersion)) {
-//                            Toast.makeText(mContext, msg, Toast.LENGTH_SHORT).show();
-//                        }
-//                    }
-//                });
-            }
+                mBleDeviceHwVersion = hardVersion;
+                mBleDeviceSwVersion = softVersion;
+                mBleDeviceSyncNum = syncNum;
+
+                Log.i(TAG,"hardVersion：" + hardVersion + "  softVersion:" + softVersion + "   syncNum:" + syncNum);
+                if (mIZBFormBlePenCallBack != null) {
+                    mIZBFormBlePenCallBack.onNewSession(hardVersion,softVersion,syncNum);
+                }            }
 
             @Override
             public void onCurrentTime(long penTime) {
@@ -395,7 +405,7 @@ public class ZBFormBlePenManager {
 //                btn_hover_mode.setText("获取悬浮坐标");
 //                imgHold.setVisibility(View.GONE);
 //                isReConnected = true;
-                initBle();
+                initBlePenStream();
 
             }
 
@@ -463,19 +473,39 @@ public class ZBFormBlePenManager {
         BlePenManager.getInstance().connect(bleDevice, mBleGattCallback);
     }
 
-    public String getmBleDeviceName() {
+    public String getBleDeviceName() {
         return mBleDeviceName;
     }
 
-    public String getmBleDeviceMac() {
+    public String getBleDeviceMac() {
         return mBleDeviceMac;
     }
 
-    public String getmBleDevicePower() {
+    public int getBleDevicePower() {
         return mBleDevicePower;
     }
 
-    public String getmBleDeviceVersion() {
-        return mBleDeviceVersion;
+    public String getBleDeviceSwVersion() {
+        return mBleDeviceSwVersion;
+    }
+
+    public String getBleDeviceHwVersion() {return mBleDeviceHwVersion;}
+
+    public String getBleDeviceSyncNum() {return mBleDeviceSyncNum;}
+
+    public boolean isLowMemory() { return isLowMemory;}
+
+    public boolean isLowBattery() { return isLowBattery; }
+
+    public int getBleDeviceUsedMemory() { return mBleDeviceUsedMemory; }
+
+    public int getBleDeviceUsedBytes() { return mBleDeviceUsedBytes; }
+
+    public boolean isBleInitSuccess() {
+        return isBleInitSuccess;
+    }
+
+    public void setBleInitSuccess(boolean bleInitSuccess) {
+        isBleInitSuccess = bleInitSuccess;
     }
 }
