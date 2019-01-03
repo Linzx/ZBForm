@@ -67,10 +67,10 @@ public class ZBformApplication extends Application {
     }
 
     private void initZBFormBlePenManager(){
-        mZBFormBlePenManager = ZBFormBlePenManager.getInstance(context);
+        sBlePenManager = ZBFormBlePenManager.getInstance(context);
         boolean initSuccess = BlePenManager.getInstance().init(this, MyLicense.getBytes());
         Log.i(TAG, "ble init success = "+initSuccess);
-        mZBFormBlePenManager.setBleInitSuccess(initSuccess);
+        sBlePenManager.setBleInitSuccess(initSuccess);
     }
 
     public static String getmLoginUserId() {
