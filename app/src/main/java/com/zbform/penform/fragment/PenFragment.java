@@ -11,6 +11,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -29,21 +31,18 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.tstudy.blepenlib.BlePenManager;
-import com.tstudy.blepenlib.BlePenStreamManager;
 import com.tstudy.blepenlib.callback.BleGattCallback;
-import com.tstudy.blepenlib.callback.BlePenStreamCallback;
 import com.tstudy.blepenlib.callback.BleScanCallback;
 import com.tstudy.blepenlib.data.BleDevice;
 import com.tstudy.blepenlib.exception.BleException;
 import com.zbform.penform.R;
 import com.zbform.penform.ZBformApplication;
-import com.zbform.penform.blepen.MyLicense;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.settings.DeviceAdapter;
 
 import java.util.List;
 
-public class PenFragment extends Fragment implements View.OnClickListener  {
+public class PenFragment extends Fragment implements View.OnClickListener{
 
 
     public static final String TAG = PenFragment.class.getSimpleName();
@@ -67,16 +66,12 @@ public class PenFragment extends Fragment implements View.OnClickListener  {
     private TextView mPenPower;
     private TextView mPenVersion;
 
-    private String mBlePenVersion;
-    private String mBlePenPower;
-
     private ZBFormBlePenManager mBlePenManager = ZBformApplication.sBlePenManager;
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
         mContext = context;
-        mBlePenManager = ZBFormBlePenManager.getInstance(mContext);
     }
 
     @Override
@@ -160,8 +155,15 @@ public class PenFragment extends Fragment implements View.OnClickListener  {
         mPenPower = view.findViewById(R.id.pen_power);
         mPenVersion = view.findViewById(R.id.pen_version);
 
-        mScanLayout.setVisibility(View.VISIBLE);
-        mPenInfoLayout.setVisibility(View.GONE);
+        if(mBlePenManager.isConnectedBleDevice()) {
+            Log.i(TAG, "ble device has connected.");
+            setPenInfo();
+        } else {
+            Log.i(TAG, "ble device not connected yet.");
+
+            mScanLayout.setVisibility(View.VISIBLE);
+            mPenInfoLayout.setVisibility(View.GONE);
+        }
     }
 
     private void startScan() {
@@ -199,84 +201,6 @@ public class PenFragment extends Fragment implements View.OnClickListener  {
         mPenInfoLayout.setVisibility(View.GONE);
     }
 
-    private void openPenStream(BleDevice bleDevice){
-        BlePenStreamManager.getInstance().openPenStream(bleDevice, new BlePenStreamCallback(){
-
-            @Override
-            public void onOpenPenStreamSuccess() {
-                Log.i(TAG, "[openPenStream]: onOpenPenStreamSuccess");
-            }
-
-            @Override
-            public void onOpenPenStreamFailure(BleException e) {
-                Log.i(TAG, "[openPenStream]: onOpenPenStreamFailure");
-
-            }
-
-            @Override
-            public void onRemainBattery(int i) {
-                Log.i(TAG, "[openPenStream]: onRemainBattery: "+i+"%");
-                mBlePenPower = i+"%";
-                Log.i(TAG,"mBlePenPower = "+mBlePenPower);
-                ((Activity)mContext).runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mPenPower.setText(mBlePenPower);
-                    }
-                });
-
-            }
-
-            @Override
-            public void onMemoryFillLevel(int i, int i1) {
-                Log.i(TAG, "[openPenStream]: onMemoryFillLevel");
-
-            }
-
-            @Override
-            public void onCoordDraw(int i, String s, int i1, int i2, int i3, int i4, long l) {
-                Log.i(TAG, "[openPenStream]: onCoordDraw");
-
-            }
-
-            @Override
-            public void onOffLineCoordDraw(int i, String s, int i1, int i2, int i3, int i4, long l, int i5, int i6) {
-                Log.i(TAG, "[openPenStream]: onOffLineCoordDraw");
-
-            }
-
-            @Override
-            public void onDisConnected(boolean b, BleDevice bleDevice) {
-                Log.i(TAG, "[openPenStream]: onDisConnected");
-
-            }
-
-            @Override
-            public void onWarnActiveReport(int i) {
-                Log.i(TAG, "[openPenStream]: onWarnActiveReport");
-
-            }
-
-            @Override
-            public void onNewSession(String s, String s1, String s2) {
-                Log.i(TAG, "[openPenStream]: onNewSession: hardVersion = "+s +"   softVersion = "+s1);
-                mBlePenVersion = s1;
-                Log.i(TAG,"mBlePenVersion = "+mBlePenVersion);
-                ((Activity)mContext).runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mPenVersion.setText(mBlePenVersion);
-                    }
-                });
-            }
-
-            @Override
-            public void onCurrentTime(long l) {
-                Log.i(TAG, "[openPenStream]: onCurrentTime");
-
-            }
-        });
-    }
 
     private void connect(final BleDevice bleDevice) {
         //连接回调
@@ -301,7 +225,7 @@ public class PenFragment extends Fragment implements View.OnClickListener  {
             public void onConnectSuccess(BleDevice bleDevice, BluetoothGatt gatt, int status) {
                 mBleDevice = bleDevice;
                 Log.i(TAG,"onConnectSuccess");
-                openPenStream(mBleDevice);
+                mBlePenManager.setBleDevice(mBleDevice);
                 progressDialog.dismiss();
 //                mDeviceAdapter.addDevice(0,bleDevice);
 //                mDeviceAdapter.notifyDataSetChanged();
@@ -325,14 +249,12 @@ public class PenFragment extends Fragment implements View.OnClickListener  {
     }
 
     public void setPenInfo(){
-        if(mBleDevice != null){
             mPenInfoLayout.setVisibility(View.VISIBLE);
             mScanLayout.setVisibility(View.GONE);
-            mPenName.setText(mBleDevice.getName());
-            mPenMac.setText(mBleDevice.getMac());
-//            mPenPower.setText(mBlePenPower);
-//            mPenVersion.setText(mBlePenVersion);
-        }
+            mPenName.setText(mBlePenManager.getBleDeviceName());
+            mPenMac.setText(mBlePenManager.getBleDeviceMac());
+            mPenPower.setText(mBlePenManager.getBleDevicePower()+"%");
+            mPenVersion.setText(mBlePenManager.getBleDeviceSwVersion());
     }
     @Override
     public final void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,

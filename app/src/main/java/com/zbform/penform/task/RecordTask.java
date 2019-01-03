@@ -43,7 +43,7 @@ public class RecordTask implements IZBformNetBeanCallBack {
         mUserId = ZBformApplication.getmLoginUserId();
         mUserKeyStr = ZBformApplication.getmLoginUserKey();
         mContext = context;
-        mFormId = "74fef293-e8c1-4c8a-ba3f-25321d1eabaf";
+        mFormId = formId;
         mRecordId = recordId;
     }
 

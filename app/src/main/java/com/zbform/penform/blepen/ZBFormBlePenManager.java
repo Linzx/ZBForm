@@ -1,5 +1,6 @@
 package com.zbform.penform.blepen;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothGatt;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -9,6 +10,8 @@ import android.graphics.PaintFlagsDrawFilter;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.os.Handler;
+import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.WindowManager;
@@ -27,7 +30,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.logging.Handler;
 
 import static android.content.Context.WINDOW_SERVICE;
 import static com.tstudy.blepenlib.constant.Constant.PEN_COODINAT_MESSAGE;
@@ -129,6 +131,7 @@ public class ZBFormBlePenManager {
         mBleDeviceMac = mBleDevice.getMac();
         initBlePenStream();
 
+        BlePenStreamManager.getInstance().getPenInfo();
         BlePenStreamManager.getInstance().setStandMode();
     }
 
@@ -180,10 +183,8 @@ public class ZBFormBlePenManager {
             @Override
             public void onMemoryFillLevel(final int percent, final int byteNum) {
                 Log.d(TAG, "onMemoryFillLevel: " + percent + "%");
-
                 mBleDeviceUsedMemory = percent;
                 mBleDeviceUsedBytes = byteNum;
-
                 if (mIZBFormBlePenCallBack != null) {
                     mIZBFormBlePenCallBack.onMemoryFillLevel(percent, byteNum);
                 }
@@ -319,11 +320,11 @@ public class ZBFormBlePenManager {
                 mBleDeviceHwVersion = hardVersion;
                 mBleDeviceSwVersion = softVersion;
                 mBleDeviceSyncNum = syncNum;
-
                 Log.i(TAG,"hardVersion：" + hardVersion + "  softVersion:" + softVersion + "   syncNum:" + syncNum);
                 if (mIZBFormBlePenCallBack != null) {
                     mIZBFormBlePenCallBack.onNewSession(hardVersion,softVersion,syncNum);
-                }            }
+                }
+            }
 
             @Override
             public void onCurrentTime(long penTime) {
@@ -469,7 +470,6 @@ public class ZBFormBlePenManager {
     }
 
     private void connect(final BleDevice bleDevice) {
-
         BlePenManager.getInstance().connect(bleDevice, mBleGattCallback);
     }
 
@@ -489,17 +489,29 @@ public class ZBFormBlePenManager {
         return mBleDeviceSwVersion;
     }
 
-    public String getBleDeviceHwVersion() {return mBleDeviceHwVersion;}
+    public String getBleDeviceHwVersion() {
+        return mBleDeviceHwVersion;
+    }
 
-    public String getBleDeviceSyncNum() {return mBleDeviceSyncNum;}
+    public String getBleDeviceSyncNum() {
+        return mBleDeviceSyncNum;
+    }
 
-    public boolean isLowMemory() { return isLowMemory;}
+    public boolean isLowMemory() {
+        return isLowMemory;
+    }
 
-    public boolean isLowBattery() { return isLowBattery; }
+    public boolean isLowBattery() {
+        return isLowBattery;
+    }
 
-    public int getBleDeviceUsedMemory() { return mBleDeviceUsedMemory; }
+    public int getBleDeviceUsedMemory() {
+        return mBleDeviceUsedMemory;
+    }
 
-    public int getBleDeviceUsedBytes() { return mBleDeviceUsedBytes; }
+    public int getBleDeviceUsedBytes() {
+        return mBleDeviceUsedBytes;
+    }
 
     public boolean isBleInitSuccess() {
         return isBleInitSuccess;
@@ -508,4 +520,9 @@ public class ZBFormBlePenManager {
     public void setBleInitSuccess(boolean bleInitSuccess) {
         isBleInitSuccess = bleInitSuccess;
     }
+
+    public boolean isConnectedBleDevice(){
+        return BlePenManager.getInstance().isConnected(mBleDevice);
+    }
+
 }

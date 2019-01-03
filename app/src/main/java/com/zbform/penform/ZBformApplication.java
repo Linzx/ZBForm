@@ -3,27 +3,14 @@ package com.zbform.penform;
 import android.app.Application;
 import android.content.Context;
 import android.os.Build;
-import android.os.Environment;
-import android.support.annotation.ColorInt;
-import android.support.annotation.ColorRes;
 import android.util.Log;
 
-
-import com.google.gson.Gson;
 import com.tstudy.blepenlib.BlePenManager;
 import com.zbform.penform.blepen.MyLicense;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.handler.UnceHandler;
 import com.zbform.penform.json.UserInfo;
-import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.permissions.Nammu;
-//import com.zbform.penform.provider.PlaylistInfo;
-import com.zbform.penform.util.IConstants;
-import com.zbform.penform.util.PreferencesUtility;
-import com.zbform.penform.util.ThemeHelper;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 /**
  */
