@@ -1,8 +1,8 @@
 package com.zbform.penform.json;
 
 public class FormItem{
-    private int form;
-    private int item;
+    private String form;
+    private String item;
     private int page;
     private String type;
     private double locaX;
@@ -13,19 +13,19 @@ public class FormItem{
     private String identityFlag;
     private String fieldName;
 
-    public int getForm() {
+    public String getForm() {
         return form;
     }
 
-    public void setForm(int form) {
+    public void setForm(String form) {
         this.form = form;
     }
 
-    public int getItem() {
+    public String getItem() {
         return item;
     }
 
-    public void setItem(int item) {
+    public void setItem(String item) {
         this.item = item;
     }
 

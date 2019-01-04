@@ -5,6 +5,8 @@ import android.content.Context;
 import android.os.Build;
 import android.util.Log;
 
+
+import com.lidroid.xutils.DbUtils;
 import com.tstudy.blepenlib.BlePenManager;
 import com.zbform.penform.blepen.MyLicense;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
@@ -20,15 +22,15 @@ public class ZBformApplication extends Application {
 
     /**
      * mUser: 记录登录用户账号信息
-     * */
+     */
     public static UserInfo.Results mUser;
     private static String mLoginUserId;
     private static String mLoginUserKey;
     public static Context context;
-
+    public static DbUtils mDB;
     /**
      * mZBFormBlePenManager 全局唯一
-     * */
+     */
     public static ZBFormBlePenManager sBlePenManager;
 
     //捕获全局Exception 重启界面
@@ -51,12 +53,16 @@ public class ZBformApplication extends Application {
         // refWatcher = LeakCanary.install(this);
         //       LeakCanary.install(this);
         initCatchException();
+
+        mDB = DbUtils.create(this, "zbform.db");
+        mDB.configAllowTransaction(true);
+        mDB.configDebug(true);
     }
 
-    private void initZBFormBlePenManager(){
+    private void initZBFormBlePenManager() {
         sBlePenManager = ZBFormBlePenManager.getInstance(context);
         boolean initSuccess = BlePenManager.getInstance().init(this, MyLicense.getBytes());
-        Log.i(TAG, "ble init success = "+initSuccess);
+        Log.i(TAG, "ble init success = " + initSuccess);
         sBlePenManager.setBleInitSuccess(initSuccess);
     }
 

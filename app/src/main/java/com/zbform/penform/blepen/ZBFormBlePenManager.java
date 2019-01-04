@@ -53,14 +53,18 @@ public class ZBFormBlePenManager {
         return mZBFormBlePenManager;
     }
 
-    public interface IZBFormBlePenCallBack {
+    public interface IBlePenStateCallBack {
         void onRemainBattery(final int percent);
 
         void onMemoryFillLevel(final int percent, final int byteNum);
 
-        void onReadPageAddress(String address);
-
         void onNewSession(final String hardVersion, final String softVersion, final String syncNum);
+    }
+
+    public interface IBlePenDrawCallBack {
+
+        void onCoordDraw(final String pageAddress, final int nX, final int nY);
+        void onOffLineCoordDraw(final String pageAddress, final int nX, final int nY);
     }
 
     private ImageView mImageView;
@@ -102,7 +106,8 @@ public class ZBFormBlePenManager {
     private String mPageAddress = "0.0.0.0";
     private String mUrlData;
     private Handler mUIHander;
-    private IZBFormBlePenCallBack mIZBFormBlePenCallBack;
+    private IBlePenStateCallBack mIBlePenStateCallBack;
+    private IBlePenDrawCallBack mIBlePenDrawCallBack;
 
 
     private ZBFormBlePenManager(Context context) {
@@ -120,8 +125,12 @@ public class ZBFormBlePenManager {
         initBlePenStream();
     }
 
-    public void setIZBFormBlePenCallBack(IZBFormBlePenCallBack callBack) {
-        mIZBFormBlePenCallBack = callBack;
+    public void setBlePenStateCallBack(IBlePenStateCallBack callBack) {
+        mIBlePenStateCallBack = callBack;
+    }
+
+    public void setIBlePenDrawCallBack(IBlePenDrawCallBack callBack) {
+        mIBlePenDrawCallBack = callBack;
     }
 
     public void setBleDevice(BleDevice device) {
@@ -174,8 +183,8 @@ public class ZBFormBlePenManager {
             public void onRemainBattery(final int percent) {
                 Log.d(TAG, "onRemainBattery: " + percent + "%");
                 mBleDevicePower = percent;
-                if (mIZBFormBlePenCallBack != null) {
-                    mIZBFormBlePenCallBack.onRemainBattery(percent);
+                if (mIBlePenStateCallBack != null) {
+                    mIBlePenStateCallBack.onRemainBattery(percent);
                 }
 
             }
@@ -183,10 +192,12 @@ public class ZBFormBlePenManager {
             @Override
             public void onMemoryFillLevel(final int percent, final int byteNum) {
                 Log.d(TAG, "onMemoryFillLevel: " + percent + "%");
+
                 mBleDeviceUsedMemory = percent;
                 mBleDeviceUsedBytes = byteNum;
-                if (mIZBFormBlePenCallBack != null) {
-                    mIZBFormBlePenCallBack.onMemoryFillLevel(percent, byteNum);
+
+                if (mIBlePenStateCallBack != null) {
+                    mIBlePenStateCallBack.onMemoryFillLevel(percent, byteNum);
                 }
 
             }
@@ -206,6 +217,9 @@ public class ZBFormBlePenManager {
                         synchronized (mSyncObject) {
                             if (nX > 0 && nY > 0 && nForce > 0) {
                                 mStreamingController.addCoordinate(nX, nY, nForce, pageAddress);
+                                if (mIBlePenDrawCallBack != null) {
+                                    mIBlePenDrawCallBack.onCoordDraw(mPageAddress,nX,nY);
+                                }
                             }
                         }
                         if (!TextUtils.isEmpty(pageAddress)) {
@@ -213,9 +227,6 @@ public class ZBFormBlePenManager {
                                 drawClear();
                             }
                             mPageAddress = pageAddress;
-                            if (mIZBFormBlePenCallBack != null) {
-                                mIZBFormBlePenCallBack.onReadPageAddress(mPageAddress);
-                            }
                         }
 
                         break;
@@ -252,6 +263,9 @@ public class ZBFormBlePenManager {
                         synchronized (mSyncObject) {
                             if (nX > 0 && nY > 0 && nForce > 0) {
                                 mStreamingController.addCoordinate(nX, nY, nForce, pageAddress);
+                                if (mIBlePenDrawCallBack != null) {
+                                    mIBlePenDrawCallBack.onOffLineCoordDraw(mPageAddress,nX,nY);
+                                }
                             }
                         }
                         if (!TextUtils.isEmpty(pageAddress)) {
@@ -320,9 +334,10 @@ public class ZBFormBlePenManager {
                 mBleDeviceHwVersion = hardVersion;
                 mBleDeviceSwVersion = softVersion;
                 mBleDeviceSyncNum = syncNum;
-                Log.i(TAG,"hardVersion：" + hardVersion + "  softVersion:" + softVersion + "   syncNum:" + syncNum);
-                if (mIZBFormBlePenCallBack != null) {
-                    mIZBFormBlePenCallBack.onNewSession(hardVersion,softVersion,syncNum);
+
+                Log.i(TAG, "hardVersion：" + hardVersion + "  softVersion:" + softVersion + "   syncNum:" + syncNum);
+                if (mIBlePenStateCallBack != null) {
+                    mIBlePenStateCallBack.onNewSession(hardVersion, softVersion, syncNum);
                 }
             }
 

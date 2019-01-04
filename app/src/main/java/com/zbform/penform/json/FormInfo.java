@@ -5,7 +5,7 @@ public class FormInfo extends BaseInfo {
     public Results[] results;
 
     public static class Results extends BaseFormRecordResults{
-        private FormItem[] items;
+        public FormItem[] items;
 
         public FormItem[] getItems() {
             return items;
