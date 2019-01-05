@@ -34,6 +34,7 @@ import com.zbform.penform.adapter.MenuItemAdapter;
 import com.zbform.penform.fragment.BaseFragment;
 import com.zbform.penform.fragment.FormListFragment;
 import com.zbform.penform.fragment.OnFragmentChangeListener;
+import com.zbform.penform.fragment.RecordFragment;
 import com.zbform.penform.fragment.RecordListFragment;
 
 import java.util.ArrayList;
@@ -164,10 +165,15 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             Log.i(TAG, "Fragments size = "+fragmentManager.getFragments().size());
-            if (fragmentManager.getFragments().size() > 1 && mCurrentFragmet instanceof RecordListFragment) {
-                fragmentManager.popBackStack();
-                setmTootBarTitle(getString(R.string.menu_item_formlist));
-            } else {
+            if (fragmentManager.getFragments().size() > 1) {
+                if(mCurrentFragmet instanceof RecordListFragment) {
+                    fragmentManager.popBackStack();
+                    setmTootBarTitle(getString(R.string.menu_item_formlist));
+                } else if(mCurrentFragmet instanceof RecordFragment) {
+                    fragmentManager.popBackStack();
+                    setmTootBarTitle(getString(R.string.title_record_list));
+                }
+            }else {
                 if ((System.currentTimeMillis() - time > 1000)) {
                     Toast.makeText(this, "再按一次返回桌面", Toast.LENGTH_SHORT).show();
                     time = System.currentTimeMillis();
@@ -206,7 +212,7 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
     private void selectFragment(BaseFragment fragment) {
         FragmentTransaction transaction = fragmentManager.beginTransaction();
         transaction.replace(R.id.fragment_container,  fragment);
-        if(fragment instanceof RecordListFragment) {
+        if(fragment instanceof RecordListFragment || fragment instanceof RecordFragment) {
             transaction.addToBackStack(fragment.getClass().getSimpleName());
         }
         transaction.commit();
@@ -223,8 +229,15 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
     }
 
     @Override
-    public void onRecordFragmentSelect(String formId, String RecordId) {
-
+    public void onRecordFragmentSelect(String formId, String recordId, String recordCode, int page) {
+        mCurrentFragmet = new RecordFragment();
+        Bundle bundle = new Bundle();
+        bundle.putString("formId", formId);
+        bundle.putString("recordId", recordId);
+        bundle.putInt("page",page);
+        mCurrentFragmet.setArguments(bundle);
+        selectFragment(mCurrentFragmet);
+        setmTootBarTitle(recordCode);
     }
 
 }

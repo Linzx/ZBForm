@@ -42,7 +42,7 @@ import com.zbform.penform.settings.DeviceAdapter;
 
 import java.util.List;
 
-public class PenFragment extends Fragment implements View.OnClickListener{
+public class PenFragment extends Fragment implements View.OnClickListener, ZBFormBlePenManager.IZBFormBlePenCallBack{
 
 
     public static final String TAG = PenFragment.class.getSimpleName();
@@ -72,6 +72,7 @@ public class PenFragment extends Fragment implements View.OnClickListener{
     public void onAttach(Context context) {
         super.onAttach(context);
         mContext = context;
+        mBlePenManager.setIZBFormBlePenCallBack(this);
     }
 
     @Override
@@ -256,6 +257,8 @@ public class PenFragment extends Fragment implements View.OnClickListener{
             mPenPower.setText(mBlePenManager.getBleDevicePower()+"%");
             mPenVersion.setText(mBlePenManager.getBleDeviceSwVersion());
     }
+
+
     @Override
     public final void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                                  @NonNull int[] grantResults) {
@@ -310,16 +313,33 @@ public class PenFragment extends Fragment implements View.OnClickListener{
         }
     }
 
-/*
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_OPEN_BT_CODE) {
-            if (resultCode == Activity.RESULT_OK) {
-                checkPermissions();
-            } else {
-                Toast.makeText(mContext, "拒绝蓝牙权限", Toast.LENGTH_SHORT).show();
+    public void onRemainBattery(final int percent) {
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mPenPower.setText(percent+"%");
             }
-        }
-    }*/
+        });
+    }
+
+    @Override
+    public void onMemoryFillLevel(int percent, int byteNum) {
+
+    }
+
+    @Override
+    public void onReadPageAddress(String address) {
+
+    }
+
+    @Override
+    public void onNewSession(String hardVersion, final String softVersion, String syncNum) {
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mPenVersion.setText(softVersion);
+            }
+        });
+    }
 }

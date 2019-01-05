@@ -19,6 +19,7 @@ import com.pullrefresh.PtrDefaultHandler;
 import com.pullrefresh.PtrFrameLayout;
 import com.pullrefresh.loadmore.OnLoadMoreListener;
 import com.zbform.penform.R;
+import com.zbform.penform.activity.ZBformMain;
 import com.zbform.penform.json.RecordItem;
 import com.zbform.penform.json.RecordListInfo;
 import com.zbform.penform.task.RecordListTask;
@@ -42,12 +43,18 @@ public class RecordListFragment extends BaseFragment implements RecordListTask.O
     private String mFormId;
 
     private Context mContext;
+    private OnFragmentChangeListener mFragmentChangeCallBack;
+
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
         mContext = context;
         mFormId = (String)getArguments().get("formId");
+        if(getActivity() instanceof ZBformMain) {
+            Log.i(TAG, "zbformmain fragment,set fragment change callback.");
+            mFragmentChangeCallBack = (OnFragmentChangeListener) mContext;
+        }
     }
 
     @Override
@@ -181,7 +188,7 @@ public class RecordListFragment extends BaseFragment implements RecordListTask.O
         }
 
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
+        public View getView(final int position, View convertView, ViewGroup parent) {
             ViewHolder holder;
             if (convertView == null) {
                 convertView = inflater.inflate(R.layout.listitem_recordlist_layout, parent, false);
@@ -191,9 +198,17 @@ public class RecordListFragment extends BaseFragment implements RecordListTask.O
                 holder = (ViewHolder) convertView.getTag();
             }
 
-            holder.recordCode.setText(datas.get(position).getHwcode());
-            holder.modifyDate.setText(convertDateFormat(datas.get(position).getHwmodifydate()));
-            holder.owner.setText(datas.get(position).getHwname());
+            final RecordItem recordItem = datas.get(position);
+            holder.recordCode.setText(recordItem.getHwcode());
+            holder.modifyDate.setText(convertDateFormat(recordItem.getHwmodifydate()));
+            holder.owner.setText(recordItem.getHwname());
+
+            convertView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mFragmentChangeCallBack.onRecordFragmentSelect(mFormId, recordItem.getHwuuid(),recordItem.getHwcode(),recordItem.getHwpage());
+                }
+            });
             return convertView;
         }
 

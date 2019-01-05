@@ -5,7 +5,7 @@ public class RecordDataItem {
     public String code;
     public int form;
     public int record;
-    public String hwdata;
+    public HwData hwdata;
 
     public String getCode() {
         return code;
@@ -31,11 +31,11 @@ public class RecordDataItem {
         this.record = record;
     }
 
-    public String getHwdata() {
+    public HwData getHwdata() {
         return hwdata;
     }
 
-    public void setHwdata(String hwdata) {
+    public void setHwdata(HwData hwdata) {
         this.hwdata = hwdata;
     }
 }

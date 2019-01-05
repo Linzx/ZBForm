@@ -4,6 +4,6 @@ public interface OnFragmentChangeListener {
 
     public void onRecordListFragmentSelect(String formId);
 
-    public void onRecordFragmentSelect(String formId, String RecordId);
+    public void onRecordFragmentSelect(String formId, String RecordId, String recordCode, int page);
 
 }
