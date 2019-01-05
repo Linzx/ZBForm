@@ -36,6 +36,7 @@ import com.zbform.penform.fragment.FormListFragment;
 import com.zbform.penform.fragment.OnFragmentChangeListener;
 import com.zbform.penform.fragment.RecordFragment;
 import com.zbform.penform.fragment.RecordListFragment;
+import com.zbform.penform.services.ZBFormService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,7 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
     private ListView mLvLeftMenu;
     private TextView mTootBarTitle;
     private long time = 0;
+    private Intent mService;
 
     private FragmentManager fragmentManager;
 
@@ -76,6 +78,8 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
         setmTootBarTitle(getString(R.string.menu_item_formlist));
         mCurrentFragmet = new FormListFragment();
         selectFragment(mCurrentFragmet);
+        mService = new Intent(this, ZBFormService.class);
+        startService(mService);
     }
 
     private void setToolBar() {
@@ -159,6 +163,7 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        stopService(mService);
     }
 
     @Override

@@ -22,8 +22,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.model.stream.HttpUrlGlideUrlLoader;
-import com.bumptech.glide.request.target.BitmapImageViewTarget;
 import com.lidroid.xutils.BitmapUtils;
 import com.lidroid.xutils.bitmap.BitmapDisplayConfig;
 import com.lidroid.xutils.bitmap.callback.BitmapLoadFrom;
@@ -34,16 +32,13 @@ import com.pullrefresh.PtrFrameLayout;
 import com.pullrefresh.loadmore.OnLoadMoreListener;
 import com.zbform.penform.R;
 import com.zbform.penform.ZBformApplication;
-import com.zbform.penform.activity.FormImgActivity;
+import com.zbform.penform.activity.FormDrawActivity;
 import com.zbform.penform.json.FormListInfo;
 import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.task.FormListTask;
 //import com.zbform.penform.view.GridDividerItemDecoration;
 import com.zbform.penform.task.TestTask;
-import com.zbform.penform.util.BitmapHelp;
-import com.zbform.penform.view.GridDividerItemDecorationEx;
 
-import com.bumptech.glide.request.target.Target;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,12 +81,12 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
     }
 
     private void initData() {
-//        new TestTask().execute(mContext);
-        mBitmapUtils = BitmapHelp.getBitmapUtils(mContext);
-        mBitmapUtils.configDefaultLoadingImage(R.drawable.no_banner);
-        mBitmapUtils.configDefaultLoadFailedImage(R.drawable.no_banner);
-        mBitmapUtils.configDefaultBitmapConfig(Bitmap.Config.RGB_565);
-        mBitmapUtils.configMemoryCacheEnabled(true);
+        new TestTask().execute(mContext);
+//        mBitmapUtils = BitmapHelp.getBitmapUtils(mContext);
+//        mBitmapUtils.configDefaultLoadingImage(R.drawable.no_banner);
+//        mBitmapUtils.configDefaultLoadFailedImage(R.drawable.no_banner);
+//        mBitmapUtils.configDefaultBitmapConfig(Bitmap.Config.RGB_565);
+//        mBitmapUtils.configMemoryCacheEnabled(true);
         mTask = new FormListTask();
         mTask.setOnFormTaskListener(this);
 
@@ -237,8 +232,9 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
                 if (v.getTag() == null) return;
                 ChildViewHolder holder = (ChildViewHolder) v.getTag();
                 Log.i("whd", "item=" + holder.formItem.getName());
-                Intent intent = new Intent(mContext, FormImgActivity.class);
+                Intent intent = new Intent(mContext, FormDrawActivity.class);
                 intent.putExtra("info",holder.url);
+                intent.putExtra("formid",holder.formItem.getUuid());
                 startActivity(intent);
             } else if (v.getId() == R.id.view_record){
                Log.i(TAG, "onclick view record");

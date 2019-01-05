@@ -1,5 +1,7 @@
 package com.zbform.penform.json;
-
+/*
+表单列表
+ */
 public class FormListInfo extends BaseInfo {
 
     public Results[] results;

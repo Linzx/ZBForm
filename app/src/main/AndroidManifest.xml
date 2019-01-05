@@ -50,7 +50,7 @@
             android:screenOrientation="portrait">
         </activity>
         <activity
-            android:name="com.zbform.penform.activity.FormImgActivity"
+            android:name="com.zbform.penform.activity.FormDrawActivity"
             android:screenOrientation="portrait"
             android:theme="@style/FormImgThem"/>
         <activity
@@ -62,7 +62,7 @@
             android:screenOrientation="portrait"
             android:label="@string/menu_item_setting"
             android:theme="@style/SettingTheme"/>
-
+        <service android:name=".services.ZBFormService" />
         <!-- 广播注册 -->
         <receiver android:name="com.zbform.penform.update.InstallReceiver">
             <intent-filter android:priority="20">
