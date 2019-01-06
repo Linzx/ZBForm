@@ -69,7 +69,7 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ItemHolder
 
     private void setOnPopupMenuListener(ItemHolder itemHolder, final int position) {
 
-//        itemHolder.menu.setOnClickListener(new View.OnClickListener() {
+//        itemHolder.menu_draw.setOnClickListener(new View.OnClickListener() {
 //            @Override
 //            public void onClick(View v) {
 //                SimpleMoreFragment morefragment = SimpleMoreFragment.newInstance(searchResults.get(position).songId);
@@ -93,7 +93,7 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ItemHolder
 //            this.title = (TextView) view.findViewById(R.id.viewpager_list_toptext);
 //            this.songartist = (TextView) view.findViewById(R.id.viewpager_list_bottom_text);
 //            this.albumArt = (ImageView) view.findViewById(R.id.play_state);
-//            this.menu = (ImageView) view.findViewById(R.id.viewpager_list_button);
+//            this.menu_draw = (ImageView) view.findViewById(R.id.viewpager_list_button);
 
             view.setOnClickListener(this);
         }

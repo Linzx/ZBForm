@@ -15,8 +15,12 @@ import android.graphics.drawable.TransitionDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v7.app.ActionBar;
+import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -25,20 +29,26 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.zbform.penform.R;
+import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.json.FormInfo;
 import com.zbform.penform.services.ZBFormService;
 import com.zbform.penform.task.FormTask;
+import com.zbform.penform.task.NewFormRecordTask;
 
 public class FormDrawActivity extends BaseActivity {
     private static final String TAG = "FormDrawActivity";
     private static final ColorDrawable TRANSPARENT_DRAWABLE = new ColorDrawable(android.R.color.transparent);
+    private FormInfo mFormInfo;
     private String url;
     private String mFormID;
+    private String mFormName;
     private ImageView mImgView;
     private ProgressBar progressBar;
     private FormTask mFromTask;
+    private NewFormRecordTask mNewRecordTask;
     private ZBFormService mService;
+    private ActionBar mActionBar;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -47,12 +57,15 @@ public class FormDrawActivity extends BaseActivity {
         setContentView(R.layout.formimg_activity);
         url = getIntent().getStringExtra("info");
         mFormID = getIntent().getStringExtra("formid");
+        mFormName = getIntent().getStringExtra("formname");
         mImgView = (ImageView) findViewById(R.id.form_img);
         progressBar = (ProgressBar) findViewById(R.id.progress_img);
+        setToolBar();
+
+        getFormImg();
 
         Intent intent = new Intent(this, ZBFormService.class);
         bindService(intent, conn, Service.BIND_AUTO_CREATE);
-
     }
 
     ServiceConnection conn = new ServiceConnection() {
@@ -60,9 +73,6 @@ public class FormDrawActivity extends BaseActivity {
             Log.d(TAG, "onServiceConnected");
             ZBFormService.LocalBinder binder = (ZBFormService.LocalBinder) service;
             mService = binder.getService();
-            mFromTask = new FormTask();
-            mFromTask.setOnFormTaskListener(mFormTaskListener);
-            mFromTask.execute(FormDrawActivity.this, mFormID);
         }
         public void onServiceDisconnected(ComponentName name) {
             mService = null;
@@ -73,19 +83,45 @@ public class FormDrawActivity extends BaseActivity {
 
         @Override
         public void onStartGet() {
-
+            progressBar.setVisibility(View.VISIBLE);
         }
 
         @Override
         public void onGetSuccess(FormInfo form) {
-            if (mService != null){
-                mService.setDrawFormInfo(form);
-            }
-            getFormImg();
+            mNewRecordTask = new NewFormRecordTask();
+            mNewRecordTask.execute(FormDrawActivity.this,mFormID);
+            mNewRecordTask.setOnNewFormTaskListener(mNewRecordListener);
+            mFormInfo = form;
         }
 
         @Override
         public void onGetFail() {
+            progressBar.setVisibility(View.INVISIBLE);
+
+        }
+    };
+
+    private NewFormRecordTask.OnNewRecordTaskListener mNewRecordListener = new NewFormRecordTask.OnNewRecordTaskListener() {
+
+        @Override
+        public void onStartNew() {
+
+        }
+
+        @Override
+        public void onNewSuccess(String uuid) {
+
+            progressBar.setVisibility(View.INVISIBLE);
+            if (mService != null){
+                mService.setDrawFormInfo(mFormInfo, uuid);
+                mService.startRecordCoord();
+                ZBformApplication.sBlePenManager.startDraw();
+            }
+        }
+
+        @Override
+        public void onNewFail() {
+            progressBar.setVisibility(View.INVISIBLE);
 
         }
     };
@@ -166,13 +202,11 @@ public class FormDrawActivity extends BaseActivity {
     }
 
     class BitmapTask extends AsyncTask<Integer, Void, Bitmap> {
-        private Context mContext;
         private int mWidth;
         private int mHeight;
 
         BitmapTask(Context context, int width, int height) {
 
-            mContext = context;
             mWidth = width;
             mHeight = height;
         }
@@ -188,7 +222,7 @@ public class FormDrawActivity extends BaseActivity {
                         .get();
 
             } catch (Exception e) {
-                Log.i("whd", "e W=" + e.getMessage());
+                Log.i(TAG, "e W=" + e.getMessage());
                 e.printStackTrace();
             }
             return scaleImg;
@@ -223,5 +257,48 @@ public class FormDrawActivity extends BaseActivity {
                 });
         imageView.setImageDrawable(transitionDrawable);
         transitionDrawable.startTransition(500);
+    }
+
+    private void setToolBar() {
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        mActionBar = getSupportActionBar();
+        mActionBar.setDisplayHomeAsUpEnabled(true);
+        mActionBar.setTitle(mFormName == null ? "" : mFormName);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(final Menu menu) {
+
+        getMenuInflater().inflate(R.menu.menu_draw, menu);
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(final MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+                return true;
+            case R.id.add_record:
+                mFromTask = new FormTask();
+                mFromTask.setOnFormTaskListener(mFormTaskListener);
+                mFromTask.execute(FormDrawActivity.this, mFormID);
+                return true;
+            default:
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Unbind from the service
+        if (mService != null){
+            mService.stopRecordCoord();
+            ZBformApplication.sBlePenManager.stopDraw();
+        }
+        unbindService(conn);
     }
 }

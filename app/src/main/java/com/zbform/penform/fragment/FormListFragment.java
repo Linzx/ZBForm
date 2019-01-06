@@ -235,6 +235,7 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
                 Intent intent = new Intent(mContext, FormDrawActivity.class);
                 intent.putExtra("info",holder.url);
                 intent.putExtra("formid",holder.formItem.getUuid());
+                intent.putExtra("formname",holder.formItem.getName().replace(".pdf",""));
                 startActivity(intent);
             } else if (v.getId() == R.id.view_record){
                Log.i(TAG, "onclick view record");

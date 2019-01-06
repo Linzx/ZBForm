@@ -31,6 +31,11 @@
     <!-- 表单记录列表 -->
     <string name="title_record_list">表单记录列表</string>
 
+    <string name="menu_item_add_record">创建表单记录</string>
+
+    <string name="menu_item_connect">数码笔已链接</string>
+    <string name="menu_item_disconnect">数码笔未链接</string>
+
     <!-- 设置 -->
     <string name="pref_header_account">个人信息</string>
     <string name="pref_header_pen_manage">蓝牙笔管理</string>

@@ -42,7 +42,7 @@ import com.zbform.penform.settings.DeviceAdapter;
 
 import java.util.List;
 
-public class PenFragment extends Fragment implements View.OnClickListener, ZBFormBlePenManager.IZBFormBlePenCallBack{
+public class PenFragment extends Fragment implements View.OnClickListener, ZBFormBlePenManager.IBlePenStateCallBack{
 
 
     public static final String TAG = PenFragment.class.getSimpleName();
@@ -72,7 +72,7 @@ public class PenFragment extends Fragment implements View.OnClickListener, ZBFor
     public void onAttach(Context context) {
         super.onAttach(context);
         mContext = context;
-        mBlePenManager.setIZBFormBlePenCallBack(this);
+        mBlePenManager.setBlePenStateCallBack(this);
     }
 
     @Override
@@ -205,7 +205,7 @@ public class PenFragment extends Fragment implements View.OnClickListener, ZBFor
 
     private void connect(final BleDevice bleDevice) {
         //连接回调
-        BleGattCallback bleGattCallback = new BleGattCallback() {
+        ZBFormBlePenManager.IZBBleGattCallback bleGattCallback = new ZBFormBlePenManager.IZBBleGattCallback() {
             @Override
             public void onStartConnect() {
                 progressDialog.setMessage("正在连接蓝牙点阵笔:"+bleDevice.getName());
@@ -246,7 +246,7 @@ public class PenFragment extends Fragment implements View.OnClickListener, ZBFor
 //                }
             }
         };
-        BlePenManager.getInstance().connect(bleDevice, bleGattCallback);
+        mBlePenManager.connect(bleDevice,bleGattCallback);
     }
 
     public void setPenInfo(){
@@ -325,11 +325,6 @@ public class PenFragment extends Fragment implements View.OnClickListener, ZBFor
 
     @Override
     public void onMemoryFillLevel(int percent, int byteNum) {
-
-    }
-
-    @Override
-    public void onReadPageAddress(String address) {
 
     }
 

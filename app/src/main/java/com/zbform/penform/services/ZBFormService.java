@@ -12,7 +12,6 @@ import com.lidroid.xutils.exception.DbException;
 import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.db.ZBStrokeEntity;
-import com.zbform.penform.db.ZBStrokePointEntity;
 import com.zbform.penform.json.FormInfo;
 import com.zbform.penform.json.FormItem;
 
@@ -23,7 +22,8 @@ public class ZBFormService extends Service {
     private static final String TAG = "ZBFormService";
 
     private FormInfo mDrawFormInfo;
-    private boolean mStopCoordDBTask = false;
+    private String mRecordId;
+    private boolean mStopRecordCoord = false;
 
 
     private LocalBinder binder = new LocalBinder();
@@ -67,44 +67,36 @@ public class ZBFormService extends Service {
 
         @Override
         protected Boolean doInBackground(Void... integers) {
-            while(true && !mStopCoordDBTask) {
+            while(true && !mStopRecordCoord) {
                 try {
                     DrawCoord coord = mCoordQueue.take();
                     if (coord.x == -1000) {
                         continue;
                     }
-                    ZBStrokeEntity parent = new ZBStrokeEntity();
-                    parent.setUserid(ZBformApplication.getmLoginUserId());
-                    parent.setFormid("");
+                    ZBStrokeEntity stroke = new ZBStrokeEntity();
+                    stroke.setUserid(ZBformApplication.getmLoginUserId());
+                    stroke.setFormid(mDrawFormInfo.results[0].getUuid());
 
-                    parent.setRecordid("test1");
-                    parent.setItemid("");
+                    stroke.setRecordid(mRecordId);
 
+                    String itemId = "";//findFormRecordId(coord.x,coord.y);
+                    stroke.setItemid(itemId);
 
-                    ZBStrokePointEntity child = new ZBStrokePointEntity();
-                    child.setX(coord.x);
-                    child.setY(coord.y);
-                    child.parent = parent;
-                    Log.i(TAG, "save db begin=");
+                    stroke.setIsupload(false);
+                    stroke.setX(coord.x);
+                    stroke.setY(coord.y);
 
-                    ZBformApplication.mDB.saveBindingId(child);
+                    ZBformApplication.mDB.saveBindingId(stroke);
 
-                    Log.i(TAG, "save db end=");
+                    Log.i(TAG, "save db end");
 
-                    List<ZBStrokeEntity> test1 = ZBformApplication.mDB.findAll(Selector.from(ZBStrokeEntity.class));
-                    if (test1 == null) {
-                        Log.i(TAG, "test1 null");
-                    } else {
-                        Log.i(TAG, "test1 is" + test1.size());
-                        Log.i(TAG, "test1 is" + test1.get(0).getFormid());
-                    }
-
-                    List<ZBStrokePointEntity> test = ZBformApplication.mDB.findAll(Selector.from(ZBStrokePointEntity.class));
-                    if (test == null) {
-                        Log.i(TAG, "test null");
-                    } else {
-                        Log.i(TAG, "test is" + test.size());
-                    }
+//                    List<ZBStrokeEntity> test1 = ZBformApplication.mDB.findAll(Selector.from(ZBStrokeEntity.class));
+//                    if (test1 == null) {
+//                        Log.i(TAG, "test1 null");
+//                    } else {
+//                        Log.i(TAG, "test1 is" + test1.size());
+//                        Log.i(TAG, "test1 is" + test1.get(0).getFormid());
+//                    }
 
                 } catch (DbException dbe) {
                     dbe.printStackTrace();
@@ -127,6 +119,13 @@ public class ZBFormService extends Service {
 
             double xoff = x * 0.3 / 8 / 10;
             double yoff = y * 0.3 / 8 / 10;
+            Log.i(TAG,"xoff="+xoff);
+            Log.i(TAG,"yoff"+yoff);
+            Log.i(TAG,"item.getLocaX()="+item.getLocaX());
+            Log.i(TAG,"item.getLocaY()="+item.getLocaY());
+            Log.i(TAG,"LocaX()+LocaW="+(item.getLocaX() + item.getLocaW()));
+            Log.i(TAG,"LocaY()+LocaH()="+(item.getLocaY() + item.getLocaH()));
+
             if(xoff >= item.getLocaX() &&
                     yoff >= item.getLocaY() &&
                     xoff <= (item.getLocaX() + item.getLocaW()) &&
@@ -167,13 +166,18 @@ public class ZBFormService extends Service {
         super.onDestroy();
     }
 
-    public void setDrawFormInfo(FormInfo info){
+    public void setDrawFormInfo(FormInfo info, String recordId){
         mDrawFormInfo = info;
+        mRecordId =recordId;
     }
 
-    public void stopCoordDBTask(){
+    public void startRecordCoord(){
+        new CoodDBTask().execute();
+    }
 
-        mStopCoordDBTask = true;
+    public void stopRecordCoord(){
+
+        mStopRecordCoord = true;
         DrawCoord coord = new DrawCoord();
         coord.address = "";
         coord.x = -1000;

@@ -1,23 +1,20 @@
 package com.zbform.penform.activity;
 
 import android.app.Activity;
-import android.content.Context;
-import android.content.DialogInterface;
+import android.bluetooth.BluetoothGatt;
 import android.content.Intent;
-import android.graphics.Color;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -27,10 +24,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.tstudy.blepenlib.data.BleDevice;
+import com.tstudy.blepenlib.exception.BleException;
 import com.zbform.penform.MainActivity;
 import com.zbform.penform.R;
+import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.account.GlideCircleTransform;
 import com.zbform.penform.adapter.MenuItemAdapter;
+import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.fragment.BaseFragment;
 import com.zbform.penform.fragment.FormListFragment;
 import com.zbform.penform.fragment.OnFragmentChangeListener;
@@ -46,6 +47,7 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
     private static final String TAG = "ZBformMain";
 
     private ActionBar mActionBar;
+    private Toolbar mToolbar;
     private ArrayList<TextView> tabs = new ArrayList<>();
     private DrawerLayout drawerLayout;
     private ListView mLvLeftMenu;
@@ -56,6 +58,39 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
     private FragmentManager fragmentManager;
 
     private BaseFragment mCurrentFragmet;
+
+    ZBFormBlePenManager.IZBBleGattCallback bleGattCallback = new ZBFormBlePenManager.IZBBleGattCallback() {
+        @Override
+        public void onStartConnect() {
+        }
+
+        @Override
+        public void onConnectFail(BleDevice bleDevice, BleException exception) {
+            Log.i(TAG,"main onConnectFail");
+            if (mToolbar != null) {
+                Menu menu = mToolbar.getMenu();
+                setUpMenu(menu);
+            }
+        }
+
+        @Override
+        public void onConnectSuccess(BleDevice bleDevice, BluetoothGatt gatt, int status) {
+            Log.i(TAG,"main onConnectSuccess");
+            if (mToolbar != null) {
+                Menu menu = mToolbar.getMenu();
+                setUpMenu(menu);
+            }
+        }
+
+        @Override
+        public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
+            Log.i(TAG,"main onDisConnected");
+            if (mToolbar != null) {
+                Menu menu = mToolbar.getMenu();
+                setUpMenu(menu);
+            }
+        }
+    };
 
     public static void launch(Activity activity) {
         Intent intent = new Intent(activity, ZBformMain.class);
@@ -73,6 +108,7 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
         mLvLeftMenu = (ListView) findViewById(R.id.id_lv_left_menu);
 
         mTootBarTitle = (TextView)findViewById(R.id.toolbar_title);
+        ZBformApplication.sBlePenManager.setZBBleGattCallback(bleGattCallback);
         setToolBar();
         setUpDrawer();
         setmTootBarTitle(getString(R.string.menu_item_formlist));
@@ -82,9 +118,27 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
         startService(mService);
     }
 
+    private void setUpMenu(Menu menu) {
+        if (menu == null) return;
+        MenuItem connect = menu.findItem(R.id.pen_connect);
+        MenuItem disConnect = menu.findItem(R.id.pen_disconnect);
+
+        if (connect != null && disConnect != null) {
+            if (ZBformApplication.sBlePenManager.isConnectedBleDevice()) {
+                Log.i(TAG, "CONNECT");
+                connect.setVisible(true);
+                disConnect.setVisible(false);
+            } else {
+                Log.i(TAG, "DISCONNECT");
+                connect.setVisible(false);
+                disConnect.setVisible(true);
+            }
+        }
+    }
+
     private void setToolBar() {
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(mToolbar);
         mActionBar = getSupportActionBar();
         mActionBar.setDisplayHomeAsUpEnabled(true);
         mActionBar.setHomeAsUpIndicator(R.drawable.ic_menu);
@@ -148,6 +202,16 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
     }
 
     @Override
+    public boolean onCreateOptionsMenu(final Menu menu) {
+
+        getMenuInflater().inflate(R.menu.menu_pen_state, menu);
+
+        setUpMenu(menu);
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // handle item selection
         switch (item.getItemId()) {
@@ -157,6 +221,16 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
 
             default:
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (mToolbar != null) {
+            Menu menu = mToolbar.getMenu();
+            setUpMenu(menu);
         }
     }
 
@@ -244,5 +318,4 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
         selectFragment(mCurrentFragmet);
         setmTootBarTitle(recordCode);
     }
-
 }

@@ -14,7 +14,7 @@ import java.util.Date;
 public class ApiAddress {
     public final static String TAG = "apiaddress";
 
-    private static boolean DEBUG = false;
+    private static boolean DEBUG = true;
     public static final String SYSTEM_KEY = "7A1285_788a0f";
 
     public static final String DownLoadPdfUrlBase = DEBUG == true ?
@@ -93,6 +93,24 @@ public class ApiAddress {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd HH:mm:ss.SSS");// HH:mm:ss
         Date date = new Date(System.currentTimeMillis());
         return simpleDateFormat.format(date);
+    }
+
+    public static String getNewRecordUri(String userid, String userkey, String formid) {
+        String signCode = getSignCode(userid+userkey+SYSTEM_KEY);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(ApiAddress.Hw_Create);
+        sb.append("?signcode=");
+        sb.append(Uri.encode(signCode));
+        sb.append("&timestamp=");
+        sb.append(Uri.encode(getTimeStamp()));
+        sb.append("&userid=");
+        sb.append(Uri.encode(userid));
+        sb.append("&formid=");
+        sb.append(Uri.encode(formid));
+
+        Log.i(TAG, "get form img url=" + sb.toString());
+        return sb.toString();
     }
 
     public static String getFormImgUri(String userid, String userkey, String uuid, int page) {

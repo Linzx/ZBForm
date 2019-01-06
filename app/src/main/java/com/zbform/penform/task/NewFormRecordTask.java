@@ -10,27 +10,28 @@ import com.lidroid.xutils.http.ResponseInfo;
 import com.lidroid.xutils.http.client.HttpRequest;
 import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.json.FormInfo;
+import com.zbform.penform.json.NewRecordInfo;
 import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.net.ErrorCode;
 import com.zbform.penform.net.IZBformNetBeanCallBack;
 import com.zbform.penform.net.ZBformNetBean;
 
-public class FormTask implements IZBformNetBeanCallBack {
-    private static final String TAG = "FormTask";
+public class NewFormRecordTask implements IZBformNetBeanCallBack {
+    private static final String TAG = "NewFormRecordTask";
 	private Context mContext;
-	private OnFormTaskListener mOnFormTaskListener;
+	private OnNewRecordTaskListener mOnNewRecordTaskListener;
 
-	public interface OnFormTaskListener {
-		public void onStartGet();
+	public interface OnNewRecordTaskListener {
+		public void onStartNew();
 
-		public void onGetSuccess(FormInfo info);
+		public void onNewSuccess(String uuid);
 
-		public void onGetFail();
+		public void onNewFail();
 	}
 
 	public void execute(Context context, String formid) {
 		mContext = context;
-		String formListUri = ApiAddress.getFormUri(ZBformApplication.getmLoginUserId(),
+		String formListUri = ApiAddress.getNewRecordUri(ZBformApplication.getmLoginUserId(),
 				ZBformApplication.getmLoginUserKey(),formid);
 		ZBformNetBean formListTask = new ZBformNetBean(context, formListUri,
 				HttpRequest.HttpMethod.GET);
@@ -38,14 +39,14 @@ public class FormTask implements IZBformNetBeanCallBack {
 		formListTask.execute();
 	}
 
-	public void setOnFormTaskListener(OnFormTaskListener listener) {
-		mOnFormTaskListener = listener;
+	public void setOnNewFormTaskListener(OnNewRecordTaskListener listener) {
+		mOnNewRecordTaskListener = listener;
 	}
 
 	@Override
 	public void onStart() {
-		if (mOnFormTaskListener != null) {
-			mOnFormTaskListener.onStartGet();
+		if (mOnNewRecordTaskListener != null) {
+			mOnNewRecordTaskListener.onStartNew();
 		}
 	}
 
@@ -67,44 +68,43 @@ public class FormTask implements IZBformNetBeanCallBack {
 			String resultGson = responseInfo.result;
 			Log.i(TAG, "result form Gson!!=" + resultGson);
 			Gson gson = new Gson();
-			FormInfo form = gson.fromJson(resultGson, new TypeToken<FormInfo>() {
+            NewRecordInfo newRecordInfo = gson.fromJson(resultGson, new TypeToken<NewRecordInfo>() {
 			}.getType());
 
-			if (form != null && form.header != null
-					&& form.results != null && form.results.length > 0) {
+			if (newRecordInfo != null && newRecordInfo.header != null
+					&& newRecordInfo.results != null && newRecordInfo.results.length > 0) {
 
-				Log.i(TAG, "form errorcode!!=" + form.header.getErrorCode());
-				if (form.header.getErrorCode().equals(ErrorCode.RESULT_OK)) {
+				Log.i(TAG, "form errorcode!!=" + newRecordInfo.header.getErrorCode());
+				if (newRecordInfo.header.getErrorCode().equals(ErrorCode.RESULT_OK)) {
 
-//					FormItem[] item = form.results[0].getItems();
-//
-					if (mOnFormTaskListener != null) {
-						mOnFormTaskListener.onGetSuccess(form);
+					String id = newRecordInfo.results[0].uuid;
+					if (mOnNewRecordTaskListener != null) {
+						mOnNewRecordTaskListener.onNewSuccess(id);
 					}
 
 				} else {
-					if (mOnFormTaskListener != null) {
-						mOnFormTaskListener.onGetFail();
+					if (mOnNewRecordTaskListener != null) {
+						mOnNewRecordTaskListener.onNewFail();
 					}
 				}
 			} else {
-				if (mOnFormTaskListener != null) {
-					mOnFormTaskListener.onGetFail();
+				if (mOnNewRecordTaskListener != null) {
+					mOnNewRecordTaskListener.onNewFail();
 				}
 			}
 		} catch (Exception e) {
 			Log.i(TAG, "e=" + e.getMessage());
 
-			if (mOnFormTaskListener != null) {
-				mOnFormTaskListener.onGetFail();
+			if (mOnNewRecordTaskListener != null) {
+				mOnNewRecordTaskListener.onNewFail();
 			}
 		}
 	}
 
 	@Override
 	public void onFailure(HttpException error, String msg) {
-		if (mOnFormTaskListener != null) {
-			mOnFormTaskListener.onGetFail();
+		if (mOnNewRecordTaskListener != null) {
+			mOnNewRecordTaskListener.onNewFail();
 		}
 	}
 }
