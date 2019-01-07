@@ -3,9 +3,9 @@ package com.zbform.penform.json;
 public class RecordDataItem {
 
     public String code;
-    public int form;
-    public int record;
-    public HwData hwdata;
+    public String form;
+    public String record;
+    public String hwdata;
 
     public String getCode() {
         return code;
@@ -15,27 +15,27 @@ public class RecordDataItem {
         this.code = code;
     }
 
-    public int getForm() {
+    public String getForm() {
         return form;
     }
 
-    public void setForm(int form) {
+    public void setForm(String form) {
         this.form = form;
     }
 
-    public int getRecord() {
+    public String getRecord() {
         return record;
     }
 
-    public void setRecord(int record) {
+    public void setRecord(String record) {
         this.record = record;
     }
 
-    public HwData getHwdata() {
+    public String getHwdata() {
         return hwdata;
     }
 
-    public void setHwdata(HwData hwdata) {
+    public void setHwdata(String hwdata) {
         this.hwdata = hwdata;
     }
 }

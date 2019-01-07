@@ -14,7 +14,7 @@ import java.util.Date;
 public class ApiAddress {
     public final static String TAG = "apiaddress";
 
-    private static boolean DEBUG = true;
+    private static boolean DEBUG = false;
     public static final String SYSTEM_KEY = "7A1285_788a0f";
 
     public static final String DownLoadPdfUrlBase = DEBUG == true ?
@@ -188,7 +188,7 @@ public class ApiAddress {
         String signCode = getSignCode(userid+userkey+SYSTEM_KEY);
 
         StringBuilder sb = new StringBuilder();
-        sb.append(ApiAddress.Hw_List);
+        sb.append(ApiAddress.Hw_Get);
         sb.append("?signcode=");
         sb.append(Uri.encode(signCode));
         sb.append("&timestamp=");
