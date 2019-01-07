@@ -26,7 +26,6 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.tstudy.blepenlib.data.BleDevice;
 import com.tstudy.blepenlib.exception.BleException;
-import com.zbform.penform.MainActivity;
 import com.zbform.penform.R;
 import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.account.GlideCircleTransform;
@@ -176,22 +175,16 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
                         drawerLayout.closeDrawers();
                         break;
                     case 2:
-                        // 表单记录列表
-                        Intent intent1 = new Intent(ZBformMain.this, MainActivity.class);
-                        startActivity(intent1);
-                        drawerLayout.closeDrawers();
-                        break;
-                    case 3:
                         // 设置
                         Intent intent = new Intent(ZBformMain.this, SettingActivity.class);
                         startActivity(intent);
                         drawerLayout.closeDrawers();
                         break;
-                    case 4:
+                    case 3:
                         // 更新
 //                        finish();
                         drawerLayout.closeDrawers();
-                    case 5:
+                    case 4:
                         // 退出
                         finish();
                         drawerLayout.closeDrawers();

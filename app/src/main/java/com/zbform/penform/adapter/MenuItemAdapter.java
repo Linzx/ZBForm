@@ -37,8 +37,6 @@ public class MenuItemAdapter extends ArrayAdapter<LvMenuItem>{
                 Arrays.asList(
                         new LvMenuItem(R.mipmap.topmenu_icn_cloud,
                                 mContext.getResources().getString(R.string.menu_item_formlist)),
-                        new LvMenuItem(R.mipmap.topmenu_icn_free,
-                                mContext.getResources().getString(R.string.menu_item_formrecord)),
                         new LvMenuItem(R.mipmap.topmenu_icn_set,
                                 mContext.getResources().getString(R.string.menu_item_setting)),
                         new LvMenuItem(R.mipmap.topmenu_icn_vip,

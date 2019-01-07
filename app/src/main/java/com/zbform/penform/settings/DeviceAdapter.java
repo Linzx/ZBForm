@@ -120,7 +120,7 @@ public class DeviceAdapter extends BaseAdapter {
         if (convertView != null) {
             holder = (ViewHolder) convertView.getTag();
         } else {
-            convertView = View.inflate(context, R.layout.adapter_device_test, null);
+            convertView = View.inflate(context, R.layout.adapter_device, null);
             holder = new ViewHolder();
             convertView.setTag(holder);
             holder.img_blue = (ImageView) convertView.findViewById(R.id.img_blue);

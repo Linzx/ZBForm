@@ -33,7 +33,7 @@
                 android:layout_alignParentRight="true"
                 android:layout_centerVertical="true"
                 android:layout_marginRight="10dp"
-                android:src="@mipmap/ic_loading_test"
+                android:src="@mipmap/ic_loading"
                 android:visibility="invisible" />
 
         </RelativeLayout>
