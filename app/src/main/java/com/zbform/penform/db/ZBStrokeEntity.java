@@ -3,6 +3,10 @@ package com.zbform.penform.db;
 
 import com.lidroid.xutils.db.annotation.Column;
 import com.lidroid.xutils.db.annotation.Table;
+import com.lidroid.xutils.db.annotation.Transient;
+import com.zbform.penform.json.Point;
+
+import java.util.ArrayList;
 
 @Table(name = "zbstroke")
 public class ZBStrokeEntity extends EntityBase{
@@ -30,21 +34,20 @@ public class ZBStrokeEntity extends EntityBase{
     @Column(column = "itemid")
     public String itemid;
 
-    public ZBStrokeEntity parent;
     @Column(column = "isupload")
     public Boolean isupload;
 
-    /// <summary>
-    /// 一个笔画开始时间yyyyMMdd HH:mm:ss.SSS
-    /// </summary>
-    @Column(column = "beginTime")
-    public long beginTime;
+    @Column(column = "pageaddress")
+    public String pageAddress;
+
+    @Column(column = "tagtime")
+    public String tagtime;
 
     /// <summary>
-    /// 一个笔画结束时间
+    /// 一个笔画时间
     /// </summary>
-    @Column(column = "endTime")
-    public long endTime;
+    @Column(column = "stroketime")
+    public int strokeTime;
 
     /// <summary>
     /// x坐标
@@ -56,6 +59,9 @@ public class ZBStrokeEntity extends EntityBase{
     /// </summary>
     @Column(column = "y")
     public int y;
+
+    @Transient
+    public ArrayList<Point> dList = new ArrayList<Point>();
 
 
     public String getUserid() {
@@ -114,19 +120,27 @@ public class ZBStrokeEntity extends EntityBase{
         this.isupload = isupload;
     }
 
-    public long getBeginTime() {
-        return beginTime;
+    public String getPageAddress() {
+        return pageAddress;
     }
 
-    public void setBeginTime(long beginTime) {
-        this.beginTime = beginTime;
+    public void setPageAddress(String pageAddress) {
+        this.pageAddress = pageAddress;
     }
 
-    public long getEndTime() {
-        return endTime;
+    public String getTagtime() {
+        return tagtime;
     }
 
-    public void setEndTime(long endTime) {
-        this.endTime = endTime;
+    public void setTagtime(String tagtime) {
+        this.tagtime = tagtime;
+    }
+
+    public int getStrokeTime() {
+        return strokeTime;
+    }
+
+    public void setStrokeTime(int strokeTime) {
+        this.strokeTime = strokeTime;
     }
 }

@@ -70,7 +70,7 @@ public class FormDrawActivity extends BaseActivity {
 
     ServiceConnection conn = new ServiceConnection() {
         public void onServiceConnected(ComponentName name, IBinder service) {
-            Log.d(TAG, "onServiceConnected"); 
+            Log.d(TAG, "onServiceConnected");
             ZBFormService.LocalBinder binder = (ZBFormService.LocalBinder) service;
             mService = binder.getService();
         }

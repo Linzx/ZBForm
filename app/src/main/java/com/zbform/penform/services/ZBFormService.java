@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.lidroid.xutils.db.sqlite.Selector;
@@ -14,6 +15,10 @@ import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.db.ZBStrokeEntity;
 import com.zbform.penform.json.FormInfo;
 import com.zbform.penform.json.FormItem;
+import com.zbform.penform.json.HwData;
+import com.zbform.penform.json.Point;
+import com.zbform.penform.json.ZBFormInnerItem;
+import com.zbform.penform.net.ApiAddress;
 
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -33,27 +38,42 @@ public class ZBFormService extends Service {
         }
     }
 
-    private class DrawCoord{
-        int x;
-        int y;
-        String address;
-    }
+    private LinkedBlockingQueue<HwData> mCoordQueue = new LinkedBlockingQueue<HwData>();
 
-    private LinkedBlockingQueue<DrawCoord> mCoordQueue = new LinkedBlockingQueue<DrawCoord>();
+    private PenDrawCallBack mIBlePenDrawCallBack  = new PenDrawCallBack();
+     private class PenDrawCallBack implements ZBFormBlePenManager.IBlePenDrawCallBack {
+         HwData mStroke = null;//一个笔画
+         long mBeginTime;
+                @Override
+                public void onPenDown() {
+                    //开始一个笔画
+                    mStroke = new HwData();
 
-    private ZBFormBlePenManager.IBlePenDrawCallBack mIBlePenDrawCallBack  =
-            new ZBFormBlePenManager.IBlePenDrawCallBack(){
+                    mStroke.setT(ApiAddress.getTimeStamp());
+                    mBeginTime = System.currentTimeMillis();
+                }
+
+                @Override
+                public void onPenUp() {
+                    //penup 一个笔画结束，开始存储
+                    long endTime = System.currentTimeMillis();
+                    int c = (int)(endTime - mBeginTime);//一个笔画的耗时
+                    mStroke.setC(c);
+                    try {
+                        mCoordQueue.put(mStroke);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
 
                 @Override
                 public void onCoordDraw(String pageAddress, int nX, int nY) {
-                    DrawCoord coord = new DrawCoord();
-                    coord.address = pageAddress;
-                    coord.x = nX;
-                    coord.y = nY;
-                    try {
-                        mCoordQueue.put(coord);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                    mStroke.setP(pageAddress);
+                    Point point = new Point();
+                    point.setX(nX);
+                    point.setY(nY);
+                    if (mStroke != null){
+                        mStroke.dList.add(point);
                     }
                 }
 
@@ -61,32 +81,42 @@ public class ZBFormService extends Service {
                 public void onOffLineCoordDraw(String pageAddress, int nX, int nY) {
 
                 }
-            };
+            }
 
     private class CoodDBTask extends AsyncTask<Void, Void, Boolean> {
-
         @Override
         protected Boolean doInBackground(Void... integers) {
-            while(true && !mStopRecordCoord) {
+            while (true) {
                 try {
-                    DrawCoord coord = mCoordQueue.take();
-                    if (coord.x == -1000) {
+                    if (mStopRecordCoord && mCoordQueue.isEmpty()) {
+                        break;
+                    }
+                    HwData stroke = mCoordQueue.take();
+                    if (stroke.getC() == -1000) {
                         continue;
                     }
-                    ZBStrokeEntity stroke = new ZBStrokeEntity();
-                    stroke.setUserid(ZBformApplication.getmLoginUserId());
-                    stroke.setFormid(mDrawFormInfo.results[0].getUuid());
+                    for (Point point : stroke.dList) {
+                        ZBStrokeEntity strokeEntity = new ZBStrokeEntity();
+                        strokeEntity.setUserid(ZBformApplication.getmLoginUserId());
+                        strokeEntity.setFormid(mDrawFormInfo.results[0].getUuid());
+                        strokeEntity.setRecordid(mRecordId);
 
-                    stroke.setRecordid(mRecordId);
+                        String itemId = findFormRecordId(point.getX(), point.getY());
+                        //笔迹不在item内，记录为page * -1
+                        if(TextUtils.isEmpty(itemId)){
+                            itemId = String.valueOf(-1 * mDrawFormInfo.results[0].getPage());
+                        }
+                        strokeEntity.setItemid(itemId);
 
-                    String itemId = "";//findFormRecordId(coord.x,coord.y);
-                    stroke.setItemid(itemId);
+                        strokeEntity.setIsupload(false);
+                        strokeEntity.setX(point.getX());
+                        strokeEntity.setY(point.getY());
+                        strokeEntity.setTagtime(stroke.getT());
+                        strokeEntity.setPageAddress(stroke.getP());
+                        strokeEntity.setStrokeTime(stroke.getC());
 
-                    stroke.setIsupload(false);
-                    stroke.setX(coord.x);
-                    stroke.setY(coord.y);
-
-                    ZBformApplication.mDB.saveBindingId(stroke);
+                        ZBformApplication.mDB.saveBindingId(strokeEntity);
+                    }
 
                     Log.i(TAG, "save db end");
 
@@ -178,10 +208,8 @@ public class ZBFormService extends Service {
     public void stopRecordCoord(){
 
         mStopRecordCoord = true;
-        DrawCoord coord = new DrawCoord();
-        coord.address = "";
-        coord.x = -1000;
-        coord.y = -1000;
+        HwData coord = new HwData();
+        coord.setC(-1000);
         try {
             mCoordQueue.put(coord);
         } catch (InterruptedException e) {

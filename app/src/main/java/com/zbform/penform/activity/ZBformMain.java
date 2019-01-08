@@ -37,6 +37,7 @@ import com.zbform.penform.fragment.OnFragmentChangeListener;
 import com.zbform.penform.fragment.RecordFragment;
 import com.zbform.penform.fragment.RecordListFragment;
 import com.zbform.penform.services.ZBFormService;
+import com.zbform.penform.task.UpLoadStrokeTask;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +66,7 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
 
         @Override
         public void onConnectFail(BleDevice bleDevice, BleException exception) {
-            Log.i(TAG, "main onConnectFail");
+            Log.i(TAG,"main onConnectFail");
             if (mToolbar != null) {
                 Menu menu = mToolbar.getMenu();
                 setUpMenu(menu);
@@ -74,7 +75,7 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
 
         @Override
         public void onConnectSuccess(BleDevice bleDevice, BluetoothGatt gatt, int status) {
-            Log.i(TAG, "main onConnectSuccess");
+            Log.i(TAG,"main onConnectSuccess");
             if (mToolbar != null) {
                 Menu menu = mToolbar.getMenu();
                 setUpMenu(menu);
@@ -83,7 +84,7 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
 
         @Override
         public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
-            Log.i(TAG, "main onDisConnected");
+            Log.i(TAG,"main onDisConnected");
             if (mToolbar != null) {
                 Menu menu = mToolbar.getMenu();
                 setUpMenu(menu);
@@ -106,7 +107,7 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
         drawerLayout = (DrawerLayout) findViewById(R.id.fd);
         mLvLeftMenu = (ListView) findViewById(R.id.id_lv_left_menu);
 
-        mTootBarTitle = (TextView) findViewById(R.id.toolbar_title);
+        mTootBarTitle = (TextView)findViewById(R.id.toolbar_title);
         ZBformApplication.sBlePenManager.setZBBleGattCallback(bleGattCallback);
         setToolBar();
         setUpDrawer();
@@ -115,6 +116,8 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
         selectFragment(mCurrentFragmet);
         mService = new Intent(this, ZBFormService.class);
         startService(mService);
+
+//        new UpLoadStrokeTask(this).execute();
     }
 
     private void setUpMenu(Menu menu) {
@@ -144,7 +147,7 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
         mActionBar.setTitle("");
     }
 
-    private void setmTootBarTitle(String title) {
+    private void setmTootBarTitle(String title){
         mTootBarTitle.setText(title);
     }
 
@@ -239,14 +242,14 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
             int fragSize = fragmentManager.getFragments().size();
             Log.i(TAG, "Fragments size = " + fragSize);
             if (fragmentManager.getFragments().size() > 1) {
-                if (mCurrentFragmet instanceof RecordListFragment) {
+                if(mCurrentFragmet instanceof RecordListFragment) {
                     fragmentManager.popBackStack();
                     setmTootBarTitle(getString(R.string.menu_item_formlist));
-                } else if (mCurrentFragmet instanceof RecordFragment) {
+                } else if(mCurrentFragmet instanceof RecordFragment) {
                     fragmentManager.popBackStack();
                     setmTootBarTitle(getString(R.string.title_record_list));
                 }
-            } else {
+            }else {
                 if ((System.currentTimeMillis() - time > 1000)) {
                     Toast.makeText(this, "再按一次返回桌面", Toast.LENGTH_SHORT).show();
                     time = System.currentTimeMillis();
@@ -270,7 +273,7 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
         if (fragments != null) {
             for (Fragment fragment : fragments) {
                 if (fragment != null) {
-                    fragment.onRequestPermissionsResult(requestCode, permissions, grantResults);
+                    fragment.onRequestPermissionsResult(requestCode,permissions,grantResults);
                 }
             }
         }
@@ -284,8 +287,8 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
 
     private void selectFragment(BaseFragment fragment) {
         FragmentTransaction transaction = fragmentManager.beginTransaction();
-        transaction.replace(R.id.fragment_container, fragment);
-        if (fragment instanceof RecordListFragment || fragment instanceof RecordFragment) {
+        transaction.replace(R.id.fragment_container,  fragment);
+        if(fragment instanceof RecordListFragment || fragment instanceof RecordFragment) {
             transaction.addToBackStack(fragment.getClass().getSimpleName());
         }
         transaction.commit();
@@ -307,7 +310,7 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
         Bundle bundle = new Bundle();
         bundle.putString("formId", formId);
         bundle.putString("recordId", recordId);
-        bundle.putInt("page", page);
+        bundle.putInt("page",page);
         mCurrentFragmet.setArguments(bundle);
         selectFragment(mCurrentFragmet);
         setmTootBarTitle(recordCode);

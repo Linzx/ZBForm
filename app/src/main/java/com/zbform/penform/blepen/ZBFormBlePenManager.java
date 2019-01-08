@@ -110,6 +110,8 @@ public class ZBFormBlePenManager {
 
     public interface IBlePenDrawCallBack {
 
+        void onPenDown();
+        void onPenUp();
         void onCoordDraw(final String pageAddress, final int nX, final int nY);
         void onOffLineCoordDraw(final String pageAddress, final int nX, final int nY);
     }
@@ -242,6 +244,9 @@ public class ZBFormBlePenManager {
                         writeString = "down";
                         synchronized (mSyncObject) {
                             mStreamingController.penDown();
+                            if (mIBlePenDrawCallBack != null) {
+                                mIBlePenDrawCallBack.onPenDown();
+                            }
                         }
                         break;
                     case PEN_COODINAT_MESSAGE:
@@ -268,6 +273,9 @@ public class ZBFormBlePenManager {
                         writeString = " up ";
                         synchronized (mSyncObject) {
                             mStreamingController.penUp();
+                            if (mIBlePenDrawCallBack != null) {
+                                mIBlePenDrawCallBack.onPenUp();
+                            }
                         }
 
                         break;

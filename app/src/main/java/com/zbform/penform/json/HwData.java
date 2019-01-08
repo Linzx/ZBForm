@@ -1,13 +1,22 @@
 package com.zbform.penform.json;
 
-import java.util.Arrays;
+import com.google.gson.annotations.Expose;
+
+import java.util.ArrayList;
 
 public class HwData {
+    @Expose(serialize = true, deserialize = true)
     String t;  // 时间戳
+    @Expose(serialize = true, deserialize = true)
     int c;     // 用时
+    @Expose(serialize = true, deserialize = true)
     String p;  // 点阵地址
     //String s;  // 笔序列号
+    @Expose(serialize = true, deserialize = true)
     Point[] d; // 笔画点阵集合
+
+    @Expose(serialize = false, deserialize = false)
+    public ArrayList<Point> dList = new ArrayList<Point>();
 
     public String getT() {
         return t;

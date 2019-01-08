@@ -1,7 +1,11 @@
 package com.zbform.penform.json;
 
+import com.google.gson.annotations.Expose;
+
 public class Point {
+    @Expose(serialize = true, deserialize = true)
     int x;
+    @Expose(serialize = true, deserialize = true)
     int y;
 
     public int getX() {
