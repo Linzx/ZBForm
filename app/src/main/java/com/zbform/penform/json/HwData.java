@@ -3,6 +3,7 @@ package com.zbform.penform.json;
 import com.google.gson.annotations.Expose;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class HwData {
     @Expose(serialize = true, deserialize = true)

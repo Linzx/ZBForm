@@ -1,6 +1,7 @@
 package com.zbform.penform.fragment;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -19,6 +20,8 @@ import com.pullrefresh.PtrDefaultHandler;
 import com.pullrefresh.PtrFrameLayout;
 import com.pullrefresh.loadmore.OnLoadMoreListener;
 import com.zbform.penform.R;
+import com.zbform.penform.activity.FormDrawActivity;
+import com.zbform.penform.activity.RecordActivity;
 import com.zbform.penform.activity.ZBformMain;
 import com.zbform.penform.json.RecordItem;
 import com.zbform.penform.json.RecordListInfo;
@@ -206,7 +209,13 @@ public class RecordListFragment extends BaseFragment implements RecordListTask.O
             convertView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    mFragmentChangeCallBack.onRecordFragmentSelect(mFormId, recordItem.getHwuuid(),recordItem.getHwcode(),recordItem.getHwpage());
+//                    mFragmentChangeCallBack.onRecordFragmentSelect(mFormId, recordItem.getHwuuid(),recordItem.getHwcode(),recordItem.getHwpage());
+                    Intent intent = new Intent(mContext, RecordActivity.class);
+                    intent.putExtra("formId", mFormId);
+                    intent.putExtra("recordId", recordItem.getHwuuid());
+                    intent.putExtra("page",recordItem.getHwpage());
+                    intent.putExtra("recordCode", recordItem.getHwcode());
+                    startActivity(intent);
                 }
             });
             return convertView;

@@ -54,10 +54,11 @@
             android:screenOrientation="portrait"
             android:theme="@style/FormImgThem"/>
         <activity
-            android:name=".MainActivity"
-            android:screenOrientation="portrait">
+            android:name="com.zbform.penform.activity.RecordActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/FormImgThem">
         </activity>
-       <activity
+        <activity
             android:name="com.zbform.penform.activity.SettingActivity"
             android:screenOrientation="portrait"
             android:label="@string/menu_item_setting"

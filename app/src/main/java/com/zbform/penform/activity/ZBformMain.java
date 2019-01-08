@@ -34,10 +34,8 @@ import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.fragment.BaseFragment;
 import com.zbform.penform.fragment.FormListFragment;
 import com.zbform.penform.fragment.OnFragmentChangeListener;
-import com.zbform.penform.fragment.RecordFragment;
 import com.zbform.penform.fragment.RecordListFragment;
 import com.zbform.penform.services.ZBFormService;
-import com.zbform.penform.task.UpLoadStrokeTask;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -245,9 +243,6 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
                 if(mCurrentFragmet instanceof RecordListFragment) {
                     fragmentManager.popBackStack();
                     setmTootBarTitle(getString(R.string.menu_item_formlist));
-                } else if(mCurrentFragmet instanceof RecordFragment) {
-                    fragmentManager.popBackStack();
-                    setmTootBarTitle(getString(R.string.title_record_list));
                 }
             }else {
                 if ((System.currentTimeMillis() - time > 1000)) {
@@ -288,7 +283,7 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
     private void selectFragment(BaseFragment fragment) {
         FragmentTransaction transaction = fragmentManager.beginTransaction();
         transaction.replace(R.id.fragment_container,  fragment);
-        if(fragment instanceof RecordListFragment || fragment instanceof RecordFragment) {
+        if(fragment instanceof RecordListFragment) {
             transaction.addToBackStack(fragment.getClass().getSimpleName());
         }
         transaction.commit();
@@ -306,13 +301,6 @@ public class ZBformMain extends BaseActivity implements OnFragmentChangeListener
 
     @Override
     public void onRecordFragmentSelect(String formId, String recordId, String recordCode, int page) {
-        mCurrentFragmet = new RecordFragment();
-        Bundle bundle = new Bundle();
-        bundle.putString("formId", formId);
-        bundle.putString("recordId", recordId);
-        bundle.putInt("page",page);
-        mCurrentFragmet.setArguments(bundle);
-        selectFragment(mCurrentFragmet);
-        setmTootBarTitle(recordCode);
+
     }
 }
