@@ -161,6 +161,7 @@ public class ZBFormService extends Service {
                     xoff <= (item.getLocaX() + item.getLocaW()) &&
                     yoff <= (item.getLocaY() + item.getLocaH())){
                 id = item.getItem();
+                Log.i(TAG,"form item id: "+id);
                 break;
             }
 

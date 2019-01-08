@@ -1,5 +1,6 @@
 package com.zbform.penform.fragment;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -33,6 +34,7 @@ import com.pullrefresh.loadmore.OnLoadMoreListener;
 import com.zbform.penform.R;
 import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.activity.FormDrawActivity;
+import com.zbform.penform.activity.RecordListActivity;
 import com.zbform.penform.json.FormListInfo;
 import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.task.FormListTask;
@@ -55,14 +57,13 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
     private int page = 0;
     private Context mContext;
     private BitmapUtils mBitmapUtils;
+    @SuppressLint("ResourceAsColor")
     private static final ColorDrawable TRANSPARENT_DRAWABLE = new ColorDrawable(android.R.color.transparent);
-    private OnFragmentChangeListener mFragmentChangeCallBack;
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
         mContext = context;
         Log.i(TAG, "onAttach, set fragment change listener");
-        mFragmentChangeCallBack = (OnFragmentChangeListener) context;
     }
 
     @Override
@@ -243,7 +244,11 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
                     ChildViewHolder viewHolder = (ChildViewHolder)v.getTag();
                     String formId = viewHolder.formItem.getUuid();
                     Log.i(TAG, "form onclick formId = " + formId);
-                    mFragmentChangeCallBack.onRecordListFragmentSelect(formId);
+
+                    Intent intent = new Intent(mContext, RecordListActivity.class);
+                    intent.putExtra("formId", formId);
+                    startActivity(intent);
+                    //mFragmentChangeCallBack.onRecordListFragmentSelect(formId);
                 }
 
             }

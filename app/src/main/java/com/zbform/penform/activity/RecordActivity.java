@@ -47,7 +47,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     ActionBar mActionBar;
     ImageView mRecordImg;
 
-    Bitmap mFormImg;
     Path mPath = new Path();
     float mScaleX = 0.1929f;
     float mScaleY = 0.23457f;

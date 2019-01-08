@@ -59,6 +59,11 @@
             android:theme="@style/FormImgThem">
         </activity>
         <activity
+            android:name="com.zbform.penform.activity.RecordListActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/FormImgThem">
+        </activity>
+        <activity
             android:name="com.zbform.penform.activity.SettingActivity"
             android:screenOrientation="portrait"
             android:label="@string/menu_item_setting"
