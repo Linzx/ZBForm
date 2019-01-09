@@ -559,4 +559,7 @@ public class ZBFormBlePenManager {
         return BlePenManager.getInstance().isConnected(mBleDevice);
     }
 
+    public Bitmap getDrawBitmap(){
+        return mBitmap;
+    }
 }

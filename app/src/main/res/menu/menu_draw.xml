@@ -8,17 +8,17 @@
         android:title="@string/menu_item_add_record"
         app:showAsAction="ifRoom" />
 
+    <item
+        android:id="@+id/img_pre"
+        android:icon="@drawable/verticalright"
+        android:orderInCategory="1"
+        android:title="@string/menu_item_pre"
+        app:showAsAction="ifRoom" />
 
-    <!--<item-->
-    <!--android:id="@+id/action_exit"-->
-    <!--app:showAsAction="ifRoom"-->
-    <!--android:title="@string/exit">-->
-    <!--</item>-->
-    <!--<item android:id="@+id/action_connect"-->
-    <!--android:title="建立蓝牙连接"-->
-    <!--android:orderInCategory="100"  />-->
-
-    <!--<item android:id="@+id/action_show_bluetooth"-->
-    <!--android:title="让本设备可见"-->
-    <!--android:orderInCategory="100" />-->
+    <item
+        android:id="@+id/img_next"
+        android:icon="@drawable/verticalleft"
+        android:orderInCategory="1"
+        android:title="@string/menu_item_next"
+        app:showAsAction="ifRoom" />
 </menu>

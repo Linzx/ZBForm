@@ -194,8 +194,9 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
 
 
             String url = ApiAddress.getFormImgUri(ZBformApplication.getmLoginUserId(),
-                    ZBformApplication.getmLoginUserId(),item.getUuid(),item.getPage());
+                    ZBformApplication.getmLoginUserId(),item.getUuid(),1);
             holder.url = url;
+            //缩略图显示第一页
             Glide.with(mContext).load(url).crossFade().thumbnail(0.2f).into(holder.itemImg);
 //            mBitmapUtils.display(holder.itemImg,url,new CustomBitmapLoadCallBack(holder));
         }
@@ -232,9 +233,9 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
             if(v.getId() == R.id.item_content) {
                 if (v.getTag() == null) return;
                 ChildViewHolder holder = (ChildViewHolder) v.getTag();
-                Log.i("whd", "item=" + holder.formItem.getName());
+                Log.i(TAG, "item=" + holder.formItem.getName());
                 Intent intent = new Intent(mContext, FormDrawActivity.class);
-                intent.putExtra("info",holder.url);
+                intent.putExtra("page",holder.formItem.getPage());
                 intent.putExtra("formid",holder.formItem.getUuid());
                 intent.putExtra("formname",holder.formItem.getName().replace(".pdf",""));
                 startActivity(intent);
@@ -252,38 +253,6 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
                 }
 
             }
-        }
-    }
-
-    public class CustomBitmapLoadCallBack extends DefaultBitmapLoadCallBack<ImageView> {
-        private final ChildViewHolder holder;
-
-        public CustomBitmapLoadCallBack(ChildViewHolder holder) {
-            this.holder = holder;
-        }
-
-        @Override
-        public void onLoading(ImageView container, String uri, BitmapDisplayConfig config, long total, long current) {
-//            this.holder.imgPb.setProgress((int) (current * 100 / total));
-        }
-
-        @Override
-        public void onLoadCompleted(ImageView container, String uri, Bitmap bitmap, BitmapDisplayConfig config, BitmapLoadFrom from) {
-            //super.onLoadCompleted(container, uri, bitmap, config, from);
-            //override super, handle pic self
-            holder.formBitmap = bitmap;
-            fadeInDisplay(container, bitmap);
-//            this.holder.imgPb.setProgress(100);
-        }
-
-        private void fadeInDisplay(ImageView imageView, Bitmap bitmap) {
-            final TransitionDrawable transitionDrawable =
-                    new TransitionDrawable(new Drawable[]{
-                            TRANSPARENT_DRAWABLE,
-                            new BitmapDrawable(imageView.getResources(), bitmap)
-                    });
-            imageView.setImageDrawable(transitionDrawable);
-            transitionDrawable.startTransition(500);
         }
     }
 

@@ -24,6 +24,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
@@ -32,34 +33,46 @@ import com.zbform.penform.R;
 import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.json.FormInfo;
+import com.zbform.penform.json.FormItem;
+import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.services.ZBFormService;
 import com.zbform.penform.task.FormTask;
 import com.zbform.penform.task.NewFormRecordTask;
 
+import java.util.HashMap;
+
 public class FormDrawActivity extends BaseActivity {
     private static final String TAG = "FormDrawActivity";
+    private static final int PRE_IMG = 1;
+    private static final int NEXT_IMG = 2;
+
     private static final ColorDrawable TRANSPARENT_DRAWABLE = new ColorDrawable(android.R.color.transparent);
     private FormInfo mFormInfo;
-    private String url;
+    private int mCurrentPage = 1;
+    private int mPage;
     private String mFormID;
     private String mFormName;
+    private HashMap<Integer,Bitmap> mCacheImg = new HashMap<Integer,Bitmap>();
     private ImageView mImgView;
-    private ProgressBar progressBar;
+    private ProgressBar mProgressBar;
     private FormTask mFromTask;
     private NewFormRecordTask mNewRecordTask;
     private ZBFormService mService;
     private ActionBar mActionBar;
+    private ZBFormBlePenManager mZBFormBlePenManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.formimg_activity);
-        url = getIntent().getStringExtra("info");
+//        url = getIntent().getStringExtra("info");
+        mZBFormBlePenManager = ZBFormBlePenManager.getInstance(FormDrawActivity.this);
+        mPage = getIntent().getIntExtra("page",1);
         mFormID = getIntent().getStringExtra("formid");
         mFormName = getIntent().getStringExtra("formname");
         mImgView = (ImageView) findViewById(R.id.form_img);
-        progressBar = (ProgressBar) findViewById(R.id.progress_img);
+        mProgressBar = (ProgressBar) findViewById(R.id.progress_img);
         setToolBar();
 
         getFormImg();
@@ -83,7 +96,7 @@ public class FormDrawActivity extends BaseActivity {
 
         @Override
         public void onStartGet() {
-            progressBar.setVisibility(View.VISIBLE);
+            mProgressBar.setVisibility(View.VISIBLE);
         }
 
         @Override
@@ -92,11 +105,16 @@ public class FormDrawActivity extends BaseActivity {
             mNewRecordTask.execute(FormDrawActivity.this,mFormID);
             mNewRecordTask.setOnNewFormTaskListener(mNewRecordListener);
             mFormInfo = form;
+            for (int i = 0;i < mFormInfo.results[0].items.length; i++) {
+                FormItem item = mFormInfo.results[0].items[i];
+                Log.i(TAG, "item=" + item.getItem() +",fieldName="+item.getFieldName()+",page="+
+                item.getPage());
+            }
         }
 
         @Override
         public void onGetFail() {
-            progressBar.setVisibility(View.INVISIBLE);
+            mProgressBar.setVisibility(View.INVISIBLE);
 
         }
     };
@@ -111,7 +129,7 @@ public class FormDrawActivity extends BaseActivity {
         @Override
         public void onNewSuccess(String uuid) {
 
-            progressBar.setVisibility(View.INVISIBLE);
+            mProgressBar.setVisibility(View.INVISIBLE);
             if (mService != null){
                 mService.setDrawFormInfo(mFormInfo, uuid);
                 mService.startRecordCoord();
@@ -121,16 +139,16 @@ public class FormDrawActivity extends BaseActivity {
 
         @Override
         public void onNewFail() {
-            progressBar.setVisibility(View.INVISIBLE);
+            mProgressBar.setVisibility(View.INVISIBLE);
 
         }
     };
 
     private void getFormImg() {
         try {
-            Log.i("whd", "getimg url=" + url);
+            mProgressBar.setVisibility(View.VISIBLE);
             Glide.with(this)
-                    .load(url)
+                    .load(getUrl())
                     .asBitmap()
                     .into(mOriginTarget);
         } catch (Exception e) {
@@ -154,6 +172,13 @@ public class FormDrawActivity extends BaseActivity {
         }
     };
 
+    private String getUrl() {
+        if (mCurrentPage < 0 || mCurrentPage > mPage) {
+            mCurrentPage = 1;
+        }
+        return ApiAddress.getFormImgUri(ZBformApplication.getmLoginUserId(),
+                ZBformApplication.getmLoginUserId(), mFormID, mCurrentPage);
+    }
 
     public void computeBitmapSize(Bitmap bitmap, ImageView image) {
         DisplayMetrics displayMetrics = new DisplayMetrics();
@@ -201,6 +226,40 @@ public class FormDrawActivity extends BaseActivity {
 
     }
 
+    private void switchPages(int action) {
+        if (action == PRE_IMG && mCurrentPage == 1) {
+            Toast.makeText(this, this.getResources().getString(R.string.toast_already_first), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (action == NEXT_IMG && mCurrentPage == mPage) {
+            Toast.makeText(this, this.getResources().getString(R.string.toast_already_last), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Log.i(TAG,"mpage="+mPage);
+        mCacheImg.put(mCurrentPage, mZBFormBlePenManager.getDrawBitmap());
+        Log.i(TAG,"mCurrentPage1="+mCurrentPage);
+        if (action == PRE_IMG) {
+            if (mCurrentPage > 1) {
+                mCurrentPage -= 1;
+            }
+        } else if (action == NEXT_IMG) {
+            if (mCurrentPage < mPage) {
+                mCurrentPage += 1;
+            }
+        }
+        Log.i(TAG,"mCurrentPage2="+mCurrentPage);
+        if (mCacheImg.containsKey(mCurrentPage)) {
+            Log.i(TAG,"mCurrentPage3");
+            Bitmap cache = mCacheImg.get(mCurrentPage);
+            mImgView.setImageBitmap(cache);
+
+            mZBFormBlePenManager.setDrawView(mImgView, cache, cache.getWidth(), cache.getHeight());
+        } else {
+            Log.i(TAG,"mCurrentPage4");
+            getFormImg();
+        }
+    }
+
     class BitmapTask extends AsyncTask<Integer, Void, Bitmap> {
         private int mWidth;
         private int mHeight;
@@ -216,7 +275,7 @@ public class FormDrawActivity extends BaseActivity {
             Bitmap scaleImg = null;
             try {
                 scaleImg = Glide.with(FormDrawActivity.this)
-                        .load(url)
+                        .load(getUrl())
                         .asBitmap()
                         .into(mWidth, mHeight)
                         .get();
@@ -236,13 +295,8 @@ public class FormDrawActivity extends BaseActivity {
                 Log.i("whd", "scalbitmap H=" + bitmap.getHeight());
                 mImgView.setImageBitmap(bitmap);
 
-                progressBar.setVisibility(View.INVISIBLE);
-//        if (bitmap != null && bitmap.isRecycled()) {
-//            bitmap.recycle();
-//        }
-                ZBFormBlePenManager manager = ZBFormBlePenManager.getInstance(FormDrawActivity.this);
-
-                manager.setDrawView(mImgView, bitmap, bitmap.getWidth(), bitmap.getHeight());
+                mProgressBar.setVisibility(View.INVISIBLE);
+                mZBFormBlePenManager.setDrawView(mImgView, bitmap, bitmap.getWidth(), bitmap.getHeight());
             } else {
                 Log.i("whd", "bitmap! null");
             }
@@ -285,6 +339,12 @@ public class FormDrawActivity extends BaseActivity {
                 mFromTask = new FormTask();
                 mFromTask.setOnFormTaskListener(mFormTaskListener);
                 mFromTask.execute(FormDrawActivity.this, mFormID);
+                return true;
+            case R.id.img_pre:
+                switchPages(PRE_IMG);
+                return true;
+            case R.id.img_next:
+                switchPages(NEXT_IMG);
                 return true;
             default:
                 break;

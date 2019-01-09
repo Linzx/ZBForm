@@ -32,6 +32,10 @@
     <string name="title_record_list">表单记录列表</string>
 
     <string name="menu_item_add_record">创建表单记录</string>
+    <string name="menu_item_pre">前一页</string>
+    <string name="menu_item_next">下一页</string>
+    <string name="toast_already_first">已经是第一页!</string>
+    <string name="toast_already_last">已经是最后一页!</string>
 
     <string name="menu_item_connect">数码笔已链接</string>
     <string name="menu_item_disconnect">数码笔未链接</string>
