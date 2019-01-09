@@ -326,6 +326,19 @@ public class FormDrawActivity extends BaseActivity {
 
         getMenuInflater().inflate(R.menu.menu_draw, menu);
 
+        MenuItem pre = menu.findItem(R.id.img_pre);
+        MenuItem next = menu.findItem(R.id.img_next);
+
+        if (pre != null && next != null) {
+            if (mPage > 1) {
+                pre.setVisible(true);
+                next.setVisible(true);
+            } else {
+                pre.setVisible(false);
+                next.setVisible(false);
+            }
+        }
+
         return super.onCreateOptionsMenu(menu);
     }
 
