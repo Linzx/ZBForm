@@ -10,10 +10,12 @@ import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
@@ -22,21 +24,33 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.zbform.penform.R;
 import com.zbform.penform.ZBformApplication;
+import com.zbform.penform.json.FormInfo;
+import com.zbform.penform.json.FormItem;
 import com.zbform.penform.json.HwData;
 import com.zbform.penform.json.Point;
 import com.zbform.penform.json.RecordDataItem;
 import com.zbform.penform.json.RecordInfo;
 import com.zbform.penform.net.ApiAddress;
+import com.zbform.penform.task.FormTask;
 import com.zbform.penform.task.RecordTask;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class RecordActivity extends BaseActivity implements RecordTask.OnTaskListener {
 
     public static final String TAG = RecordActivity.class.getSimpleName();
 
+    private static final int PRE_IMG = 1;
+    private static final int NEXT_IMG = 2;
+
+    private int mCurrentPage = 1;
+    private HashMap<Integer, Bitmap> mCacheImg = new HashMap<Integer, Bitmap>();
+
     private static List<RecordInfo.Results> recordResults = new ArrayList<>();
+    private List<RecordDataItem> mCurrentItems = new ArrayList<>();
     private RecordTask mTask;
     private String mFormId;
     private String mRecordId;
@@ -46,10 +60,14 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     ProgressBar mProgressBar;
     ActionBar mActionBar;
     ImageView mRecordImg;
+    Bitmap mRecordBitmapImg;
 
     Path mPath = new Path();
     float mScaleX = 0.1929f;
     float mScaleY = 0.23457f;
+
+    private FormTask mFormTask;
+    private FormInfo mFormInfo = null;
 
     private Context mContext;
 
@@ -67,12 +85,13 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         mRecordId = getIntent().getStringExtra("recordId");
         mPage = getIntent().getIntExtra("page", 0);
         mRecordCode = getIntent().getStringExtra("recordCode");
-        Log.i(TAG, "form id = " + mFormId + "  record id = " + mRecordId + "  page = " + mPage + "  record code = "+mRecordCode);
+        Log.i(TAG, "form id = " + mFormId + "  record id = " + mRecordId + "  page = " + mPage + "  record code = " + mRecordCode);
 
         setToolBar();
 
         initData();
     }
+
     private void setToolBar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -83,10 +102,38 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
 
     private void initData() {
-        // 获取对应的表单记录数据
         mTask = new RecordTask(mContext, mFormId, mRecordId);
         mTask.setTaskListener(this);
-        mTask.getRecord();
+        if (mPage > 1) {
+            // 获取表单，为了查询form item
+            mFormTask = new FormTask();
+            mFormTask.setOnFormTaskListener(mFormTaskListener);
+            mFormTask.execute(mContext, mFormId);
+        } else {
+            // 获取对应的表单记录数据
+            mTask.getRecord();
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(final Menu menu) {
+
+        getMenuInflater().inflate(R.menu.menu_page, menu);
+
+        MenuItem pre = menu.findItem(R.id.img_pre);
+        MenuItem next = menu.findItem(R.id.img_next);
+
+        if (pre != null && next != null) {
+            if (mPage > 1) {
+                pre.setVisible(true);
+                next.setVisible(true);
+            } else {
+                pre.setVisible(false);
+                next.setVisible(false);
+            }
+        }
+
+        return super.onCreateOptionsMenu(menu);
     }
 
     @Override
@@ -94,6 +141,17 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         switch (item.getItemId()) {
             case android.R.id.home:
                 finish();
+                return true;
+            case R.id.img_pre:
+                switchPages(PRE_IMG);
+                return true;
+            case R.id.img_next:
+                if (mFormInfo == null) {
+                    mFormTask = new FormTask();
+                    mFormTask.setOnFormTaskListener(mFormTaskListener);
+                    mFormTask.execute(mContext, mFormId);
+                }
+                switchPages(NEXT_IMG);
                 return true;
             default:
                 break;
@@ -112,10 +170,72 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         Log.i(TAG, "onTaskSuccess()");
 
         // 获取Form 表单的图片，准备合成
-        String url = ApiAddress.getFormImgUri(ZBformApplication.getmLoginUserId(), ZBformApplication.getmLoginUserKey(), mFormId, mPage);
-        getFormImg(url);
-
+        getFormImg(getUrl());
     }
+
+    private List<RecordDataItem> getCurrentItems() {
+        if (mPage == 1 && recordResults != null && recordResults.size() > 0) {
+            return Arrays.asList(recordResults.get(0).getItems());
+        }
+        List<RecordDataItem> itemList = new ArrayList<>();
+        if (recordResults.size() > 0) {
+            RecordDataItem[] items = recordResults.get(0).getItems();
+            for (RecordDataItem item : items) {
+
+                String itemId = item.getItemcode();
+                for (FormItem formItem : mFormInfo.results[0].getItems()) {
+                    int p = formItem.getPage();
+                    if (mCurrentPage == p && itemId.equals(formItem.getItem())) {
+                        itemList.add(item);
+                    }
+                }
+            }
+        }
+        return itemList;
+    }
+
+    private String getUrl() {
+        if (mCurrentPage < 0 || mCurrentPage > mPage) {
+            mCurrentPage = 1;
+        }
+        return ApiAddress.getFormImgUri(ZBformApplication.getmLoginUserId(),
+                ZBformApplication.getmLoginUserId(), mFormId, mCurrentPage);
+    }
+
+    private void switchPages(int action) {
+        if (action == PRE_IMG && mCurrentPage == 1) {
+            Toast.makeText(this, this.getResources().getString(R.string.toast_already_first), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (action == NEXT_IMG && mCurrentPage == mPage) {
+            Toast.makeText(this, this.getResources().getString(R.string.toast_already_last), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Log.i(TAG, "page size = " + mPage);
+        if (!mCacheImg.containsKey(mCurrentPage)) {
+            mCacheImg.put(mCurrentPage, mRecordBitmapImg);
+        }
+        Log.i(TAG, "Current Page = " + mCurrentPage);
+        if (action == PRE_IMG) {
+            if (mCurrentPage > 1) {
+                mCurrentPage -= 1;
+            }
+        } else if (action == NEXT_IMG) {
+            if (mCurrentPage < mPage) {
+                mCurrentPage += 1;
+            }
+        }
+        if (mCacheImg.containsKey(mCurrentPage)) {
+            Log.i(TAG, "use cache img");
+            Bitmap cache = mCacheImg.get(mCurrentPage);
+            mRecordImg.setImageBitmap(cache);
+        } else {
+            Log.i(TAG, "get new page img");
+
+            getFormImg(getUrl());
+        }
+    }
+
 
     @Override
     public void onTaskFail() {
@@ -125,6 +245,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
     private void getFormImg(String url) {
         try {
+            mProgressBar.setVisibility(View.VISIBLE);
             Glide.with(RecordActivity.this)
                     .load(url)
                     .asBitmap()
@@ -149,7 +270,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         @Override
         protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
             Log.i(TAG, "transform， outWidth = " + outWidth + "   outHeight = " + outHeight);
-            Log.i(TAG, "bitmapp width = "+toTransform.getWidth() +"  height = "+toTransform.getHeight());
+            Log.i(TAG, "bitmapp width = " + toTransform.getWidth() + "  height = " + toTransform.getHeight());
             int width = toTransform.getWidth();
             int height = toTransform.getHeight();
             Canvas canvas = new Canvas(toTransform);
@@ -164,17 +285,18 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             paint.setFilterBitmap(true);
 
             //计算scale
-            if(width > height) {
-                mScaleX = (float)width / 7920f;
-                mScaleY = (float)height / 5600f;
+            if (width > height) {
+                mScaleX = (float) width / 7920f;
+                mScaleY = (float) height / 5600f;
             } else {
-                mScaleY = (float)height / 7920f;
-                mScaleX = (float)width / 5600f;
+                mScaleY = (float) height / 7920f;
+                mScaleX = (float) width / 5600f;
             }
 
-            if (recordResults.size() > 0) {
-                RecordDataItem[] items = recordResults.get(0).getItems();
-                for (RecordDataItem item : items) {
+            mCurrentItems = getCurrentItems();
+
+            if (mCurrentItems.size() > 0) {
+                for (RecordDataItem item : mCurrentItems) {
 
                     HwData hwData = new Gson().fromJson(item.getHwdata(), new TypeToken<HwData>() {
                     }.getType());
@@ -186,6 +308,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
 
             canvas.drawPath(mPath, paint);
+            mRecordBitmapImg = toTransform;
             mPath.reset();
             return toTransform;
 
@@ -210,4 +333,28 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             return "com.zbform.penform.RecordImgTransformation";
         }
     }
+
+    private FormTask.OnFormTaskListener mFormTaskListener = new FormTask.OnFormTaskListener() {
+
+        @Override
+        public void onStartGet() {
+            mProgressBar.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        public void onGetSuccess(FormInfo form) {
+            mFormInfo = form;
+            mTask.getRecord();
+            for (int i = 0; i < mFormInfo.results[0].items.length; i++) {
+                FormItem item = mFormInfo.results[0].items[i];
+                Log.i(TAG, "item=" + item.getItem() + ",fieldName=" + item.getFieldName() + ",page=" +
+                        item.getPage());
+            }
+        }
+
+        @Override
+        public void onGetFail() {
+            mProgressBar.setVisibility(View.INVISIBLE);
+        }
+    };
 }

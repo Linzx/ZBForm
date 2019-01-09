@@ -6,6 +6,7 @@ public class RecordDataItem {
     public String form;
     public String record;
     public String hwdata;
+    public String itemcode;
 
     public String getCode() {
         return code;
@@ -37,5 +38,13 @@ public class RecordDataItem {
 
     public void setHwdata(String hwdata) {
         this.hwdata = hwdata;
+    }
+
+    public String getItemcode() {
+        return itemcode;
+    }
+
+    public void setItemcode(String itemcode) {
+        this.itemcode = itemcode;
     }
 }
