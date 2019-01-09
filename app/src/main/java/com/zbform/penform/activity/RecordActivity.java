@@ -1,5 +1,6 @@
 package com.zbform.penform.activity;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -80,7 +81,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         mContext = this;
         mRecordImg = findViewById(R.id.record_img);
         mProgressBar = findViewById(R.id.progress_img);
-
         mFormId = getIntent().getStringExtra("formId");
         mRecordId = getIntent().getStringExtra("recordId");
         mPage = getIntent().getIntExtra("page", 0);
@@ -251,7 +251,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                     .asBitmap()
                     .transform(new RecordImgTransformation(mContext))
                     .into(mRecordImg);
-            mProgressBar.setVisibility(View.INVISIBLE);
             //.get();
         } catch (Exception e) {
             Log.i(TAG, "load bitmap ex=" + e.getMessage());
@@ -310,6 +309,12 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             canvas.drawPath(mPath, paint);
             mRecordBitmapImg = toTransform;
             mPath.reset();
+            ((Activity)mContext).runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mProgressBar.setVisibility(View.INVISIBLE);
+                }
+            });
             return toTransform;
 
         }
