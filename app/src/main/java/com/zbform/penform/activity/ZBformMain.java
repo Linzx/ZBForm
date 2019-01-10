@@ -211,6 +211,10 @@ public class ZBformMain extends BaseActivity {
                 drawerLayout.openDrawer(Gravity.LEFT);
                 return true;
 
+            case R.id.pen_connect:
+                Intent intent = new Intent(this, PenManagerActivity.class);
+                startActivity(intent);
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }

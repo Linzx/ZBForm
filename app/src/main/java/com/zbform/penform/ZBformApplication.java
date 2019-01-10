@@ -52,7 +52,7 @@ public class ZBformApplication extends Application {
         }
         // refWatcher = LeakCanary.install(this);
         //       LeakCanary.install(this);
-        initCatchException();
+//        initCatchException();
 
         mDB = DbUtils.create(this, "zbform.db");
         mDB.configAllowTransaction(true);
