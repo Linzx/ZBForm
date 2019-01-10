@@ -33,6 +33,7 @@ import com.zbform.penform.db.ZBStrokeEntity;
 import com.zbform.penform.handler.HandlerUtil;
 import com.zbform.penform.json.FormInfo;
 import com.zbform.penform.json.FormItem;
+import com.zbform.penform.json.FormListInfo;
 import com.zbform.penform.json.HwData;
 import com.zbform.penform.json.Point;
 import com.zbform.penform.json.UpLoadStrokeinfo;
@@ -55,10 +56,12 @@ public class ZBFormService extends Service {
 
     private static final int UPLOAD_DELAY = 8 * 1000; //8s
     private Context mContext;
+    private List<FormListInfo.Results> mFormList;
     private FormInfo mDrawFormInfo;
     private String mRecordId;
     private boolean mStopRecordCoord = false;
     private int mCurrentPage = 1;
+    private String mPageAddress ="0.0.0.0";
     //    private Executor mExecutor = Executors.newCachedThreadPool();
     private IntentFilter mIntentFilter;
     private NetworkChangeReceiver mNetworkChangeReceiver;
@@ -94,6 +97,9 @@ public class ZBFormService extends Service {
         @Override
         public void onPenUp() {
             //penup 一个笔画结束，开始存储
+            if (!ZBformApplication.sBlePenManager.getCanDraw()){
+                return;
+            }
             long endTime = System.currentTimeMillis();
             int c = (int) (endTime - mBeginTime);//一个笔画的耗时
             mStroke.setC(c);
@@ -106,6 +112,18 @@ public class ZBFormService extends Service {
 
         @Override
         public void onCoordDraw(String pageAddress, int nX, int nY) {
+            if (!TextUtils.isEmpty(pageAddress)) {
+                if (!"0.0.0.0".equals(pageAddress) &&
+                        !mPageAddress.equals(pageAddress)) {
+                    Log.i(TAG, "onCoordDraw START=");
+                    FormListInfo.Results form = findPageForm(pageAddress);
+                    startPageFormActivity(form);
+                }
+                mPageAddress = pageAddress;
+            }
+            if (!ZBformApplication.sBlePenManager.getCanDraw()){
+                return;
+            }
             mStroke.setP(pageAddress);
             Point point = new Point();
             point.setX(nX);
@@ -117,7 +135,32 @@ public class ZBFormService extends Service {
 
         @Override
         public void onOffLineCoordDraw(String pageAddress, int nX, int nY) {
+            if (!ZBformApplication.sBlePenManager.getCanDraw()){
+                return;
+            }
+        }
 
+        private FormListInfo.Results findPageForm(String address){
+            FormListInfo.Results formTarget = null;
+
+            for(FormListInfo.Results form : mFormList){
+                if (form.getRinit().equals(address)){
+                    formTarget = form;
+                    break;
+                }
+            }
+
+            return formTarget;
+        }
+
+        private void startPageFormActivity(FormListInfo.Results form){
+            if (form == null) return;
+            Intent intent = new Intent(mContext, FormDrawActivity.class);
+            intent.putExtra("page",form.getPage());
+            intent.putExtra("pageaddress",form.getRinit());
+            intent.putExtra("formid",form.getUuid());
+            intent.putExtra("formname",form.getName().replace(".pdf",""));
+            startActivity(intent);
         }
     }
 
@@ -581,5 +624,14 @@ public class ZBFormService extends Service {
 
     public void setCurrentPage(int page) {
         mCurrentPage = page;
+    }
+
+    public void setFormList(List<FormListInfo.Results> list){
+        mFormList = list;
+    }
+
+
+    public void setCurrentPageAddress(String page){
+        mPageAddress = page;
     }
 }

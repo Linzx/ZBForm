@@ -59,7 +59,7 @@ public class ZBFormBlePenManager {
     private String mBleDeviceName;
     private BlePenStreamCallback mBlePenStreamCallback;
     private String writeString;
-    private boolean openStandardMode;
+    private boolean mCanDraw = false;
 
     //    private ImageView imgHold;
 
@@ -161,6 +161,7 @@ public class ZBFormBlePenManager {
         mBleDeviceMac = mBleDevice.getMac();
         initBlePenStream();
         BlePenStreamManager.getInstance().getPenInfo();
+        BlePenStreamManager.getInstance().setStandMode();
     }
 
     public void setDrawView(ImageView view, Bitmap bitmap, int width, int height) {
@@ -175,10 +176,12 @@ public class ZBFormBlePenManager {
     }
 
     public void startDraw(){
+        mCanDraw = true;
         BlePenStreamManager.getInstance().setStandMode();
     }
 
     public void stopDraw(){
+        mCanDraw = false;
         BlePenStreamManager.getInstance().setHoverMode();
     }
 
@@ -243,22 +246,29 @@ public class ZBFormBlePenManager {
                     case PEN_DOWN_MESSAGE:
                         writeString = "down";
                         synchronized (mSyncObject) {
-                            mStreamingController.penDown();
+                            if (mStreamingController != null) {
+                                mStreamingController.penDown();
+                            }
                             if (mIBlePenDrawCallBack != null) {
                                 mIBlePenDrawCallBack.onPenDown();
                             }
+                            Log.i("whd", "PEN_DOWN_MESSAGE pageAddress="+pageAddress);
                         }
                         break;
                     case PEN_COODINAT_MESSAGE:
                         writeString = "move";
                         synchronized (mSyncObject) {
                             if (nX > 0 && nY > 0 && nForce > 0) {
-                                mStreamingController.addCoordinate(nX, nY, nForce, pageAddress);
-                                if (mIBlePenDrawCallBack != null) {
-                                    mIBlePenDrawCallBack.onCoordDraw(mPageAddress,nX,nY);
+                                if (mStreamingController != null) {
+                                    mStreamingController.addCoordinate(nX, nY, nForce, pageAddress);
                                 }
                             }
+
+                            if (mIBlePenDrawCallBack != null) {
+                                mIBlePenDrawCallBack.onCoordDraw(pageAddress,nX,nY);
+                            }
                         }
+
                         Log.i("whd", "onCoordDraw pageAddress="+pageAddress);
                         if (!TextUtils.isEmpty(pageAddress)) {
                             if (!"0.0.0.0".equals(mPageAddress) && !mPageAddress.equals(pageAddress)) {
@@ -267,12 +277,13 @@ public class ZBFormBlePenManager {
                             }
                             mPageAddress = pageAddress;
                         }
-
                         break;
                     case PEN_UP_MESSAGE:
                         writeString = " up ";
                         synchronized (mSyncObject) {
-                            mStreamingController.penUp();
+                            if (mStreamingController != null) {
+                                mStreamingController.penUp();
+                            }
                             if (mIBlePenDrawCallBack != null) {
                                 mIBlePenDrawCallBack.onPenUp();
                             }
@@ -285,7 +296,9 @@ public class ZBFormBlePenManager {
 
                 Log.i("whd", "onCoordDraw2");
 
-                drawBitmap();
+                if (mCanDraw) {
+                    drawBitmap();
+                }
                 Log.d(TAG, "onCoordDraw: " + writeString);
             }
 
@@ -297,17 +310,21 @@ public class ZBFormBlePenManager {
                     case PEN_DOWN_MESSAGE:
                         writeString = "outline down";
                         synchronized (mSyncObject) {
-                            mStreamingController.penDown();
+                            if (mStreamingController != null) {
+                                mStreamingController.penDown();
+                            }
                         }
                         break;
                     case PEN_COODINAT_MESSAGE:
                         writeString = "outline move";
                         synchronized (mSyncObject) {
                             if (nX > 0 && nY > 0 && nForce > 0) {
-                                mStreamingController.addCoordinate(nX, nY, nForce, pageAddress);
-                                if (mIBlePenDrawCallBack != null) {
-                                    mIBlePenDrawCallBack.onOffLineCoordDraw(mPageAddress,nX,nY);
+                                if (mStreamingController != null) {
+                                    mStreamingController.addCoordinate(nX, nY, nForce, pageAddress);
                                 }
+                            }
+                            if (mIBlePenDrawCallBack != null) {
+                                mIBlePenDrawCallBack.onOffLineCoordDraw(pageAddress,nX,nY);
                             }
                         }
                         if (!TextUtils.isEmpty(pageAddress)) {
@@ -321,14 +338,18 @@ public class ZBFormBlePenManager {
                     case PEN_UP_MESSAGE:
                         writeString = "outline  up ";
                         synchronized (mSyncObject) {
-                            mStreamingController.penUp();
+                            if (mStreamingController != null) {
+                                mStreamingController.penUp();
+                            }
                         }
                         break;
                     default:
                         writeString = "outline  up ";
                 }
                 Log.i("whd", "onOffLineCoordDraw2");
-                drawBitmap();
+                if (mCanDraw) {
+                    drawBitmap();
+                }
 
             }
 
@@ -484,7 +505,9 @@ public class ZBFormBlePenManager {
     private synchronized void drawBitmap() {
         Path path = null;
         Paint paint = null;
-
+        if (mStreamingController == null) {
+            return;
+        }
         if (mBitmap != null) {
             mImageView.setImageBitmap(mBitmap);
         }
@@ -561,5 +584,9 @@ public class ZBFormBlePenManager {
 
     public Bitmap getDrawBitmap(){
         return mBitmap;
+    }
+
+    public boolean getCanDraw(){
+        return mCanDraw;
     }
 }

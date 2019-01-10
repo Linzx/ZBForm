@@ -48,6 +48,7 @@ public class FormDrawActivity extends BaseActivity {
     private FormInfo mFormInfo;
     private int mCurrentPage = 1;
     private int mPage;
+    private String mPageAddress;
     private String mFormID;
     private String mFormName;
     private HashMap<Integer, Bitmap> mCacheImg = new HashMap<Integer, Bitmap>();
@@ -63,19 +64,38 @@ public class FormDrawActivity extends BaseActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        Log.i(TAG,"onCreate");
         setContentView(R.layout.formimg_activity);
         mZBFormBlePenManager = ZBFormBlePenManager.getInstance(FormDrawActivity.this);
-        mPage = getIntent().getIntExtra("page", 1);
-        mFormID = getIntent().getStringExtra("formid");
-        mFormName = getIntent().getStringExtra("formname");
+
         mImgView = (ImageView) findViewById(R.id.form_img);
         mProgressBar = (ProgressBar) findViewById(R.id.progress_img);
         setToolBar();
 
+        initFormData(getIntent());
         getFormImg();
 
         Intent intent = new Intent(this, ZBFormService.class);
         bindService(intent, conn, Service.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        Log.i(TAG,"onNewIntent");
+        initFormData(intent);
+        getFormImg();
+    }
+
+    private void initFormData(Intent intent){
+        if (intent != null) {
+            mCurrentPage = 1;
+            mCacheImg.clear();
+            mPage = intent.getIntExtra("page", 1);
+            mPageAddress = intent.getStringExtra("pageaddress");
+            mFormID = intent.getStringExtra("formid");
+            mFormName = intent.getStringExtra("formname");
+        }
     }
 
     ServiceConnection conn = new ServiceConnection() {
@@ -83,6 +103,7 @@ public class FormDrawActivity extends BaseActivity {
             Log.d(TAG, "onServiceConnected");
             ZBFormService.LocalBinder binder = (ZBFormService.LocalBinder) service;
             mService = binder.getService();
+            mService.setCurrentPageAddress(mPageAddress);
         }
 
         public void onServiceDisconnected(ComponentName name) {
@@ -132,7 +153,7 @@ public class FormDrawActivity extends BaseActivity {
                 ZBformApplication.sBlePenManager.startDraw();
             }
             Toast.makeText(FormDrawActivity.this,FormDrawActivity.this.getResources().getString(R.string.toast_new_record),
-                    Toast.LENGTH_SHORT);
+                    Toast.LENGTH_SHORT).show();
         }
 
         @Override
