@@ -479,7 +479,7 @@ public class ZBFormService extends Service {
                     if (upInfo.header.getErrorCode().equals(ErrorCode.RESULT_OK)) {
 
                         //上传成功，删除本地数据
-//                        new UpdateDBTask(mInnerItem).execute();
+                        new UpdateDBTask(mInnerItem).execute();
 
                         //上传失败，回压进queue,重试直到成功
                     } else {
