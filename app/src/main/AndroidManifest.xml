@@ -51,6 +51,7 @@
         <activity
             android:name="com.zbform.penform.activity.FormDrawActivity"
             android:screenOrientation="portrait"
+            android:launchMode="singleInstance"
             android:theme="@style/FormImgThem"/>
         <activity
             android:name="com.zbform.penform.activity.RecordActivity"

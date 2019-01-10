@@ -1,8 +1,11 @@
 package com.zbform.penform.fragment;
 
 import android.annotation.SuppressLint;
+import android.app.Service;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
@@ -11,6 +14,7 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.TransitionDrawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -37,6 +41,7 @@ import com.zbform.penform.activity.FormDrawActivity;
 import com.zbform.penform.activity.RecordListActivity;
 import com.zbform.penform.json.FormListInfo;
 import com.zbform.penform.net.ApiAddress;
+import com.zbform.penform.services.ZBFormService;
 import com.zbform.penform.task.FormListTask;
 //import com.zbform.penform.view.GridDividerItemDecoration;
 import com.zbform.penform.task.TestTask;
@@ -54,11 +59,23 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
     private Handler handler = new Handler();
     private FormListTask mTask;
 
-    private int page = 0;
     private Context mContext;
-    private BitmapUtils mBitmapUtils;
+    private ZBFormService mService;
     @SuppressLint("ResourceAsColor")
     private static final ColorDrawable TRANSPARENT_DRAWABLE = new ColorDrawable(android.R.color.transparent);
+
+    ServiceConnection conn = new ServiceConnection() {
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d(TAG, "onServiceConnected");
+            ZBFormService.LocalBinder binder = (ZBFormService.LocalBinder) service;
+            mService = binder.getService();
+        }
+
+        public void onServiceDisconnected(ComponentName name) {
+            mService = null;
+        }
+    };
+
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
@@ -71,7 +88,20 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
         View view = inflater.inflate(R.layout.fragment_fromlist, container, false);
         initView(view);
         initData();
+        Intent intent = new Intent(getActivity(), ZBFormService.class);
+        if (getActivity() != null) {
+            getActivity().bindService(intent, conn, Service.BIND_AUTO_CREATE);
+        }
         return view;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        // Unbind from the service
+        if (getActivity() != null) {
+            getActivity().unbindService(conn);
+        }
     }
 
     private void initView(View view) {
@@ -138,6 +168,10 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
             Log.i("whd","onget success1="+results.size());
             mAdapter.setData(results);
             mAdapter.notifyDataSetChanged();
+
+            if (mService != null){
+                mService.setFormList(results);
+            }
         }
         ptrClassicFrameLayout.refreshComplete();
     }
@@ -229,6 +263,7 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
                 Log.i(TAG, "item=" + holder.formItem.getName());
                 Intent intent = new Intent(mContext, FormDrawActivity.class);
                 intent.putExtra("page",holder.formItem.getPage());
+                intent.putExtra("pageaddress",holder.formItem.getRinit());
                 intent.putExtra("formid",holder.formItem.getUuid());
                 intent.putExtra("formname",holder.formItem.getName().replace(".pdf",""));
                 startActivity(intent);
