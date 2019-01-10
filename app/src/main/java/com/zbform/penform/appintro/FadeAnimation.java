@@ -9,6 +9,7 @@ import android.widget.Toast;
 import com.zbform.penform.R;
 import com.zbform.penform.activity.SignInActivity;
 import com.zbform.penform.activity.ZBformMain;
+import com.zbform.penform.util.PreferencesUtility;
 
 public class FadeAnimation extends BaseAppIntro {
     @Override
@@ -23,6 +24,8 @@ public class FadeAnimation extends BaseAppIntro {
     }
 
     private void loadSignActivity(){
+        PreferencesUtility mPreference = PreferencesUtility.getInstance(this);
+        mPreference.setShowIntroduce(true);
         Intent intent = new Intent(this, SignInActivity.class);
         startActivity(intent);
         finish();

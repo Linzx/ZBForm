@@ -13,23 +13,26 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AutoCompleteTextView;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import com.zbform.penform.task.LoginTask;
+import com.zbform.penform.util.PreferencesUtility;
 import com.zbform.penform.view.TransitionView;
 import com.zbform.penform.R;
 
 
 public class SignInActivity extends AppCompatActivity implements View.OnClickListener, LoginTask.OnLoginTaskListener {
-
+    private static final String TAG = "SignInActivity";
     private TransitionView mAnimView;
     private Toolbar mToolbar;
     private View mBarContainer;
     private AutoCompleteTextView mNameText;
     private EditText mPwdText;
+    private CheckBox chkPwd;
     private LoginTask mLoginTask;
-
+    private PreferencesUtility mPreference;
     public static void launch(Activity activity) {
         Intent intent = new Intent(activity, SignInActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -40,11 +43,13 @@ public class SignInActivity extends AppCompatActivity implements View.OnClickLis
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         setContentView(R.layout.sign_up_activity);
+        mPreference = PreferencesUtility.getInstance(this);
         mToolbar = (Toolbar) findViewById(R.id.toolbar_login);
         setSupportActionBar(mToolbar);
         ActionBar mActionBar = getSupportActionBar();
         mActionBar.setDisplayHomeAsUpEnabled(true);
         mBarContainer = findViewById(R.id.app_bar);
+        chkPwd = (CheckBox) findViewById(R.id.save_user);
         mAnimView = (TransitionView) findViewById(R.id.ani_view);
         mAnimView.setParent(findViewById(R.id.sign_content));
         mAnimView.setOnAnimationEndListener(new TransitionView.OnAnimationEndListener(){
@@ -66,10 +71,20 @@ public class SignInActivity extends AppCompatActivity implements View.OnClickLis
 
         mNameText = findViewById(R.id.actv_username);
         mPwdText = findViewById(R.id.edit_password);
+        String name = mPreference.getUserID();
+        String pwd = mPreference.getPassword();
+        if (!TextUtils.isEmpty(name)) {
+            mNameText.setText(name);
+        }
+        if (!TextUtils.isEmpty(pwd)) {
+            mPwdText.setText(pwd);
+        }
+
         View signUp = findViewById(R.id.tv_sign_up);
         signUp.setOnClickListener(this);
         mLoginTask = new LoginTask();
         mLoginTask.setOnLoginTaskListener(this);
+
     }
 
     private void gotoHomeActivity(){
@@ -108,19 +123,19 @@ public class SignInActivity extends AppCompatActivity implements View.OnClickLis
     public void onClick(View v) {
         String id = mNameText.getText().toString();
         String pwd = mPwdText.getText().toString();
-        Log.i("whd","id="+id);
-        Log.i("whd","pwd="+pwd);
+        Log.i(TAG,"id="+id);
+        Log.i(TAG,"pwd="+pwd);
         if (TextUtils.isEmpty(id) || pwd.isEmpty()){
-            //return;
+            return;
         }
 
         hideInput(v);
-        mLoginTask.Login(this, "ZB002", "888888");
+        mLoginTask.Login(this, id, pwd);
     }
 
     @Override
     public void onStartLogin() {
-        Log.i("whd","onStartLogin");
+        Log.i(TAG,"onStartLogin");
         startLoginView();
     }
 
@@ -130,12 +145,18 @@ public class SignInActivity extends AppCompatActivity implements View.OnClickLis
         if (mAnimView.mSignEnd) {
             mAnimView.startSuccessAni();
         }
+        if (chkPwd.isChecked()) {
+            mPreference.setUserID(mNameText.getText().toString()
+                            .trim());
+            mPreference.setPassword(mPwdText.getText().toString()
+                            .trim());
+        }
     }
 
     @Override
     public void onLoginFail() {
         mAnimView.mSuccess = false;
-        Log.i("whd","onLoginFail");
+        Log.i(TAG,"onLoginFail");
         if (mAnimView.mSignEnd) {
             mAnimView.startLoginFailAni();
         }

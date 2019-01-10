@@ -1,89 +1,142 @@
 package com.zbform.penform.services;
 
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.lidroid.xutils.db.sqlite.Selector;
+import com.lidroid.xutils.db.sqlite.WhereBuilder;
 import com.lidroid.xutils.exception.DbException;
+import com.lidroid.xutils.exception.HttpException;
+import com.lidroid.xutils.http.RequestParams;
+import com.lidroid.xutils.http.ResponseInfo;
+import com.lidroid.xutils.http.client.HttpRequest;
 import com.zbform.penform.ZBformApplication;
+import com.zbform.penform.activity.FormDrawActivity;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.db.ZBStrokeEntity;
+import com.zbform.penform.handler.HandlerUtil;
 import com.zbform.penform.json.FormInfo;
 import com.zbform.penform.json.FormItem;
 import com.zbform.penform.json.HwData;
 import com.zbform.penform.json.Point;
+import com.zbform.penform.json.UpLoadStrokeinfo;
 import com.zbform.penform.json.ZBFormInnerItem;
 import com.zbform.penform.net.ApiAddress;
+import com.zbform.penform.net.ErrorCode;
+import com.zbform.penform.net.IZBformNetBeanCallBack;
+import com.zbform.penform.net.ZBformNetBean;
+import com.zbform.penform.task.UpLoadStrokeTask;
 
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class ZBFormService extends Service {
     private static final String TAG = "ZBFormService";
 
+    private static final int UPLOAD_DELAY = 8 * 1000; //8s
+    private Context mContext;
     private FormInfo mDrawFormInfo;
     private String mRecordId;
     private boolean mStopRecordCoord = false;
+    private int mCurrentPage = 1;
+    //    private Executor mExecutor = Executors.newCachedThreadPool();
+    private IntentFilter mIntentFilter;
+    private NetworkChangeReceiver mNetworkChangeReceiver;
 
 
     private LocalBinder binder = new LocalBinder();
+
     public class LocalBinder extends Binder {
         public ZBFormService getService() {
             return ZBFormService.this;
         }
     }
 
+    private UpLoadQueryHandler mUpLoadQueryHandler;
     private LinkedBlockingQueue<HwData> mCoordQueue = new LinkedBlockingQueue<HwData>();
+    private LinkedBlockingQueue<ZBFormInnerItem> mUpLoadQueue = new LinkedBlockingQueue<ZBFormInnerItem>();
 
-    private PenDrawCallBack mIBlePenDrawCallBack  = new PenDrawCallBack();
-     private class PenDrawCallBack implements ZBFormBlePenManager.IBlePenDrawCallBack {
-         HwData mStroke = null;//一个笔画
-         long mBeginTime;
-                @Override
-                public void onPenDown() {
-                    //开始一个笔画
-                    mStroke = new HwData();
+    private PenDrawCallBack mIBlePenDrawCallBack = new PenDrawCallBack();
 
-                    mStroke.setT(ApiAddress.getTimeStamp());
-                    mBeginTime = System.currentTimeMillis();
-                }
+    private class PenDrawCallBack implements ZBFormBlePenManager.IBlePenDrawCallBack {
+        HwData mStroke = null;//一个笔画
+        long mBeginTime;
 
-                @Override
-                public void onPenUp() {
-                    //penup 一个笔画结束，开始存储
-                    long endTime = System.currentTimeMillis();
-                    int c = (int)(endTime - mBeginTime);//一个笔画的耗时
-                    mStroke.setC(c);
-                    try {
-                        mCoordQueue.put(mStroke);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+        @Override
+        public void onPenDown() {
+            //开始一个笔画
+            mStroke = new HwData();
 
-                @Override
-                public void onCoordDraw(String pageAddress, int nX, int nY) {
-                    mStroke.setP(pageAddress);
-                    Point point = new Point();
-                    point.setX(nX);
-                    point.setY(nY);
-                    if (mStroke != null){
-                        mStroke.dList.add(point);
-                    }
-                }
+            mStroke.setT(ApiAddress.getTimeStamp());
+            mBeginTime = System.currentTimeMillis();
+        }
 
-                @Override
-                public void onOffLineCoordDraw(String pageAddress, int nX, int nY) {
-
-                }
+        @Override
+        public void onPenUp() {
+            //penup 一个笔画结束，开始存储
+            long endTime = System.currentTimeMillis();
+            int c = (int) (endTime - mBeginTime);//一个笔画的耗时
+            mStroke.setC(c);
+            try {
+                mCoordQueue.put(mStroke);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
+        }
 
-    private class CoodDBTask extends AsyncTask<Void, Void, Boolean> {
+        @Override
+        public void onCoordDraw(String pageAddress, int nX, int nY) {
+            mStroke.setP(pageAddress);
+            Point point = new Point();
+            point.setX(nX);
+            point.setY(nY);
+            if (mStroke != null) {
+                mStroke.dList.add(point);
+            }
+        }
+
+        @Override
+        public void onOffLineCoordDraw(String pageAddress, int nX, int nY) {
+
+        }
+    }
+
+    class NetworkChangeReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            ConnectivityManager connectionManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+            NetworkInfo networkInfo = connectionManager.getActiveNetworkInfo();
+            if (networkInfo != null && networkInfo.isAvailable()) {
+                Log.i(TAG, "networkInfo available");
+                //有网络，同步一下本地数据
+                new UpLoadStrokeDBQuery().execute();
+            } else {
+                Log.i(TAG, "no networkInfo");
+            }
+        }
+    }
+
+    private class CoodSaveDBTask extends AsyncTask<Void, Void, Boolean> {
         @Override
         protected Boolean doInBackground(Void... integers) {
             while (true) {
@@ -103,8 +156,8 @@ public class ZBFormService extends Service {
 
                         String itemId = findFormRecordId(point.getX(), point.getY());
                         //笔迹不在item内，记录为page * -1
-                        if(TextUtils.isEmpty(itemId)){
-                            itemId = String.valueOf(-1 * mDrawFormInfo.results[0].getPage());
+                        if (TextUtils.isEmpty(itemId)) {
+                            itemId = String.valueOf(-1 * mCurrentPage);
                         }
                         strokeEntity.setItemid(itemId);
 
@@ -138,47 +191,350 @@ public class ZBFormService extends Service {
             }
             return true;
         }
+
+        /// 计算坐标点是哪个formitem
+        private String findFormRecordId(int x, int y) {
+
+            String id = "";
+            for (int i = 0; i < mDrawFormInfo.results[0].items.length; i++) {
+                FormItem item = mDrawFormInfo.results[0].items[i];
+
+                double xoff = x * 0.3 / 8 / 10;
+                double yoff = y * 0.3 / 8 / 10;
+                Log.i(TAG, "xoff=" + xoff);
+                Log.i(TAG, "yoff" + yoff);
+                Log.i(TAG, "item.getLocaX()=" + item.getLocaX());
+                Log.i(TAG, "item.getLocaY()=" + item.getLocaY());
+                Log.i(TAG, "LocaX()+LocaW=" + (item.getLocaX() + item.getLocaW()));
+                Log.i(TAG, "LocaY()+LocaH()=" + (item.getLocaY() + item.getLocaH()));
+
+                if (xoff >= item.getLocaX() &&
+                        yoff >= item.getLocaY() &&
+                        xoff <= (item.getLocaX() + item.getLocaW()) &&
+                        yoff <= (item.getLocaY() + item.getLocaH())) {
+                    id = item.getItem();
+                    Log.i(TAG, "form item id: " + id);
+                    break;
+                }
+
+            }
+            return id;
+        }
     }
 
-    /// 计算坐标点是哪个formitem
-    private String findFormRecordId(int x, int y){
+    //    private class UpLoadQueueTask extends Thread{
+    private class UpLoadQueueTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected Void doInBackground(Void... params) {
+//        @Override
+//        public void run(){
+            while (true) {
+                try {
+                    Log.i(TAG, "UpLoadQueueTask LOOP");
+                    ZBFormInnerItem item = mUpLoadQueue.take();
+                    Log.i(TAG, "UpLoadQueueTask TAKE DONE");
 
-        String id = "";
-        for (int i = 0;i < mDrawFormInfo.results[0].items.length; i++) {
-            FormItem item = mDrawFormInfo.results[0].items[i];
+                    new UpLoadStrokeNet(item).execute();
 
-            double xoff = x * 0.3 / 8 / 10;
-            double yoff = y * 0.3 / 8 / 10;
-            Log.i(TAG,"xoff="+xoff);
-            Log.i(TAG,"yoff"+yoff);
-            Log.i(TAG,"item.getLocaX()="+item.getLocaX());
-            Log.i(TAG,"item.getLocaY()="+item.getLocaY());
-            Log.i(TAG,"LocaX()+LocaW="+(item.getLocaX() + item.getLocaW()));
-            Log.i(TAG,"LocaY()+LocaH()="+(item.getLocaY() + item.getLocaH()));
+                } catch (InterruptedException e) {
+                    Log.i(TAG, "queue ex=" + e.getMessage());
+                    e.printStackTrace();
+//                    return false;
+                }
+            }
+        }
+    }
 
-            if(xoff >= item.getLocaX() &&
-                    yoff >= item.getLocaY() &&
-                    xoff <= (item.getLocaX() + item.getLocaW()) &&
-                    yoff <= (item.getLocaY() + item.getLocaH())){
-                id = item.getItem();
-                Log.i(TAG,"form item id: "+id);
-                break;
+    public class UpLoadStrokeDBQuery extends AsyncTask<Void, Void, Void> {
+        private ArrayList<ZBFormInnerItem> mInnerItems;
+
+        public UpLoadStrokeDBQuery() {
+            super();
+            mInnerItems = new ArrayList<ZBFormInnerItem>();
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            //db data convert to jason object
+            try {
+                List<ZBStrokeEntity> strokeUpLoad = ZBformApplication.mDB.
+                        findAll(Selector.from(ZBStrokeEntity.class).
+                                where("isupload", "=", 0));
+                if (strokeUpLoad == null) return null;
+                Log.i("UpLoadStrokeDBQuery", "zblen=" + strokeUpLoad.size());
+
+                for (ZBStrokeEntity entity : strokeUpLoad) {
+                    ZBFormInnerItem item;
+                    item = findInnerItem(entity.formid, entity.recordid, entity.itemid, entity.userid);
+                    if (item == null) {
+                        item = new ZBFormInnerItem();
+                        item.formid = entity.formid;
+                        item.id = entity.recordid;
+                        item.itemid = entity.itemid;
+                        item.userid = entity.userid;
+                        mInnerItems.add(item);
+                    }
+
+                    HwData data;//一个笔画
+                    data = findHwData(item, entity.getTagtime());
+                    if (data == null) {
+                        data = new HwData();
+                        //同一个时间戳代表是一个笔画的记录
+                        data.setT(entity.getTagtime());
+                        data.setC(entity.getStrokeTime());
+                        data.setP(entity.getPageAddress());
+                        item.dataList.add(data);
+                    }
+                    Point point = new Point();
+                    point.setX(entity.x);
+                    point.setY(entity.y);
+                    data.dList.add(point);
+
+
+                }
+                //convert to array for jason
+                for (ZBFormInnerItem innerItem : mInnerItems) {
+                    if (innerItem.dataList.size() > 0) {
+                        innerItem.data = innerItem.dataList.toArray(new HwData[innerItem.dataList.size()]);
+
+                        for (HwData stroke : innerItem.dataList) {
+                            if (stroke.dList.size() > 0) {
+                                stroke.setD(stroke.dList.toArray(new Point[stroke.dList.size()]));
+                            }
+                        }
+//                        try {
+//                            Log.i(TAG, "db put in queue");
+//                            mUpLoadQueue.put(innerItem);
+//                        } catch (InterruptedException e) {
+//                            e.printStackTrace();
+//                        }
+                    }
+                }
+            } catch (DbException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            super.onPostExecute(result);
+            Log.i(TAG, "mInnerItems len=" + mInnerItems.size());
+            for (ZBFormInnerItem item : mInnerItems) {
+                new UpLoadStrokeNet(item).execute();
             }
 
         }
-        return id;
+
+        private ZBFormInnerItem findInnerItem(String formid, String id, String itemid, String userid) {
+            ZBFormInnerItem result = null;
+            for (ZBFormInnerItem item : mInnerItems) {
+                if (formid.equals(item.formid) &&
+                        id.equals(item.id) &&
+                        itemid.equals(item.itemid) &&
+                        userid.equals(item.userid)) {
+                    result = item;
+                    break;
+                }
+
+            }
+            return result;
+        }
+
+        private HwData findHwData(ZBFormInnerItem item, String tagtime) {
+            HwData result = null;
+            for (HwData data : item.dataList) {
+                if (tagtime.equals(data.getT())) {
+                    result = data;
+                    break;
+                }
+
+            }
+            return result;
+        }
+    }
+
+    private class UpLoadStrokeNet implements IZBformNetBeanCallBack {
+        private ZBFormInnerItem mInnerItem;
+
+        public UpLoadStrokeNet(ZBFormInnerItem innerItem) {
+            mInnerItem = innerItem;
+        }
+
+        public void execute() {
+            Log.i(TAG, "begin net upload");
+            ZBformNetBean upLoad = new ZBformNetBean(mContext, ApiAddress.Hwitem_put,
+                    HttpRequest.HttpMethod.POST);
+            RequestParams params = new RequestParams();
+            String signCode = ApiAddress.getSignCode(ZBformApplication.getmLoginUserId() +
+                    ZBformApplication.getmLoginUserKey() + ApiAddress.SYSTEM_KEY);
+            params.addQueryStringParameter("signcode", Uri.encode(signCode));
+            params.addQueryStringParameter("timestamp", Uri.encode(ApiAddress.getTimeStamp()));
+            params.addQueryStringParameter("userid", Uri.encode(ZBformApplication.getmLoginUserId()));
+            params.addQueryStringParameter("formid", Uri.encode(mInnerItem.getFormid()));
+            params.addQueryStringParameter("id", Uri.encode(mInnerItem.getId()));
+//
+//            String test = mInnerItem.getItemid();
+//            if (TextUtils.isEmpty(test)){
+//                test = "IZBform-181210896100217";
+//            }
+            params.addQueryStringParameter("itemid", Uri.encode(mInnerItem.getItemid()));
+
+
+            Log.i(TAG, "mInnerItems formid=" + mInnerItem.getFormid());
+            Log.i(TAG, "mInnerItems id=" + mInnerItem.getId());
+            Log.i(TAG, "mInnerItems itemid=" + mInnerItem.getItemid());
+            Gson gson = new GsonBuilder()
+                    .excludeFieldsWithoutExposeAnnotation()
+                    .create();
+
+            String json = gson.toJson(mInnerItem.data);
+//            Log.i(TAG, "mInnerItems datajson=" + json);
+
+            params.addBodyParameter("data", json);
+            upLoad.setNetTaskCallBack(this);
+            upLoad.execute(params);
+        }
+
+
+        @Override
+        public void onStart() {
+        }
+
+        @Override
+        public void onCancelled() {
+            // TODO Auto-generated method stub
+//            Log.i(TAG, "UPLOAD onCancelled");
+//            try {
+//                Log.i(TAG, "UPLOAD onFailure");
+//                mUpLoadQueue.put(mInnerItem);
+//            } catch (InterruptedException e1) {
+//                e1.printStackTrace();
+//            }
+        }
+
+        @Override
+        public void onLoading(long total, long current, boolean isUploading) {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void onSuccess(ResponseInfo<String> responseInfo) {
+            try {
+                String resultGson = responseInfo.result;
+                Log.i(TAG, "result UPLOAD Gson!!=" + resultGson);
+                Gson gson = new Gson();
+                UpLoadStrokeinfo upInfo = gson.fromJson(resultGson, new TypeToken<UpLoadStrokeinfo>() {
+                }.getType());
+
+                if (upInfo != null && upInfo.header != null
+                        && upInfo.results != null && upInfo.results.length > 0) {
+
+                    Log.i(TAG, "errorcode=" + upInfo.header.getErrorCode());
+                    if (upInfo.header.getErrorCode().equals(ErrorCode.RESULT_OK)) {
+
+                        //上传成功，删除本地数据
+//                        new UpdateDBTask(mInnerItem).execute();
+
+                        //上传失败，回压进queue,重试直到成功
+                    } else {
+//                        Log.i(TAG, "UPLOAD fail");
+//                        mUpLoadQueue.put(mInnerItem);
+                    }
+                } else {
+//                    Log.i(TAG, "UPLOAD null");
+//                    mUpLoadQueue.put(mInnerItem);
+                }
+            } catch (Exception e) {
+                Log.i(TAG, "upload e=" + e.getMessage());
+//                try {
+//                    mUpLoadQueue.put(mInnerItem);
+//                } catch (InterruptedException e1) {
+//                    e1.printStackTrace();
+//                }
+            }
+        }
+
+        @Override
+        public void onFailure(HttpException error, String msg) {
+//            try {
+//                Log.i(TAG, "UPLOAD onFailure");
+//                mUpLoadQueue.put(mInnerItem);
+//            } catch (InterruptedException e1) {
+//                e1.printStackTrace();
+//            }
+        }
+    }
+
+    private class UpdateDBTask extends AsyncTask<Void, Void, Void> {
+        private ZBFormInnerItem mInnerItem;
+
+        public UpdateDBTask(ZBFormInnerItem item) {
+            super();
+            mInnerItem = item;
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            for (HwData data : mInnerItem.dataList) {
+                WhereBuilder whereBuilder = WhereBuilder.b();
+                whereBuilder.and("userid", "=", mInnerItem.getUserid())
+                        .and("formid", "=", mInnerItem.getFormid())
+                        .and("recordid", "=", mInnerItem.getId())
+                        .and("itemid", "=", mInnerItem.getItemid())
+                        .and("tagtime", "=", data.getT())
+                        .and("pageAddress", "=", data.getP());
+                try {
+                    ZBformApplication.mDB.delete(ZBStrokeEntity.class, whereBuilder);
+                } catch (DbException e) {
+                    e.printStackTrace();
+                }
+            }
+            return null;
+        }
+    }
+
+    public class UpLoadQueryHandler extends Handler {
+        @Override
+        public void handleMessage(Message message) {
+            super.handleMessage(message);
+
+            Log.i(TAG, "on handleMessage ");
+            new UpLoadStrokeDBQuery().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+            //停止书写则停止查询上传数据
+            if (!mStopRecordCoord) {
+                Message msg = mUpLoadQueryHandler.obtainMessage();
+                Log.i(TAG, "send updateMSG ag");
+                mUpLoadQueryHandler.sendMessageDelayed(msg, UPLOAD_DELAY);
+            }
+        }
     }
 
     @Override
     public void onCreate() {
         Log.i(TAG, "ZBFormService onCreate");
         ZBformApplication.sBlePenManager.setIBlePenDrawCallBack(mIBlePenDrawCallBack);
+
+        mUpLoadQueryHandler = new UpLoadQueryHandler();
+        mContext = this;
+
+        mIntentFilter = new IntentFilter();
+        mIntentFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
+        mNetworkChangeReceiver = new NetworkChangeReceiver();
+        registerReceiver(mNetworkChangeReceiver, mIntentFilter);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(TAG, "ZBFormService onStartCommand1");
-
+        //服务启动开始监听是否有笔迹上传
+//        new UpLoadQueueTask().start();
+//        new UpLoadQueueTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR); //.start();
+        //刚启动，查询一次，上传遗漏数据
+//        new UpLoadStrokeDBQuery().execute();
         return START_STICKY;
     }
 
@@ -194,19 +550,24 @@ public class ZBFormService extends Service {
 
     @Override
     public void onDestroy() {
+        unregisterReceiver(mNetworkChangeReceiver);
         super.onDestroy();
     }
 
-    public void setDrawFormInfo(FormInfo info, String recordId){
+    public void setDrawFormInfo(FormInfo info, String recordId) {
         mDrawFormInfo = info;
-        mRecordId =recordId;
+        mRecordId = recordId;
     }
 
-    public void startRecordCoord(){
-        new CoodDBTask().execute();
+    public void startRecordCoord() {
+        new CoodSaveDBTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        mStopRecordCoord = false;
+        //开始书写，5s 上传一次
+        Message msg = mUpLoadQueryHandler.obtainMessage();
+        mUpLoadQueryHandler.sendMessageDelayed(msg, UPLOAD_DELAY);
     }
 
-    public void stopRecordCoord(){
+    public void stopRecordCoord() {
 
         mStopRecordCoord = true;
         HwData coord = new HwData();
@@ -218,4 +579,7 @@ public class ZBFormService extends Service {
         }
     }
 
+    public void setCurrentPage(int page) {
+        mCurrentPage = page;
+    }
 }

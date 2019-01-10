@@ -78,16 +78,9 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
         ptrClassicFrameLayout = (PtrClassicFrameLayout) view.findViewById(R.id.form_grid_view_frame);
         mRecyclerView = (RecyclerView) view.findViewById(R.id.form_recycler_view);
 //        mRecyclerView.addItemDecoration(new GridDividerItemDecorationEx(mContext));
-//        mRecyclerView.set
     }
 
     private void initData() {
-        new TestTask().execute(mContext);
-//        mBitmapUtils = BitmapHelp.getBitmapUtils(mContext);
-//        mBitmapUtils.configDefaultLoadingImage(R.drawable.no_banner);
-//        mBitmapUtils.configDefaultLoadFailedImage(R.drawable.no_banner);
-//        mBitmapUtils.configDefaultBitmapConfig(Bitmap.Config.RGB_565);
-//        mBitmapUtils.configMemoryCacheEnabled(true);
         mTask = new FormListTask();
         mTask.setOnFormTaskListener(this);
 

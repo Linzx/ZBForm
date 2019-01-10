@@ -10,21 +10,17 @@ import android.widget.ImageView;
 
 import com.zbform.penform.R;
 import com.zbform.penform.appintro.FadeAnimation;
+import com.zbform.penform.util.PreferencesUtility;
 
 
 public class WelcomeActivity extends BaseActivity {
-    private static final String PRE_INTRODUCE_SHOWED = "show_introduce";
-
-
+    private PreferencesUtility mPreference;
     private ImageView mImageView;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        SharedPreferences sp = getSharedPreferences(PRE_INTRODUCE_SHOWED, Context.MODE_PRIVATE);
-        if (!sp.getBoolean(PRE_INTRODUCE_SHOWED, false)) {
-            SharedPreferences.Editor editor = sp.edit();
-            editor.putBoolean(PRE_INTRODUCE_SHOWED, true);
-            editor.apply();
+        mPreference = PreferencesUtility.getInstance(this);
+        if (!mPreference.getShowIntroduce()) {
             Intent intent = new Intent(this, FadeAnimation.class); // Call the AppIntro java class
             startActivity(intent);
             finish();

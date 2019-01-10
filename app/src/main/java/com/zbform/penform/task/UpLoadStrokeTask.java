@@ -29,29 +29,33 @@ import com.zbform.penform.net.ZBformNetBean;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 
-public class UpLoadStrokeTask extends AsyncTask <Void, Void, Void>{
+public class UpLoadStrokeTask extends AsyncTask <Void, Void, Void> {
     private static final String TAG = "UpLoadStrokeTask";
+
     private ArrayList<ZBFormInnerItem> mInnerItems;
     private Context mContext;
-    public UpLoadStrokeTask(Context context){
+
+    public UpLoadStrokeTask(Context context) {
         super();
         mContext = context;
         mInnerItems = new ArrayList<ZBFormInnerItem>();
 
     }
+
     @Override
     protected Void doInBackground(Void... params) {
         //db data convert to jason object
         try {
             List<ZBStrokeEntity> strokeUpLoad = ZBformApplication.mDB.
                     findAll(Selector.from(ZBStrokeEntity.class).
-                    where("isupload", "=", 0));
-            Log.i(TAG,"zblen="+strokeUpLoad.size());
+                            where("isupload", "=", 0));
+            Log.i(TAG, "zblen=" + strokeUpLoad.size());
 
-            for(ZBStrokeEntity entity : strokeUpLoad){
+            for (ZBStrokeEntity entity : strokeUpLoad) {
                 ZBFormInnerItem item;
-                item = findInnerItem(entity.formid,entity.recordid,entity.itemid,entity.userid);
+                item = findInnerItem(entity.formid, entity.recordid, entity.itemid, entity.userid);
                 if (item == null) {
                     item = new ZBFormInnerItem();
                     item.formid = entity.formid;
@@ -83,8 +87,8 @@ public class UpLoadStrokeTask extends AsyncTask <Void, Void, Void>{
                 if (innerItem.dataList.size() > 0) {
                     innerItem.data = innerItem.dataList.toArray(new HwData[innerItem.dataList.size()]);
 
-                    for(HwData stroke : innerItem.dataList){
-                        if (stroke.dList.size() >0){
+                    for (HwData stroke : innerItem.dataList) {
+                        if (stroke.dList.size() > 0) {
                             stroke.setD(stroke.dList.toArray(new Point[stroke.dList.size()]));
                         }
                     }
@@ -101,9 +105,9 @@ public class UpLoadStrokeTask extends AsyncTask <Void, Void, Void>{
     @Override
     protected void onPostExecute(Void result) {
         super.onPostExecute(result);
-        Log.i(TAG,"mInnerItems len="+mInnerItems.size());
+        Log.i(TAG, "mInnerItems len=" + mInnerItems.size());
 
-        for(ZBFormInnerItem item : mInnerItems) {
+        for (ZBFormInnerItem item : mInnerItems) {
             new NetTask(item).execute(mContext);
         }
 
@@ -124,7 +128,7 @@ public class UpLoadStrokeTask extends AsyncTask <Void, Void, Void>{
         return result;
     }
 
-    private HwData findHwData(ZBFormInnerItem item,String tagtime) {
+    private HwData findHwData(ZBFormInnerItem item, String tagtime) {
         HwData result = null;
         for (HwData data : item.dataList) {
             if (tagtime.equals(data.getT())) {
@@ -136,13 +140,15 @@ public class UpLoadStrokeTask extends AsyncTask <Void, Void, Void>{
         return result;
     }
 
-    public class UpdateDBTask extends AsyncTask <Void, Void, Void> {
+    private class UpdateDBTask extends AsyncTask<Void, Void, Void> {
         private ZBFormInnerItem mInnerItem;
-        public UpdateDBTask(Context context, ZBFormInnerItem item){
+
+        public UpdateDBTask(Context context, ZBFormInnerItem item) {
             super();
             mContext = context;
-            mInnerItem =  item;
+            mInnerItem = item;
         }
+
         @Override
         protected Void doInBackground(Void... voids) {
             for (HwData data : mInnerItem.dataList) {
@@ -163,13 +169,15 @@ public class UpLoadStrokeTask extends AsyncTask <Void, Void, Void>{
         }
     }
 
-    class NetTask implements IZBformNetBeanCallBack {
+    private class NetTask implements IZBformNetBeanCallBack {
         private Context mContext;
 
         private ZBFormInnerItem mInnerItem;
-        public NetTask(ZBFormInnerItem innerItem){
+
+        public NetTask(ZBFormInnerItem innerItem) {
             mInnerItem = innerItem;
         }
+
         public void execute(Context context) {
             mContext = context;
             ZBformNetBean upLoad = new ZBformNetBean(mContext, ApiAddress.Hwitem_put,
@@ -182,12 +190,12 @@ public class UpLoadStrokeTask extends AsyncTask <Void, Void, Void>{
             params.addQueryStringParameter("userid", Uri.encode(ZBformApplication.getmLoginUserId()));
             params.addQueryStringParameter("formid", Uri.encode(mInnerItem.getFormid()));
             params.addQueryStringParameter("id", Uri.encode(mInnerItem.getId()));
-
-            String test = mInnerItem.getItemid();
-            if (TextUtils.isEmpty(test)){
-                test = "IZBform-181210896100217";
-            }
-            params.addQueryStringParameter("itemid", Uri.encode(test));
+//
+//            String test = mInnerItem.getItemid();
+//            if (TextUtils.isEmpty(test)){
+//                test = "IZBform-181210896100217";
+//            }
+            params.addQueryStringParameter("itemid", Uri.encode(mInnerItem.getItemid()));
 
 
             Log.i(TAG, "mInnerItems formid=" + mInnerItem.getFormid());
@@ -243,7 +251,7 @@ public class UpLoadStrokeTask extends AsyncTask <Void, Void, Void>{
                     Log.i(TAG, "errorcode=" + upInfo.header.getErrorCode());
                     if (upInfo.header.getErrorCode().equals(ErrorCode.RESULT_OK)) {
 
-                        new UpdateDBTask(mContext,mInnerItem).execute();
+                        new UpdateDBTask(mContext, mInnerItem).execute();
 //                        if (mOnFormTaskListener != null) {
 //                            List<FormListInfo.Results> data = Arrays.asList(forms.results);
 //                            mOnFormTaskListener.onGetSuccess(data);

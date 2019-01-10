@@ -229,7 +229,7 @@ public class ZBformMain extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        stopService(mService);
+//        stopService(mService);
     }
 
     @Override
