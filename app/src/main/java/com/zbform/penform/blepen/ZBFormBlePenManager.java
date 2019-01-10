@@ -511,6 +511,10 @@ public class ZBFormBlePenManager {
         return mBleDeviceName;
     }
 
+    public void setmBleDeviceName(String mBleDeviceName) {
+        this.mBleDeviceName = mBleDeviceName;
+    }
+
     public String getBleDeviceMac() {
         return mBleDeviceMac;
     }
@@ -549,6 +553,42 @@ public class ZBFormBlePenManager {
 
     public boolean isBleInitSuccess() {
         return isBleInitSuccess;
+    }
+
+    public void setmBleDeviceMac(String mBleDeviceMac) {
+        this.mBleDeviceMac = mBleDeviceMac;
+    }
+
+    public void setmBleDeviceHwVersion(String mBleDeviceHwVersion) {
+        this.mBleDeviceHwVersion = mBleDeviceHwVersion;
+    }
+
+    public void setmBleDeviceSwVersion(String mBleDeviceSwVersion) {
+        this.mBleDeviceSwVersion = mBleDeviceSwVersion;
+    }
+
+    public void setmBleDeviceSyncNum(String mBleDeviceSyncNum) {
+        this.mBleDeviceSyncNum = mBleDeviceSyncNum;
+    }
+
+    public void setmBleDevicePower(int mBleDevicePower) {
+        this.mBleDevicePower = mBleDevicePower;
+    }
+
+    public void setmBleDeviceUsedMemory(int mBleDeviceUsedMemory) {
+        this.mBleDeviceUsedMemory = mBleDeviceUsedMemory;
+    }
+
+    public void setmBleDeviceUsedBytes(int mBleDeviceUsedBytes) {
+        this.mBleDeviceUsedBytes = mBleDeviceUsedBytes;
+    }
+
+    public void setLowMemory(boolean lowMemory) {
+        isLowMemory = lowMemory;
+    }
+
+    public void setLowBattery(boolean lowBattery) {
+        isLowBattery = lowBattery;
     }
 
     public void setBleInitSuccess(boolean bleInitSuccess) {

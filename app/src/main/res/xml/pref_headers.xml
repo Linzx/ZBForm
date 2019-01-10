@@ -8,7 +8,6 @@
         android:title="@string/pref_header_account" />
 
     <header
-        android:fragment="com.zbform.penform.fragment.PenFragment"
         android:icon="@drawable/lay_icn_alb"
         android:title="@string/pref_header_pen_manage" />
 

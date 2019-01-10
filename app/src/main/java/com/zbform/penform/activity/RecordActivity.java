@@ -274,7 +274,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             int height = toTransform.getHeight();
             Canvas canvas = new Canvas(toTransform);
             Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
-            paint.setStrokeWidth(1.5f);
+            paint.setStrokeWidth(2f);
             paint.setColor(Color.BLACK);
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeJoin(Paint.Join.ROUND);
@@ -350,11 +350,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         public void onGetSuccess(FormInfo form) {
             mFormInfo = form;
             mTask.getRecord();
-            for (int i = 0; i < mFormInfo.results[0].items.length; i++) {
-                FormItem item = mFormInfo.results[0].items[i];
-                Log.i(TAG, "item=" + item.getItem() + ",fieldName=" + item.getFieldName() + ",page=" +
-                        item.getPage());
-            }
         }
 
         @Override

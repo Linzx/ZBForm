@@ -1,8 +1,7 @@
-package com.zbform.penform.fragment;
+package com.zbform.penform.activity;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.Fragment;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
@@ -11,15 +10,14 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.ActionBar;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.animation.LinearInterpolator;
@@ -31,7 +29,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.tstudy.blepenlib.BlePenManager;
-import com.tstudy.blepenlib.callback.BleGattCallback;
+import com.tstudy.blepenlib.BlePenStreamManager;
+import com.tstudy.blepenlib.callback.BlePenStreamCallback;
 import com.tstudy.blepenlib.callback.BleScanCallback;
 import com.tstudy.blepenlib.data.BleDevice;
 import com.tstudy.blepenlib.exception.BleException;
@@ -42,10 +41,13 @@ import com.zbform.penform.settings.DeviceAdapter;
 
 import java.util.List;
 
-public class PenFragment extends Fragment implements View.OnClickListener, ZBFormBlePenManager.IBlePenStateCallBack{
+import static com.tstudy.blepenlib.constant.Constant.WARN_BATTERY;
+import static com.tstudy.blepenlib.constant.Constant.WARN_MEMORY;
+
+public class PenManagerActivity extends BaseActivity implements View.OnClickListener{
 
 
-    public static final String TAG = PenFragment.class.getSimpleName();
+    public static final String TAG = PenManagerActivity.class.getSimpleName();
 
     private static final int REQUEST_CODE_OPEN_GPS = 1;
     private static final int REQUEST_CODE_PERMISSION_LOCATION = 2;
@@ -65,29 +67,25 @@ public class PenFragment extends Fragment implements View.OnClickListener, ZBFor
     private TextView mPenMac;
     private TextView mPenPower;
     private TextView mPenVersion;
+    private ActionBar mActionBar;
 
     private ZBFormBlePenManager mBlePenManager = ZBformApplication.sBlePenManager;
 
     @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        mContext = context;
-        mBlePenManager.setBlePenStateCallBack(this);
-    }
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.fragment_penmanager);
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_penmanager, container, false);
-        initView(view);
+        mContext = this;
+        initView();
         boolean initSuccess = mBlePenManager.isBleInitSuccess();
         if (initSuccess) {
-            Log.i(TAG,"initSuccess");
+            Log.i(TAG, "initSuccess");
             BlePenManager.getInstance().enableLog(true);
         } else {
-            Log.i(TAG,"not initSuccess");
+            Log.i(TAG, "not initSuccess");
             Toast.makeText(mContext, "初始化失败，请到开放平台申请授权或检查设备是否支持蓝牙", Toast.LENGTH_LONG).show();
         }
-        return view;
     }
 
     @Override
@@ -109,12 +107,32 @@ public class PenFragment extends Fragment implements View.OnClickListener, ZBFor
         }
     }
 
-    private void initView(View view) {
-        btn_scan = view.findViewById(R.id.btn_scan);
+    private void setToolBar() {
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        mActionBar = getSupportActionBar();
+        mActionBar.setDisplayHomeAsUpEnabled(true);
+        mActionBar.setTitle(getString(R.string.pref_header_pen_manage));
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(final MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+                return true;
+            default:
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+    private void initView() {
+        btn_scan = findViewById(R.id.btn_scan);
         btn_scan.setText(getString(R.string.start_scan));
         btn_scan.setOnClickListener(this);
+        setToolBar();
 
-        img_loading = view.findViewById(R.id.img_loading);
+        img_loading = findViewById(R.id.img_loading);
         operatingAnim = AnimationUtils.loadAnimation(mContext, R.anim.rotate_test);
         operatingAnim.setInterpolator(new LinearInterpolator());
         progressDialog = new ProgressDialog(mContext);
@@ -146,17 +164,17 @@ public class PenFragment extends Fragment implements View.OnClickListener, ZBFor
                 }
             }
         });
-        ListView listView_device = view.findViewById(R.id.list_device);
+        ListView listView_device = findViewById(R.id.list_device);
         listView_device.setAdapter(mDeviceAdapter);
 
-        mScanLayout = view.findViewById(R.id.scan);
-        mPenInfoLayout = view.findViewById(R.id.pen_info);
-        mPenName = view.findViewById(R.id.pen_name);
-        mPenMac = view.findViewById(R.id.pen_mac);
-        mPenPower = view.findViewById(R.id.pen_power);
-        mPenVersion = view.findViewById(R.id.pen_version);
+        mScanLayout = findViewById(R.id.scan);
+        mPenInfoLayout = findViewById(R.id.pen_info);
+        mPenName = findViewById(R.id.pen_name);
+        mPenMac = findViewById(R.id.pen_mac);
+        mPenPower = findViewById(R.id.pen_power);
+        mPenVersion = findViewById(R.id.pen_version);
 
-        if(mBlePenManager.isConnectedBleDevice()) {
+        if (mBlePenManager.isConnectedBleDevice()) {
             Log.i(TAG, "ble device has connected.");
             setPenInfo();
         } else {
@@ -208,7 +226,7 @@ public class PenFragment extends Fragment implements View.OnClickListener, ZBFor
         ZBFormBlePenManager.IZBBleGattCallback bleGattCallback = new ZBFormBlePenManager.IZBBleGattCallback() {
             @Override
             public void onStartConnect() {
-                progressDialog.setMessage("正在连接蓝牙点阵笔:"+bleDevice.getName());
+                progressDialog.setMessage("正在连接蓝牙点阵笔:" + bleDevice.getName());
 
                 progressDialog.show();
             }
@@ -225,12 +243,13 @@ public class PenFragment extends Fragment implements View.OnClickListener, ZBFor
             @Override
             public void onConnectSuccess(BleDevice bleDevice, BluetoothGatt gatt, int status) {
                 mBleDevice = bleDevice;
-                Log.i(TAG,"onConnectSuccess");
+                Log.i(TAG, "onConnectSuccess");
                 mBlePenManager.setBleDevice(mBleDevice);
                 progressDialog.dismiss();
+                openPenStream();
 //                mDeviceAdapter.addDevice(0,bleDevice);
 //                mDeviceAdapter.notifyDataSetChanged();
-                setPenInfo();
+//                setPenInfo();
             }
 
             @Override
@@ -246,16 +265,107 @@ public class PenFragment extends Fragment implements View.OnClickListener, ZBFor
 //                }
             }
         };
-        mBlePenManager.connect(bleDevice,bleGattCallback);
+        mBlePenManager.connect(bleDevice, bleGattCallback);
     }
 
-    public void setPenInfo(){
-            mPenInfoLayout.setVisibility(View.VISIBLE);
-            mScanLayout.setVisibility(View.GONE);
-            mPenName.setText(mBlePenManager.getBleDeviceName());
-            mPenMac.setText(mBlePenManager.getBleDeviceMac());
-            mPenPower.setText(mBlePenManager.getBleDevicePower()+"%");
-            mPenVersion.setText(mBlePenManager.getBleDeviceSwVersion());
+    public void openPenStream(){
+        BlePenStreamCallback blePenStreamCallback = new BlePenStreamCallback() {
+            @Override
+            public void onOpenPenStreamSuccess() {
+
+                PenManagerActivity.this.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        mPenInfoLayout.setVisibility(View.VISIBLE);
+                        mScanLayout.setVisibility(View.GONE);
+                        mPenName.setText(mBleDevice.getName());
+                        mPenMac.setText(mBleDevice.getMac());
+                    }
+                });
+            }
+
+            @Override
+            public void onOpenPenStreamFailure(BleException e) {
+            }
+
+            @Override
+            public void onRemainBattery(int i) {
+                final int percent = i;
+                mBlePenManager.setmBleDevicePower(i);
+                PenManagerActivity.this.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mPenPower.setText(percent + "%");
+                    }
+                });
+            }
+
+            @Override
+            public void onMemoryFillLevel(int i, int i1) {
+                mBlePenManager.setmBleDeviceUsedMemory(i);
+                mBlePenManager.setmBleDeviceUsedBytes(i1);
+            }
+
+            @Override
+            public void onCoordDraw(int i, String s, int i1, int i2, int i3, int i4, long l) {
+            }
+
+            @Override
+            public void onOffLineCoordDraw(int i, String s, int i1, int i2, int i3, int i4, long l, int i5, int i6) {
+            }
+
+            @Override
+            public void onDisConnected(boolean b, BleDevice bleDevice) {
+                Log.i(TAG, "onDisConnected");
+            }
+
+            @Override
+            public void onWarnActiveReport(int i) {
+                switch (i) {
+                    case WARN_BATTERY:
+                        mBlePenManager.setLowBattery(true);
+                        Log.d(TAG, "handleActiveReport: 电池电量低警告");
+                        break;
+                    case WARN_MEMORY:
+                        mBlePenManager.setLowMemory(true);
+                        Log.d(TAG, "handleActiveReport: 存储空间警告");
+                        break;
+                    default:
+                }
+            }
+
+            @Override
+            public void onNewSession(String s, String s1, String s2) {
+                mBlePenManager.setmBleDeviceHwVersion(s);
+                mBlePenManager.setmBleDeviceSwVersion(s1);
+                mBlePenManager.setmBleDeviceSyncNum(s2);
+                final String sv = s1;
+                PenManagerActivity.this.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mPenVersion.setText(sv);
+                    }
+                });
+            }
+
+            @Override
+            public void onCurrentTime(long l) {
+
+            }
+        };
+        if(mBleDevice != null) {
+            BlePenStreamManager.getInstance().openPenStream(mBleDevice, blePenStreamCallback);
+        }
+    }
+
+    public void setPenInfo() {
+        mPenInfoLayout.setVisibility(View.VISIBLE);
+        mScanLayout.setVisibility(View.GONE);
+        mPenName.setText(mBlePenManager.getBleDeviceName());
+        mPenMac.setText(mBlePenManager.getBleDeviceMac());
+        mPenPower.setText(mBlePenManager.getBleDevicePower() + "%");
+        mPenVersion.setText(mBlePenManager.getBleDeviceSwVersion());
     }
 
 
@@ -313,28 +423,17 @@ public class PenFragment extends Fragment implements View.OnClickListener, ZBFor
         }
     }
 
+
     @Override
-    public void onRemainBattery(final int percent) {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mPenPower.setText(percent+"%");
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_OPEN_BT_CODE) {
+            if (resultCode == RESULT_OK) {
+                checkPermissions();
+            } else {
+                Toast.makeText(mContext, "拒绝蓝牙权限", Toast.LENGTH_SHORT).show();
             }
-        });
-    }
-
-    @Override
-    public void onMemoryFillLevel(int percent, int byteNum) {
-
-    }
-
-    @Override
-    public void onNewSession(String hardVersion, final String softVersion, String syncNum) {
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mPenVersion.setText(softVersion);
-            }
-        });
+        }
     }
 }
+

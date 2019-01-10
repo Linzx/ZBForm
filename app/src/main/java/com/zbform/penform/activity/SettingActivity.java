@@ -1,13 +1,14 @@
 package com.zbform.penform.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.preference.PreferenceFragment;
 import android.support.v7.app.ActionBar;
+import android.util.Log;
 import android.view.MenuItem;
 
 import com.zbform.penform.R;
 import com.zbform.penform.fragment.AccountFragment;
-import com.zbform.penform.fragment.PenFragment;
 import com.zbform.penform.settings.AppCompatPreferenceActivity;
 
 import java.util.List;
@@ -27,8 +28,17 @@ public class SettingActivity extends AppCompatPreferenceActivity {
 
     protected boolean isValidFragment(String fragmentName) {
         return PreferenceFragment.class.getName().equals(fragmentName)
-                || AccountFragment.class.getName().equals(fragmentName)
-                || PenFragment.class.getName().equals(fragmentName);
+                || AccountFragment.class.getName().equals(fragmentName);
+    }
+
+    @Override
+    public void onHeaderClick(Header header, int position) {
+        super.onHeaderClick(header, position);
+        Log.i("Setting", "header position  = "+position);
+        if(position == 1){
+            Intent intent = new Intent(this, PenManagerActivity.class);
+            startActivity(intent);
+        }
     }
 
     @Override
