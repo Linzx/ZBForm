@@ -610,6 +610,7 @@ public class ZBFormService extends Service {
     }
 
     public void startDraw() {
+        if (!mStopRecordCoord) return;
         mStopRecordCoord = false;
         new CoodSaveDBTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         ZBformApplication.sBlePenManager.startDraw();

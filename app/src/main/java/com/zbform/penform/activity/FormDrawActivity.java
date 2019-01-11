@@ -41,11 +41,15 @@ import com.zbform.penform.task.FormTask;
 import com.zbform.penform.task.NewFormRecordTask;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class FormDrawActivity extends BaseActivity {
     private static final String TAG = "FormDrawActivity";
     private static final int PRE_IMG = 1;
     private static final int NEXT_IMG = 2;
+
+    private static final int STATE_DRAW = 100;
+    private static final int STATE_PREVIEW = 100;
 
     //    private static final ColorDrawable TRANSPARENT_DRAWABLE = new ColorDrawable(android.R.color.transparent);
     private FormInfo mFormInfo;
@@ -54,7 +58,11 @@ public class FormDrawActivity extends BaseActivity {
     private String mPageAddress;
     private String mFormID;
     private String mFormName;
+    private int mDrawState = STATE_PREVIEW;
+    //保存当前显示的图
     private HashMap<Integer, Bitmap> mCacheImg = new HashMap<Integer, Bitmap>();
+    //保存原始空白图
+    private HashMap<Integer, Bitmap> mCacheOriginImg = new HashMap<Integer, Bitmap>();
     private ImageView mImgView;
 //    private ProgressBar mProgressBar;
     private LoadingDialog mLoadingDialog;
@@ -92,8 +100,19 @@ public class FormDrawActivity extends BaseActivity {
         getFormImg(0);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+//        if (mDrawState == STATE_PREVIEW){
+//            if (mService != null) {
+//                mService.startDraw();
+//            }
+//        }
+    }
+
     private void initFormData(Intent intent){
         if (intent != null) {
+            mDrawState = STATE_PREVIEW;
             mCurrentPage = 1;
             mCacheImg.clear();
             mPage = intent.getIntExtra("page", 1);
@@ -103,6 +122,21 @@ public class FormDrawActivity extends BaseActivity {
 
             TextView title = findViewById(R.id.toolbar_title);
             title.setText(mFormName);
+            clearOriginBitmap();
+        }
+    }
+
+    private void clearOriginBitmap(){
+        try {
+            for (Map.Entry<Integer, Bitmap> entry : mCacheOriginImg.entrySet()) {
+                if (entry != null && entry.getValue() != null) {
+                    entry.getValue().recycle();
+                }
+            }
+            Log.i(TAG,"clearOriginBitmap done");
+            mCacheOriginImg.clear();
+        }catch (Exception e){
+
         }
     }
 
@@ -133,11 +167,11 @@ public class FormDrawActivity extends BaseActivity {
             mNewRecordTask.execute(FormDrawActivity.this, mFormID);
             mNewRecordTask.setOnNewFormTaskListener(mNewRecordListener);
             mFormInfo = form;
-            for (int i = 0; i < mFormInfo.results[0].items.length; i++) {
-                FormItem item = mFormInfo.results[0].items[i];
-                Log.i(TAG, "item=" + item.getItem() + ",fieldName=" + item.getFieldName() + ",page=" +
-                        item.getPage());
-            }
+//            for (int i = 0; i < mFormInfo.results[0].items.length; i++) {
+//                FormItem item = mFormInfo.results[0].items[i];
+//                Log.i(TAG, "item=" + item.getItem() + ",fieldName=" + item.getFieldName() + ",page=" +
+//                        item.getPage());
+//            }
         }
 
         @Override
@@ -160,6 +194,16 @@ public class FormDrawActivity extends BaseActivity {
             if (mService != null) {
                 mService.setDrawFormInfo(mFormInfo, uuid);
                 mService.startDraw();
+                mDrawState = STATE_DRAW;
+
+                if (mCacheOriginImg.containsKey(mCurrentPage) &&
+                        mCacheOriginImg.get(mCurrentPage) != null) {
+                    Bitmap origin = mCacheOriginImg.get(mCurrentPage);
+                    mImgView.setImageBitmap(origin);
+                    mZBFormBlePenManager.setDrawView(mImgView, origin, origin.getWidth(), origin.getHeight());
+                } else {
+                    Log.i(TAG,"set origin fail");
+                }
                 Log.i(TAG,"startDraw");
             }
             Toast.makeText(FormDrawActivity.this,FormDrawActivity.this.getResources().getString(R.string.toast_new_record),
@@ -221,6 +265,10 @@ public class FormDrawActivity extends BaseActivity {
 
                 );
 
+                if (!mCacheOriginImg.containsKey(mCurrentPage)) {
+                    Bitmap origin = toTransform.copy(toTransform.getConfig(), true);
+                    mCacheOriginImg.put(mCurrentPage, origin);
+                }
                 mZBFormBlePenManager.setDrawView(mImgView, toTransform, toTransform.getWidth(), toTransform.getHeight());
             } else {
                 Log.i(TAG, "bitmap! null");
@@ -327,6 +375,8 @@ public class FormDrawActivity extends BaseActivity {
                 finish();
                 return true;
             case R.id.add_record:
+                mCurrentPage = 1;
+                mCacheImg.clear();
                 mFromTask = new FormTask();
                 mFromTask.setOnFormTaskListener(mFormTaskListener);
                 mFromTask.execute(FormDrawActivity.this, mFormID);
@@ -345,13 +395,14 @@ public class FormDrawActivity extends BaseActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         // Unbind from the service
         if (mService != null) {
             mService.stopDraw();
         }
         dismissLoading();
         unbindService(conn);
+        clearOriginBitmap();
+        super.onDestroy();
     }
 
 
