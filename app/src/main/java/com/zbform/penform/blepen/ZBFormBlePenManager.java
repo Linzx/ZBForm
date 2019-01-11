@@ -1,6 +1,5 @@
 package com.zbform.penform.blepen;
 
-import android.app.Activity;
 import android.bluetooth.BluetoothGatt;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -11,11 +10,8 @@ import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Handler;
-import android.os.Message;
-import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -29,14 +25,10 @@ import com.tstudy.blepenlib.exception.BleException;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Locale;
 
-import static android.content.Context.WINDOW_SERVICE;
 import static com.tstudy.blepenlib.constant.Constant.PEN_COODINAT_MESSAGE;
 import static com.tstudy.blepenlib.constant.Constant.PEN_DOWN_MESSAGE;
 import static com.tstudy.blepenlib.constant.Constant.PEN_UP_MESSAGE;
@@ -51,7 +43,6 @@ public class ZBFormBlePenManager {
     private ImageView mImageView;
     private BleDevice mBleDevice;
     private StreamingController mStreamingController;
-    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS", Locale.CHINA);
     private Bitmap mBitmap;
     private int mWidth = 1920;
     private int mHeight = 1080;
@@ -127,16 +118,8 @@ public class ZBFormBlePenManager {
     }
 
     private ZBFormBlePenManager(Context context) {
-        //绘图背景初始化
-        //获取屏幕的宽高
         mContext = context;
         mIZBBleGattCallbackList = new ArrayList<IZBBleGattCallback>();
-        WindowManager windowManager = (WindowManager) context.getSystemService(WINDOW_SERVICE);
-//        if (windowManager != null) {
-//            Display dis = windowManager.getDefaultDisplay();
-//            mWidth = dis.getWidth();
-//            mHeight = dis.getHeight();
-//        }
 
         initListener();
         initBlePenStream();
@@ -155,7 +138,7 @@ public class ZBFormBlePenManager {
     }
 
     public void setBleDevice(BleDevice device) {
-        Log.i("whd", "setBleDevice");
+        Log.i(TAG, "setBleDevice");
         mBleDevice = device;
         mBleDeviceName = mBleDevice.getName();
         mBleDeviceMac = mBleDevice.getMac();
@@ -177,12 +160,12 @@ public class ZBFormBlePenManager {
 
     public void startDraw(){
         mCanDraw = true;
-        BlePenStreamManager.getInstance().setStandMode();
+//        BlePenStreamManager.getInstance().setStandMode();
     }
 
     public void stopDraw(){
         mCanDraw = false;
-        BlePenStreamManager.getInstance().setHoverMode();
+//        BlePenStreamManager.getInstance().setHoverMode();
     }
 
     public void connect(final BleDevice bleDevice, IZBBleGattCallback callback) {
@@ -293,8 +276,6 @@ public class ZBFormBlePenManager {
                     default:
                         writeString = " up ";
                 }
-
-                Log.i("whd", "onCoordDraw2");
 
                 if (mCanDraw) {
                     drawBitmap();

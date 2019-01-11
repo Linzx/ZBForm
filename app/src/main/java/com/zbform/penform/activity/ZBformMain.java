@@ -149,7 +149,10 @@ public class ZBformMain extends BaseActivity {
 
     private void setUpDrawer() {
         LayoutInflater inflater = LayoutInflater.from(this);
-        mLvLeftMenu.addHeaderView(inflater.inflate(R.layout.nav_header_main, mLvLeftMenu, false));
+        View header = inflater.inflate(R.layout.nav_header_main, mLvLeftMenu, false);
+        TextView user = header.findViewById(R.id.top_login_name);
+        user.setText(ZBformApplication.getmLoginUserId());
+        mLvLeftMenu.addHeaderView(header);
         //圆形头像
         ImageView avtar = findViewById(R.id.top_bac);
         Glide.with(this)

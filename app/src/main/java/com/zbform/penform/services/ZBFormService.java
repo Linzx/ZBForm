@@ -87,6 +87,9 @@ public class ZBFormService extends Service {
 
         @Override
         public void onPenDown() {
+            if (!ZBformApplication.sBlePenManager.getCanDraw()){
+                return;
+            }
             //开始一个笔画
             mStroke = new HwData();
 
@@ -118,8 +121,8 @@ public class ZBFormService extends Service {
                     Log.i(TAG, "onCoordDraw START=");
                     FormListInfo.Results form = findPageForm(pageAddress);
                     startPageFormActivity(form);
+                    mPageAddress = pageAddress;
                 }
-                mPageAddress = pageAddress;
             }
             if (!ZBformApplication.sBlePenManager.getCanDraw()){
                 return;
@@ -185,6 +188,10 @@ public class ZBFormService extends Service {
             while (true) {
                 try {
                     if (mStopRecordCoord && mCoordQueue.isEmpty()) {
+                        mCurrentPage = 1;
+                        mDrawFormInfo = null;
+                        mRecordId = "";
+                        mPageAddress ="0.0.0.0";
                         break;
                     }
                     HwData stroke = mCoordQueue.take();
@@ -546,7 +553,7 @@ public class ZBFormService extends Service {
 
             Log.i(TAG, "on handleMessage ");
             new UpLoadStrokeDBQuery().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-
+            Log.i(TAG, "can draw= "+ZBformApplication.sBlePenManager.getCanDraw());
             //停止书写则停止查询上传数据
             if (!mStopRecordCoord) {
                 Message msg = mUpLoadQueryHandler.obtainMessage();
@@ -602,17 +609,18 @@ public class ZBFormService extends Service {
         mRecordId = recordId;
     }
 
-    public void startRecordCoord() {
-        new CoodSaveDBTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    public void startDraw() {
         mStopRecordCoord = false;
+        new CoodSaveDBTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        ZBformApplication.sBlePenManager.startDraw();
         //开始书写，5s 上传一次
         Message msg = mUpLoadQueryHandler.obtainMessage();
         mUpLoadQueryHandler.sendMessageDelayed(msg, UPLOAD_DELAY);
     }
 
-    public void stopRecordCoord() {
-
+    public void stopDraw() {
         mStopRecordCoord = true;
+        ZBformApplication.sBlePenManager.stopDraw();
         HwData coord = new HwData();
         coord.setC(-1000);
         try {
@@ -629,7 +637,6 @@ public class ZBFormService extends Service {
     public void setFormList(List<FormListInfo.Results> list){
         mFormList = list;
     }
-
 
     public void setCurrentPageAddress(String page){
         mPageAddress = page;

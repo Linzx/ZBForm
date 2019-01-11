@@ -6,6 +6,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.os.AsyncTask;
@@ -20,6 +21,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
@@ -30,6 +32,7 @@ import com.bumptech.glide.request.target.SimpleTarget;
 import com.zbform.penform.R;
 import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
+import com.zbform.penform.dialog.LoadingDialog;
 import com.zbform.penform.json.FormInfo;
 import com.zbform.penform.json.FormItem;
 import com.zbform.penform.net.ApiAddress;
@@ -53,12 +56,14 @@ public class FormDrawActivity extends BaseActivity {
     private String mFormName;
     private HashMap<Integer, Bitmap> mCacheImg = new HashMap<Integer, Bitmap>();
     private ImageView mImgView;
-    private ProgressBar mProgressBar;
+//    private ProgressBar mProgressBar;
+    private LoadingDialog mLoadingDialog;
     private FormTask mFromTask;
     private NewFormRecordTask mNewRecordTask;
     private ZBFormService mService;
     private ActionBar mActionBar;
     private ZBFormBlePenManager mZBFormBlePenManager;
+    private Resources mResources;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -67,13 +72,13 @@ public class FormDrawActivity extends BaseActivity {
         Log.i(TAG,"onCreate");
         setContentView(R.layout.formimg_activity);
         mZBFormBlePenManager = ZBFormBlePenManager.getInstance(FormDrawActivity.this);
-
+        mResources = getResources();
         mImgView = (ImageView) findViewById(R.id.form_img);
-        mProgressBar = (ProgressBar) findViewById(R.id.progress_img);
+//        mProgressBar = (ProgressBar) findViewById(R.id.progress_img);
         setToolBar();
 
         initFormData(getIntent());
-        getFormImg();
+        getFormImg(0);
 
         Intent intent = new Intent(this, ZBFormService.class);
         bindService(intent, conn, Service.BIND_AUTO_CREATE);
@@ -84,7 +89,7 @@ public class FormDrawActivity extends BaseActivity {
         super.onNewIntent(intent);
         Log.i(TAG,"onNewIntent");
         initFormData(intent);
-        getFormImg();
+        getFormImg(0);
     }
 
     private void initFormData(Intent intent){
@@ -95,6 +100,9 @@ public class FormDrawActivity extends BaseActivity {
             mPageAddress = intent.getStringExtra("pageaddress");
             mFormID = intent.getStringExtra("formid");
             mFormName = intent.getStringExtra("formname");
+
+            TextView title = findViewById(R.id.toolbar_title);
+            title.setText(mFormName);
         }
     }
 
@@ -115,7 +123,8 @@ public class FormDrawActivity extends BaseActivity {
 
         @Override
         public void onStartGet() {
-            mProgressBar.setVisibility(View.VISIBLE);
+//            mProgressBar.setVisibility(View.VISIBLE);
+            showLoading(mResources.getString(R.string.loading_new_record));
         }
 
         @Override
@@ -133,8 +142,8 @@ public class FormDrawActivity extends BaseActivity {
 
         @Override
         public void onGetFail() {
-            mProgressBar.setVisibility(View.INVISIBLE);
-
+//            mProgressBar.setVisibility(View.INVISIBLE);
+            dismissLoading();
         }
     };
 
@@ -146,11 +155,12 @@ public class FormDrawActivity extends BaseActivity {
         @Override
         public void onNewSuccess(String uuid) {
 
-            mProgressBar.setVisibility(View.INVISIBLE);
+//            mProgressBar.setVisibility(View.INVISIBLE);
+            dismissLoading();
             if (mService != null) {
                 mService.setDrawFormInfo(mFormInfo, uuid);
-                mService.startRecordCoord();
-                ZBformApplication.sBlePenManager.startDraw();
+                mService.startDraw();
+                Log.i(TAG,"startDraw");
             }
             Toast.makeText(FormDrawActivity.this,FormDrawActivity.this.getResources().getString(R.string.toast_new_record),
                     Toast.LENGTH_SHORT).show();
@@ -158,13 +168,21 @@ public class FormDrawActivity extends BaseActivity {
 
         @Override
         public void onNewFail() {
-            mProgressBar.setVisibility(View.INVISIBLE);
+//            mProgressBar.setVisibility(View.INVISIBLE);
+            dismissLoading();
         }
     };
 
-    private void getFormImg() {
+    private void getFormImg(int action) {
         try {
-            mProgressBar.setVisibility(View.VISIBLE);
+//            mProgressBar.setVisibility(View.VISIBLE);
+            if (action == PRE_IMG) {
+                showLoading(mResources.getString(R.string.loading_pre));
+            } else if (action == NEXT_IMG) {
+                showLoading(mResources.getString(R.string.loading_next));
+            } else {
+                showLoading(mResources.getString(R.string.loading));
+            }
             Glide.with(this)
                     .load(getUrl())
                     .asBitmap()
@@ -192,8 +210,17 @@ public class FormDrawActivity extends BaseActivity {
             if (toTransform != null) {
                 Log.i(TAG, "scalbitmap W=" + toTransform.getWidth());
                 Log.i(TAG, "scalbitmap H=" + toTransform.getHeight());
+//                mProgressBar.setVisibility(View.INVISIBLE);
+                FormDrawActivity.this.
+                        runOnUiThread(new Runnable() {
+                                                        @Override
+                                                        public void run() {
+                                                            dismissLoading();
+                                                        }
+                                                    }
 
-                mProgressBar.setVisibility(View.INVISIBLE);
+                );
+
                 mZBFormBlePenManager.setDrawView(mImgView, toTransform, toTransform.getWidth(), toTransform.getHeight());
             } else {
                 Log.i(TAG, "bitmap! null");
@@ -245,7 +272,7 @@ public class FormDrawActivity extends BaseActivity {
             mZBFormBlePenManager.setDrawView(mImgView, cache, cache.getWidth(), cache.getHeight());
         } else {
             Log.i(TAG, "mCurrentPage4");
-            getFormImg();
+            getFormImg(action);
         }
         if (mService != null) {
             mService.setCurrentPage(mCurrentPage);
@@ -258,7 +285,18 @@ public class FormDrawActivity extends BaseActivity {
         setSupportActionBar(toolbar);
         mActionBar = getSupportActionBar();
         mActionBar.setDisplayHomeAsUpEnabled(true);
-        mActionBar.setTitle(mFormName == null ? "" : mFormName);
+        mActionBar.setTitle("");
+    }
+
+    private void showLoading(String msg){
+        mLoadingDialog = new LoadingDialog(this,msg);
+        mLoadingDialog.show();
+    }
+
+    private void dismissLoading(){
+        if (mLoadingDialog != null){
+            mLoadingDialog.dismiss();
+        }
     }
 
     @Override
@@ -310,9 +348,9 @@ public class FormDrawActivity extends BaseActivity {
         super.onDestroy();
         // Unbind from the service
         if (mService != null) {
-            mService.stopRecordCoord();
-            ZBformApplication.sBlePenManager.stopDraw();
+            mService.stopDraw();
         }
+        dismissLoading();
         unbindService(conn);
     }
 
@@ -356,7 +394,8 @@ public class FormDrawActivity extends BaseActivity {
                 Log.i("whd", "scalbitmap H=" + bitmap.getHeight());
                 mImgView.setImageBitmap(bitmap);
 
-                mProgressBar.setVisibility(View.INVISIBLE);
+//                mProgressBar.setVisibility(View.INVISIBLE);
+                dismissLoading();
                 mZBFormBlePenManager.setDrawView(mImgView, bitmap, bitmap.getWidth(), bitmap.getHeight());
             } else {
                 Log.i("whd", "bitmap! null");
