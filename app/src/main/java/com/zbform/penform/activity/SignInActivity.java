@@ -33,6 +33,10 @@ public class SignInActivity extends AppCompatActivity implements View.OnClickLis
     private CheckBox chkPwd;
     private LoginTask mLoginTask;
     private PreferencesUtility mPreference;
+    private View mSignUp;
+    private long lastClickTime = 0L;
+    private static final int FAST_CLICK_DELAY_TIME = 1000;  // 快速点击间隔
+
     public static void launch(Activity activity) {
         Intent intent = new Intent(activity, SignInActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -63,6 +67,7 @@ public class SignInActivity extends AppCompatActivity implements View.OnClickLis
             @Override
             public void onEnd() {
                 showToolBar();
+                mSignUp.setEnabled(true);
                 Toast.makeText(SignInActivity.this,
                         SignInActivity.this.getString(R.string.login_fail),
                         Toast.LENGTH_SHORT).show();
@@ -80,8 +85,8 @@ public class SignInActivity extends AppCompatActivity implements View.OnClickLis
             mPwdText.setText(pwd);
         }
 
-        View signUp = findViewById(R.id.tv_sign_up);
-        signUp.setOnClickListener(this);
+        mSignUp = findViewById(R.id.tv_sign_up);
+        mSignUp.setOnClickListener(this);
         mLoginTask = new LoginTask();
         mLoginTask.setOnLoginTaskListener(this);
 
@@ -121,6 +126,8 @@ public class SignInActivity extends AppCompatActivity implements View.OnClickLis
 
     @Override
     public void onClick(View v) {
+
+
         String id = mNameText.getText().toString();
         String pwd = mPwdText.getText().toString();
         Log.i(TAG,"id="+id);
@@ -128,7 +135,11 @@ public class SignInActivity extends AppCompatActivity implements View.OnClickLis
         if (TextUtils.isEmpty(id) || pwd.isEmpty()){
             return;
         }
-
+        if (System.currentTimeMillis() - lastClickTime < FAST_CLICK_DELAY_TIME){
+            return;
+        }
+        mSignUp.setEnabled(false);
+        lastClickTime = System.currentTimeMillis();
         hideInput(v);
         mLoginTask.Login(this, id, pwd);
     }
@@ -137,6 +148,10 @@ public class SignInActivity extends AppCompatActivity implements View.OnClickLis
     public void onStartLogin() {
         Log.i(TAG,"onStartLogin");
         startLoginView();
+    }
+
+    @Override
+    public void onCancelled() {
     }
 
     @Override

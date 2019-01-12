@@ -30,7 +30,6 @@ import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.activity.FormDrawActivity;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.db.ZBStrokeEntity;
-import com.zbform.penform.handler.HandlerUtil;
 import com.zbform.penform.json.FormInfo;
 import com.zbform.penform.json.FormItem;
 import com.zbform.penform.json.FormListInfo;
@@ -42,9 +41,6 @@ import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.net.ErrorCode;
 import com.zbform.penform.net.IZBformNetBeanCallBack;
 import com.zbform.penform.net.ZBformNetBean;
-import com.zbform.penform.task.UpLoadStrokeTask;
-
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -59,7 +55,7 @@ public class ZBFormService extends Service {
     private List<FormListInfo.Results> mFormList;
     private FormInfo mDrawFormInfo;
     private String mRecordId;
-    private boolean mStopRecordCoord = false;
+    private boolean mStopRecordCoord = true;
     private int mCurrentPage = 1;
     private String mPageAddress ="0.0.0.0";
     //    private Executor mExecutor = Executors.newCachedThreadPool();
@@ -118,7 +114,8 @@ public class ZBFormService extends Service {
             if (!TextUtils.isEmpty(pageAddress)) {
                 if (!"0.0.0.0".equals(pageAddress) &&
                         !mPageAddress.equals(pageAddress)) {
-                    Log.i(TAG, "onCoordDraw START=");
+                    Log.i(TAG, "START ACT onCoordDraw mPageAddress="+mPageAddress);
+                    Log.i(TAG, "START ACT onCoordDraw pageAddress="+pageAddress);
                     FormListInfo.Results form = findPageForm(pageAddress);
                     startPageFormActivity(form);
                     mPageAddress = pageAddress;
@@ -611,6 +608,8 @@ public class ZBFormService extends Service {
 
     public void startDraw() {
         if (!mStopRecordCoord) return;
+
+        Log.i(TAG,"SERVICE startDraw");
         mStopRecordCoord = false;
         new CoodSaveDBTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         ZBformApplication.sBlePenManager.startDraw();
@@ -620,6 +619,7 @@ public class ZBFormService extends Service {
     }
 
     public void stopDraw() {
+        if (mStopRecordCoord) return;
         mStopRecordCoord = true;
         ZBformApplication.sBlePenManager.stopDraw();
         HwData coord = new HwData();

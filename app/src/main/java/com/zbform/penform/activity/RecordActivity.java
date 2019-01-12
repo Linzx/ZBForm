@@ -416,5 +416,10 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         public void onGetFail() {
             dismissLoading();
         }
+
+        @Override
+        public void onCancelled() {
+
+        }
     };
 }
