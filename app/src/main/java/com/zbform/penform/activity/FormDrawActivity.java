@@ -34,22 +34,25 @@ import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.dialog.LoadingDialog;
 import com.zbform.penform.json.FormInfo;
-import com.zbform.penform.json.FormItem;
 import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.services.ZBFormService;
 import com.zbform.penform.task.FormTask;
 import com.zbform.penform.task.NewFormRecordTask;
 
 import java.util.HashMap;
-import java.util.Map;
 
 public class FormDrawActivity extends BaseActivity {
     private static final String TAG = "FormDrawActivity";
-    private static final int PRE_IMG = 1;
-    private static final int NEXT_IMG = 2;
+    private static final int ACTION_PRE_IMG = 1;
+    private static final int ACTION_NEXT_IMG = 2;
+    private static final int ACTION_NEW_RECORD = 3;
+    private static final int ACTION_PREVIEW = 4;
 
-    private static final int STATE_DRAW = 100;
     private static final int STATE_PREVIEW = 100;
+    private static final int STATE_DRAW = 200;
+
+    private long lastClickTime = 0L;
+    private static final int FAST_CLICK_DELAY_TIME = 1000;
 
     //    private static final ColorDrawable TRANSPARENT_DRAWABLE = new ColorDrawable(android.R.color.transparent);
     private FormInfo mFormInfo;
@@ -61,10 +64,9 @@ public class FormDrawActivity extends BaseActivity {
     private int mDrawState = STATE_PREVIEW;
     //保存当前显示的图
     private HashMap<Integer, Bitmap> mCacheImg = new HashMap<Integer, Bitmap>();
-    //保存原始空白图
-    private HashMap<Integer, Bitmap> mCacheOriginImg = new HashMap<Integer, Bitmap>();
     private ImageView mImgView;
-//    private ProgressBar mProgressBar;
+    private Toolbar mToolbar;
+    private ImageView mToolbarState;
     private LoadingDialog mLoadingDialog;
     private FormTask mFromTask;
     private NewFormRecordTask mNewRecordTask;
@@ -72,6 +74,18 @@ public class FormDrawActivity extends BaseActivity {
     private ActionBar mActionBar;
     private ZBFormBlePenManager mZBFormBlePenManager;
     private Resources mResources;
+
+    ServiceConnection conn = new ServiceConnection() {
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d(TAG, "onServiceConnected");
+            ZBFormService.LocalBinder binder = (ZBFormService.LocalBinder) service;
+            mService = binder.getService();
+        }
+
+        public void onServiceDisconnected(ComponentName name) {
+            mService = null;
+        }
+    };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -82,32 +96,37 @@ public class FormDrawActivity extends BaseActivity {
         mZBFormBlePenManager = ZBFormBlePenManager.getInstance(FormDrawActivity.this);
         mResources = getResources();
         mImgView = (ImageView) findViewById(R.id.form_img);
-//        mProgressBar = (ProgressBar) findViewById(R.id.progress_img);
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        mToolbarState = findViewById(R.id.toolbar_state);
         setToolBar();
-
-        initFormData(getIntent());
-        getFormImg(0);
 
         Intent intent = new Intent(this, ZBFormService.class);
         bindService(intent, conn, Service.BIND_AUTO_CREATE);
+
+        initFormData(getIntent());
+        startLoadingForm(ACTION_PREVIEW);
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        Log.i(TAG,"onNewIntent");
+        Log.i(TAG, "onNewIntent");
+        // 自动识别纸后，停止上次的draw
+        if (mService != null){
+            mService.stopDraw();
+        }
         initFormData(intent);
-        getFormImg(0);
+
+        if (mToolbar != null) {
+            Menu menu = mToolbar.getMenu();
+            setUpMenu(menu);
+        }
+        startLoadingForm(ACTION_PREVIEW);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-//        if (mDrawState == STATE_PREVIEW){
-//            if (mService != null) {
-//                mService.startDraw();
-//            }
-//        }
     }
 
     private void initFormData(Intent intent){
@@ -115,122 +134,32 @@ public class FormDrawActivity extends BaseActivity {
             mDrawState = STATE_PREVIEW;
             mCurrentPage = 1;
             mCacheImg.clear();
+            setUpToolBarState(false);
             mPage = intent.getIntExtra("page", 1);
             mPageAddress = intent.getStringExtra("pageaddress");
             mFormID = intent.getStringExtra("formid");
             mFormName = intent.getStringExtra("formname");
 
-            TextView title = findViewById(R.id.toolbar_title);
-            title.setText(mFormName);
-            clearOriginBitmap();
+//            TextView title = findViewById(R.id.toolbar_title);
+//            title.setText(mFormName);
         }
     }
 
-    private void clearOriginBitmap(){
+    private void startLoadingForm(int action) {
         try {
-            for (Map.Entry<Integer, Bitmap> entry : mCacheOriginImg.entrySet()) {
-                if (entry != null && entry.getValue() != null) {
-                    entry.getValue().recycle();
-                }
-            }
-            Log.i(TAG,"clearOriginBitmap done");
-            mCacheOriginImg.clear();
-        }catch (Exception e){
-
-        }
-    }
-
-    ServiceConnection conn = new ServiceConnection() {
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            Log.d(TAG, "onServiceConnected");
-            ZBFormService.LocalBinder binder = (ZBFormService.LocalBinder) service;
-            mService = binder.getService();
-            mService.setCurrentPageAddress(mPageAddress);
-        }
-
-        public void onServiceDisconnected(ComponentName name) {
-            mService = null;
-        }
-    };
-
-    private FormTask.OnFormTaskListener mFormTaskListener = new FormTask.OnFormTaskListener() {
-
-        @Override
-        public void onStartGet() {
-//            mProgressBar.setVisibility(View.VISIBLE);
-            showLoading(mResources.getString(R.string.loading_new_record));
-        }
-
-        @Override
-        public void onGetSuccess(FormInfo form) {
-            mNewRecordTask = new NewFormRecordTask();
-            mNewRecordTask.execute(FormDrawActivity.this, mFormID);
-            mNewRecordTask.setOnNewFormTaskListener(mNewRecordListener);
-            mFormInfo = form;
-//            for (int i = 0; i < mFormInfo.results[0].items.length; i++) {
-//                FormItem item = mFormInfo.results[0].items[i];
-//                Log.i(TAG, "item=" + item.getItem() + ",fieldName=" + item.getFieldName() + ",page=" +
-//                        item.getPage());
-//            }
-        }
-
-        @Override
-        public void onGetFail() {
-//            mProgressBar.setVisibility(View.INVISIBLE);
-            dismissLoading();
-        }
-    };
-
-    private NewFormRecordTask.OnNewRecordTaskListener mNewRecordListener = new NewFormRecordTask.OnNewRecordTaskListener() {
-
-        @Override
-        public void onStartNew() {}
-
-        @Override
-        public void onNewSuccess(String uuid) {
-
-//            mProgressBar.setVisibility(View.INVISIBLE);
-            dismissLoading();
-            if (mService != null) {
-                mService.setDrawFormInfo(mFormInfo, uuid);
-                mService.startDraw();
-                mDrawState = STATE_DRAW;
-
-                if (mCacheOriginImg.containsKey(mCurrentPage) &&
-                        mCacheOriginImg.get(mCurrentPage) != null) {
-                    Bitmap origin = mCacheOriginImg.get(mCurrentPage);
-                    mImgView.setImageBitmap(origin);
-                    mZBFormBlePenManager.setDrawView(mImgView, origin, origin.getWidth(), origin.getHeight());
-                } else {
-                    Log.i(TAG,"set origin fail");
-                }
-                Log.i(TAG,"startDraw");
-            }
-            Toast.makeText(FormDrawActivity.this,FormDrawActivity.this.getResources().getString(R.string.toast_new_record),
-                    Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        public void onNewFail() {
-//            mProgressBar.setVisibility(View.INVISIBLE);
-            dismissLoading();
-        }
-    };
-
-    private void getFormImg(int action) {
-        try {
-//            mProgressBar.setVisibility(View.VISIBLE);
-            if (action == PRE_IMG) {
+            if (action == ACTION_PRE_IMG) {
                 showLoading(mResources.getString(R.string.loading_pre));
-            } else if (action == NEXT_IMG) {
+            } else if (action == ACTION_NEXT_IMG) {
                 showLoading(mResources.getString(R.string.loading_next));
+            } else if (action == ACTION_NEW_RECORD){
+                showLoading(mResources.getString(R.string.loading_new_record));
             } else {
                 showLoading(mResources.getString(R.string.loading));
             }
             Glide.with(this)
                     .load(getUrl())
                     .asBitmap()
-                    .transform(new FormDrawImgTransformation(this))
+                    .transform(new FormDrawImgTransformation(this,action))
                     .into(mImgView);
 //                    .into(mOriginTarget);
         } catch (Exception e) {
@@ -241,10 +170,18 @@ public class FormDrawActivity extends BaseActivity {
         }
     }
 
-    private class FormDrawImgTransformation extends BitmapTransformation {
+    private void startNewRecord(){
+        mNewRecordTask = new NewFormRecordTask();
+        mNewRecordTask.execute(FormDrawActivity.this, mFormID);
+        mNewRecordTask.setOnNewFormTaskListener(mNewRecordListener);
+    }
 
-        public FormDrawImgTransformation(Context context) {
+    private class FormDrawImgTransformation extends BitmapTransformation {
+        private int mAction;
+
+        public FormDrawImgTransformation(Context context, int action) {
             super(context);
+            mAction = action;
         }
 
         @Override
@@ -254,22 +191,24 @@ public class FormDrawActivity extends BaseActivity {
             if (toTransform != null) {
                 Log.i(TAG, "scalbitmap W=" + toTransform.getWidth());
                 Log.i(TAG, "scalbitmap H=" + toTransform.getHeight());
-//                mProgressBar.setVisibility(View.INVISIBLE);
-                FormDrawActivity.this.
-                        runOnUiThread(new Runnable() {
-                                                        @Override
-                                                        public void run() {
-                                                            dismissLoading();
-                                                        }
-                                                    }
 
-                );
+                mZBFormBlePenManager.setDrawView(mImgView, toTransform,
+                        toTransform.getWidth(), toTransform.getHeight());
 
-                if (!mCacheOriginImg.containsKey(mCurrentPage)) {
-                    Bitmap origin = toTransform.copy(toTransform.getConfig(), true);
-                    mCacheOriginImg.put(mCurrentPage, origin);
+                if (mAction == ACTION_NEW_RECORD) {
+                    startNewRecord();
+                } else if (mAction == ACTION_PREVIEW) {
+                    mFromTask = new FormTask();
+                    mFromTask.setOnFormTaskListener(mFormTaskListener);
+                    mFromTask.execute(FormDrawActivity.this, mFormID);
+                } else {
+                    FormDrawActivity.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            dismissLoading();
+                        }
+                    });
                 }
-                mZBFormBlePenManager.setDrawView(mImgView, toTransform, toTransform.getWidth(), toTransform.getHeight());
             } else {
                 Log.i(TAG, "bitmap! null");
             }
@@ -282,6 +221,59 @@ public class FormDrawActivity extends BaseActivity {
         }
     }
 
+    private FormTask.OnFormTaskListener mFormTaskListener = new FormTask.OnFormTaskListener() {
+
+        @Override
+        public void onStartGet() {
+        }
+
+        @Override
+        public void onGetSuccess(FormInfo form) {
+            mFormInfo = form;
+            if (mService != null) {
+                mService.setCurrentPageAddress(mPageAddress);
+            }
+            dismissLoading();
+        }
+
+        @Override
+        public void onGetFail() {
+            dismissLoading();
+        }
+
+        @Override
+        public void onCancelled() {
+            dismissLoading();
+        }
+    };
+
+    private NewFormRecordTask.OnNewRecordTaskListener mNewRecordListener = new NewFormRecordTask.OnNewRecordTaskListener() {
+        @Override
+        public void onStartNew() {}
+
+        @Override
+        public void onNewSuccess(String uuid) {
+            if (mService != null) {
+                mService.setDrawFormInfo(mFormInfo, uuid);
+                mService.startDraw();
+                setUpToolBarState(true);
+                mDrawState = STATE_DRAW;
+                Log.i(TAG,"startDraw");
+            }
+            dismissLoading();
+
+            Toast.makeText(FormDrawActivity.this,
+                    FormDrawActivity.this.getResources().getString(R.string.toast_new_record),
+                    Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        public void onNewFail() {
+            dismissLoading();
+        }
+    };
+
+
     private String getUrl() {
         if (mCurrentPage < 0 || mCurrentPage > mPage) {
             mCurrentPage = 1;
@@ -291,22 +283,22 @@ public class FormDrawActivity extends BaseActivity {
     }
 
     private void switchPages(int action) {
-        if (action == PRE_IMG && mCurrentPage == 1) {
+        if (action == ACTION_PRE_IMG && mCurrentPage == 1) {
             Toast.makeText(this, this.getResources().getString(R.string.toast_already_first), Toast.LENGTH_SHORT).show();
             return;
         }
-        if (action == NEXT_IMG && mCurrentPage == mPage) {
+        if (action == ACTION_NEXT_IMG && mCurrentPage == mPage) {
             Toast.makeText(this, this.getResources().getString(R.string.toast_already_last), Toast.LENGTH_SHORT).show();
             return;
         }
-        Log.i(TAG, "mpage=" + mPage);
+        Log.i(TAG, "mPage=" + mPage);
         mCacheImg.put(mCurrentPage, mZBFormBlePenManager.getDrawBitmap());
         Log.i(TAG, "mCurrentPage1=" + mCurrentPage);
-        if (action == PRE_IMG) {
+        if (action == ACTION_PRE_IMG) {
             if (mCurrentPage > 1) {
                 mCurrentPage -= 1;
             }
-        } else if (action == NEXT_IMG) {
+        } else if (action == ACTION_NEXT_IMG) {
             if (mCurrentPage < mPage) {
                 mCurrentPage += 1;
             }
@@ -320,13 +312,12 @@ public class FormDrawActivity extends BaseActivity {
             mZBFormBlePenManager.setDrawView(mImgView, cache, cache.getWidth(), cache.getHeight());
         } else {
             Log.i(TAG, "mCurrentPage4");
-            getFormImg(action);
+            startLoadingForm(action);
         }
         if (mService != null) {
             mService.setCurrentPage(mCurrentPage);
         }
     }
-
 
     private void setToolBar() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -347,11 +338,14 @@ public class FormDrawActivity extends BaseActivity {
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(final Menu menu) {
+    private void setUpToolBarState(boolean visible){
+        if (mToolbarState != null) {
+            mToolbarState.setVisibility(visible == true ? View.VISIBLE: View.INVISIBLE);
+        }
+    }
 
-        getMenuInflater().inflate(R.menu.menu_draw, menu);
-
+    private void setUpMenu(Menu menu) {
+        if (menu == null) return;
         MenuItem pre = menu.findItem(R.id.img_pre);
         MenuItem next = menu.findItem(R.id.img_next);
 
@@ -364,28 +358,42 @@ public class FormDrawActivity extends BaseActivity {
                 next.setVisible(false);
             }
         }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(final Menu menu) {
+
+        getMenuInflater().inflate(R.menu.menu_draw, menu);
+        setUpMenu(menu);
+
 
         return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
+        if (System.currentTimeMillis() - lastClickTime < FAST_CLICK_DELAY_TIME){
+            return true;
+        }
         switch (item.getItemId()) {
             case android.R.id.home:
                 finish();
                 return true;
             case R.id.add_record:
-                mCurrentPage = 1;
-                mCacheImg.clear();
-                mFromTask = new FormTask();
-                mFromTask.setOnFormTaskListener(mFormTaskListener);
-                mFromTask.execute(FormDrawActivity.this, mFormID);
+                if (mDrawState == STATE_DRAW) {
+                    mCurrentPage = 1;
+                    mCacheImg.clear();
+                    startLoadingForm(ACTION_NEW_RECORD);
+                } else {
+                    showLoading(mResources.getString(R.string.loading_new_record));
+                    startNewRecord();
+                }
                 return true;
             case R.id.img_pre:
-                switchPages(PRE_IMG);
+                switchPages(ACTION_PRE_IMG);
                 return true;
             case R.id.img_next:
-                switchPages(NEXT_IMG);
+                switchPages(ACTION_NEXT_IMG);
                 return true;
             default:
                 break;
@@ -401,58 +409,11 @@ public class FormDrawActivity extends BaseActivity {
         }
         dismissLoading();
         unbindService(conn);
-        clearOriginBitmap();
         super.onDestroy();
     }
 
 
     ////////////////////////////////////////////////////////////////////
-
-    class BitmapTask extends AsyncTask<Integer, Void, Bitmap> {
-        private int mWidth;
-        private int mHeight;
-
-        BitmapTask(Context context, int width, int height) {
-
-            mWidth = width;
-            mHeight = height;
-        }
-
-        @Override
-        protected Bitmap doInBackground(Integer... params) {
-            Bitmap scaleImg = null;
-            try {
-                Log.i("whd", "BitmapTask doInBackground");
-                scaleImg = Glide.with(FormDrawActivity.this)
-                        .load(getUrl())
-                        .asBitmap()
-                        .into(mWidth, mHeight)
-                        .get();
-
-            } catch (Exception e) {
-                Log.i(TAG, "e W=" + e.getMessage());
-                e.printStackTrace();
-            }
-            return scaleImg;
-        }
-
-        @Override
-        protected void onPostExecute(Bitmap bitmap) {
-            super.onPostExecute(bitmap);
-            Log.i("whd", "BitmapTask onPostExecute");
-            if (bitmap != null) {
-                Log.i("whd", "scalbitmap W=" + bitmap.getWidth());
-                Log.i("whd", "scalbitmap H=" + bitmap.getHeight());
-                mImgView.setImageBitmap(bitmap);
-
-//                mProgressBar.setVisibility(View.INVISIBLE);
-                dismissLoading();
-                mZBFormBlePenManager.setDrawView(mImgView, bitmap, bitmap.getWidth(), bitmap.getHeight());
-            } else {
-                Log.i("whd", "bitmap! null");
-            }
-        }
-    }
 
     private SimpleTarget mOriginTarget = new SimpleTarget<Bitmap>() {
         @Override
@@ -511,6 +472,52 @@ public class FormDrawActivity extends BaseActivity {
 
 //        parent.addView(image);
 
+    }
+
+    class BitmapTask extends AsyncTask<Integer, Void, Bitmap> {
+        private int mWidth;
+        private int mHeight;
+
+        BitmapTask(Context context, int width, int height) {
+
+            mWidth = width;
+            mHeight = height;
+        }
+
+        @Override
+        protected Bitmap doInBackground(Integer... params) {
+            Bitmap scaleImg = null;
+            try {
+                Log.i("whd", "BitmapTask doInBackground");
+                scaleImg = Glide.with(FormDrawActivity.this)
+                        .load(getUrl())
+                        .asBitmap()
+                        .into(mWidth, mHeight)
+                        .get();
+
+            } catch (Exception e) {
+                Log.i(TAG, "e W=" + e.getMessage());
+                e.printStackTrace();
+            }
+            return scaleImg;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            super.onPostExecute(bitmap);
+            Log.i("whd", "BitmapTask onPostExecute");
+            if (bitmap != null) {
+                Log.i("whd", "scalbitmap W=" + bitmap.getWidth());
+                Log.i("whd", "scalbitmap H=" + bitmap.getHeight());
+                mImgView.setImageBitmap(bitmap);
+
+//                mProgressBar.setVisibility(View.INVISIBLE);
+                dismissLoading();
+                mZBFormBlePenManager.setDrawView(mImgView, bitmap, bitmap.getWidth(), bitmap.getHeight());
+            } else {
+                Log.i("whd", "bitmap! null");
+            }
+        }
     }
 //    private void fadeInDisplay(ImageView imageView, Bitmap bitmap) {
 //        final TransitionDrawable transitionDrawable =

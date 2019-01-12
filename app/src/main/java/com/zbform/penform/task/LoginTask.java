@@ -27,6 +27,8 @@ public class LoginTask implements IZBformNetBeanCallBack {
     public interface OnLoginTaskListener {
         public void onStartLogin();
 
+        public void onCancelled();
+
         public void onLoginSuccess();
 
         public void onLoginFail();
@@ -56,8 +58,9 @@ public class LoginTask implements IZBformNetBeanCallBack {
 
     @Override
     public void onCancelled() {
-        // TODO Auto-generated method stub
-
+        if (mOnLoginTaskListener != null) {
+            mOnLoginTaskListener.onCancelled();
+        }
     }
 
     @Override

@@ -26,6 +26,8 @@ public class FormTask implements IZBformNetBeanCallBack {
 		public void onGetSuccess(FormInfo info);
 
 		public void onGetFail();
+
+		public void onCancelled();
 	}
 
 	public void execute(Context context, String formid) {
@@ -51,8 +53,9 @@ public class FormTask implements IZBformNetBeanCallBack {
 
 	@Override
 	public void onCancelled() {
-		// TODO Auto-generated method stub
-
+		if (mOnFormTaskListener != null) {
+			mOnFormTaskListener.onCancelled();
+		}
 	}
 
 	@Override

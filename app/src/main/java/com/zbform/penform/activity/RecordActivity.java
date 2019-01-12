@@ -356,5 +356,10 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         public void onGetFail() {
             mProgressBar.setVisibility(View.INVISIBLE);
         }
+
+        @Override
+        public void onCancelled() {
+
+        }
     };
 }
