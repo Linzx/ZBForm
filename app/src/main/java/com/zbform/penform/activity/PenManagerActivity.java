@@ -74,6 +74,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
         mContext = this;
         initView();
         mBlePenManager.setBlePenStateCallBack(this);
+        mBlePenManager.setZBBleGattCallback(mBleGattCallback);
         boolean initSuccess = mBlePenManager.isBleInitSuccess();
         if (initSuccess) {
             Log.i(TAG, "initSuccess");
@@ -183,85 +184,87 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     }
 
     private void startScan() {
-        //扫描回调
-        BleScanCallback callback = new BleScanCallback() {
-            @Override
-            public void onScanStarted(boolean success) {
-                mDeviceAdapter.clearScanDevice();
-                mDeviceAdapter.notifyDataSetChanged();
-                img_loading.startAnimation(operatingAnim);
-                img_loading.setVisibility(View.VISIBLE);
-                btn_scan.setText(getString(R.string.stop_scan));
-            }
-
-            @Override
-            public void onLeScan(BleDevice bleDevice) {
-                super.onLeScan(bleDevice);
-            }
-
-            @Override
-            public void onScanning(BleDevice bleDevice) {
-                mDeviceAdapter.addDevice(bleDevice);
-//                mBleDevice = bleDevice;
-                mDeviceAdapter.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onScanFinished(List<BleDevice> scanResultList) {
-                img_loading.clearAnimation();
-                img_loading.setVisibility(View.INVISIBLE);
-                btn_scan.setText(getString(R.string.start_scan));
-                mDeviceAdapter.notifyDataSetChanged();
-            }
-        };
-        BlePenManager.getInstance().scan(callback);
+        BlePenManager.getInstance().scan(mScanCallback);
         mPenInfoLayout.setVisibility(View.GONE);
     }
 
+    //扫描回调
+    BleScanCallback mScanCallback = new BleScanCallback() {
+        @Override
+        public void onScanStarted(boolean success) {
+            mDeviceAdapter.clearScanDevice();
+            mDeviceAdapter.notifyDataSetChanged();
+            img_loading.startAnimation(operatingAnim);
+            img_loading.setVisibility(View.VISIBLE);
+            btn_scan.setText(getString(R.string.stop_scan));
+        }
+
+        @Override
+        public void onLeScan(BleDevice bleDevice) {
+            super.onLeScan(bleDevice);
+        }
+
+        @Override
+        public void onScanning(BleDevice bleDevice) {
+            mDeviceAdapter.addDevice(bleDevice);
+//                mBleDevice = bleDevice;
+            mDeviceAdapter.notifyDataSetChanged();
+        }
+
+        @Override
+        public void onScanFinished(List<BleDevice> scanResultList) {
+            img_loading.clearAnimation();
+            img_loading.setVisibility(View.INVISIBLE);
+            btn_scan.setText(getString(R.string.start_scan));
+            mDeviceAdapter.notifyDataSetChanged();
+        }
+    };
 
     private void connect(final BleDevice bleDevice) {
-        //连接回调
-        ZBFormBlePenManager.IZBBleGattCallback bleGattCallback = new ZBFormBlePenManager.IZBBleGattCallback() {
-            @Override
-            public void onStartConnect() {
-                if (!progressDialog.isShowing() && !PenManagerActivity.this.isFinishing() && !PenManagerActivity.this.isDestroyed()) {
-                    progressDialog.setMessage("正在连接蓝牙点阵笔:" + bleDevice.getName());
-                    progressDialog.show();
-                }
-            }
-
-            @Override
-            public void onConnectFail(BleDevice bleDevice, BleException exception) {
-                img_loading.clearAnimation();
-                img_loading.setVisibility(View.INVISIBLE);
-                btn_scan.setText(getString(R.string.start_scan));
-                if (progressDialog != null && progressDialog.isShowing()) {
-                    progressDialog.dismiss();
-                }
-//                Toast.makeText(MainActivity.this, getString(R.string.connect_fail), Toast.LENGTH_LONG).show();
-            }
-
-            @Override
-            public void onConnectSuccess(BleDevice bleDevice, BluetoothGatt gatt, int status) {
-                mBleDevice = bleDevice;
-                Log.i(TAG, "onConnectSuccess");
-                mBlePenManager.setBleDevice(mBleDevice);
-                if (progressDialog != null && progressDialog.isShowing()) {
-                    progressDialog.dismiss();
-                }
-                mDeviceAdapter.addDevice(0,bleDevice);
-//                mDeviceAdapter.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
-                if (progressDialog != null && progressDialog.isShowing()) {
-                    progressDialog.dismiss();
-                }
-            }
-        };
-        mBlePenManager.connect(bleDevice, bleGattCallback);
+        mBlePenManager.connect(bleDevice);
     }
+
+    //连接回调
+    ZBFormBlePenManager.IZBBleGattCallback mBleGattCallback = new ZBFormBlePenManager.IZBBleGattCallback() {
+        @Override
+        public void onStartConnect() {
+            if (!progressDialog.isShowing() && !PenManagerActivity.this.isFinishing() && !PenManagerActivity.this.isDestroyed()) {
+                progressDialog.setMessage("正在连接蓝牙点阵笔!");
+                progressDialog.show();
+            }
+        }
+
+        @Override
+        public void onConnectFail(BleDevice bleDevice, BleException exception) {
+            img_loading.clearAnimation();
+            img_loading.setVisibility(View.INVISIBLE);
+            btn_scan.setText(getString(R.string.start_scan));
+            if (progressDialog != null && progressDialog.isShowing()) {
+                progressDialog.dismiss();
+            }
+//                Toast.makeText(MainActivity.this, getString(R.string.connect_fail), Toast.LENGTH_LONG).show();
+        }
+
+        @Override
+        public void onConnectSuccess(BleDevice bleDevice, BluetoothGatt gatt, int status) {
+            mBleDevice = bleDevice;
+            Log.i(TAG, "onConnectSuccess");
+            mBlePenManager.setBleDevice(mBleDevice);
+            if (progressDialog != null && progressDialog.isShowing()) {
+                progressDialog.dismiss();
+            }
+            mDeviceAdapter.addDevice(0,bleDevice);
+//                mDeviceAdapter.notifyDataSetChanged();
+        }
+
+        @Override
+        public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
+            if (progressDialog != null && progressDialog.isShowing()) {
+                progressDialog.dismiss();
+            }
+        }
+    };
+
 
     public void setPenInfo() {
         mPenInfoLayout.setVisibility(View.VISIBLE);

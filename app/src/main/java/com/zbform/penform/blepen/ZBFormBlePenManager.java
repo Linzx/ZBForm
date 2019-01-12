@@ -135,8 +135,11 @@ public class ZBFormBlePenManager {
     }
 
     public void setZBBleGattCallback(IZBBleGattCallback callback){
-        if(!mIZBBleGattCallbackList.contains(callback))
+        if(!mIZBBleGattCallbackList.contains(callback)) {
+            Log.i(TAG,"Add ble gatt call back, at set");
+
             mIZBBleGattCallbackList.add(callback);
+        }
     }
 
     public void setBleDevice(BleDevice device) {
@@ -171,9 +174,14 @@ public class ZBFormBlePenManager {
     }
 
     public void connect(final BleDevice bleDevice, IZBBleGattCallback callback) {
-        if (callback != null) {
+        if (callback != null && !mIZBBleGattCallbackList.contains(callback)) {
+            Log.i(TAG,"Add ble gatt call back");
             mIZBBleGattCallbackList.add(callback);
         }
+        BlePenManager.getInstance().connect(bleDevice, mBleGattCallback);
+    }
+
+    public void connect(final BleDevice bleDevice) {
         BlePenManager.getInstance().connect(bleDevice, mBleGattCallback);
     }
 
@@ -483,8 +491,10 @@ public class ZBFormBlePenManager {
         System.gc();
         mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
         synchronized (TouchImageView.class) {
-            mImageView.setImageBitmap(mBitmap);
-            mImageView.invalidate();
+            if(mImageView != null) {
+                mImageView.setImageBitmap(mBitmap);
+                mImageView.invalidate();
+            }
         }
     }
 

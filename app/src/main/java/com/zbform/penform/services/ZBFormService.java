@@ -111,6 +111,7 @@ public class ZBFormService extends Service {
 
         @Override
         public void onCoordDraw(String pageAddress, int nX, int nY) {
+            Log.i(TAG, "page address = "+pageAddress);
             if (!TextUtils.isEmpty(pageAddress)) {
                 if (!"0.0.0.0".equals(pageAddress) &&
                         !mPageAddress.equals(pageAddress)) {
@@ -143,10 +144,12 @@ public class ZBFormService extends Service {
         private FormListInfo.Results findPageForm(String address){
             FormListInfo.Results formTarget = null;
 
-            for(FormListInfo.Results form : mFormList){
-                if (form.getRinit().equals(address)){
-                    formTarget = form;
-                    break;
+            if(mFormList != null && mFormList.size()>0) {
+                for (FormListInfo.Results form : mFormList) {
+                    if (form.getRinit().equals(address)) {
+                        formTarget = form;
+                        break;
+                    }
                 }
             }
 
@@ -156,6 +159,7 @@ public class ZBFormService extends Service {
         private void startPageFormActivity(FormListInfo.Results form){
             if (form == null) return;
             Intent intent = new Intent(mContext, FormDrawActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             intent.putExtra("page",form.getPage());
             intent.putExtra("pageaddress",form.getRinit());
             intent.putExtra("formid",form.getUuid());

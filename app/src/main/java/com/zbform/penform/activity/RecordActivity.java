@@ -87,7 +87,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             Log.d(TAG, "onServiceConnected");
             ZBFormService.LocalBinder binder = (ZBFormService.LocalBinder) service;
             mService = binder.getService();
-            mService.setCurrentPageAddress(mPageAddress);
+//            mService.setCurrentPageAddress(mPageAddress);
         }
 
         public void onServiceDisconnected(ComponentName name) {
@@ -112,6 +112,10 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         setToolBar();
 
         initData();
+
+        Log.i(TAG, "bind service: zbform service");
+        Intent intent = new Intent(this, ZBFormService.class);
+        bindService(intent, conn, Service.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -123,6 +127,17 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         dismissLoading();
         unbindService(conn);
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (mService != null) {
+            Log.i(TAG, "startDraw");
+            mService.startDraw();
+        }
+    }
+
     private void setToolBar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -135,15 +150,12 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     private void initData() {
         mTask = new RecordTask(mContext, mFormId, mRecordId);
         mTask.setTaskListener(this);
-        if (mPage > 1) {
-            // 获取表单，为了查询form item
-            mFormTask = new FormTask();
-            mFormTask.setOnFormTaskListener(mFormTaskListener);
-            mFormTask.execute(mContext, mFormId);
-        } else {
-            // 获取对应的表单记录数据
-            mTask.getRecord();
-        }
+
+        // 获取表单，为了查询form item
+        mFormTask = new FormTask();
+        mFormTask.setOnFormTaskListener(mFormTaskListener);
+        mFormTask.execute(mContext, mFormId);
+
     }
 
     @Override
@@ -271,20 +283,21 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         }
     }
 
-    private void showLoading(){
-        Log.i(TAG,"showLoading");
-        if(mLoadingDialog != null && mLoadingDialog.isShowing())
+    private void showLoading() {
+        Log.i(TAG, "showLoading");
+        if (mLoadingDialog != null && mLoadingDialog.isShowing())
             return;
-        mLoadingDialog = new LoadingDialog(this,getString(R.string.loading));
+        mLoadingDialog = new LoadingDialog(this, getString(R.string.loading));
         mLoadingDialog.show();
     }
 
-    private void dismissLoading(){
-        if (mLoadingDialog != null){
-            Log.i(TAG,"dismissLoading");
+    private void dismissLoading() {
+        if (mLoadingDialog != null) {
+            Log.i(TAG, "dismissLoading");
             mLoadingDialog.dismiss();
         }
     }
+
     @Override
     public void onTaskFail() {
         dismissLoading();
@@ -300,13 +313,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                     .transform(new RecordImgTransformation(mContext))
                     .into(mRecordImg);
 
-            if (mService != null) {
-                Log.i(TAG,"startDraw");
-                mService.setDrawFormInfo(mFormInfo, mRecordId);
-                mService.startDraw();
 
-                ZBformApplication.sBlePenManager.setDrawView(mRecordImg, mRecordBitmapImg, mRecordBitmapImg.getWidth(), mRecordBitmapImg.getHeight());
-            }
         } catch (Exception e) {
             Log.i(TAG, "load bitmap ex=" + e.getMessage());
             e.printStackTrace();
@@ -362,9 +369,12 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
 
             canvas.drawPath(mPath, paint);
+
             mRecordBitmapImg = toTransform;
+            ZBformApplication.sBlePenManager.setDrawView(mRecordImg, mRecordBitmapImg, mRecordBitmapImg.getWidth(), mRecordBitmapImg.getHeight());
+
             mPath.reset();
-            ((Activity)mContext).runOnUiThread(new Runnable() {
+            ((Activity) mContext).runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     dismissLoading();
@@ -406,9 +416,9 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             mFormInfo = form;
             mPageAddress = mFormInfo.results[0].getRinit();
 
-            Log.i(TAG, "bind service: zbform service");
-            Intent intent = new Intent(RecordActivity.this, ZBFormService.class);
-            bindService(intent, conn, Service.BIND_AUTO_CREATE);
+            Log.i(TAG, "set page address to service: " + mPageAddress);
+            mService.setCurrentPageAddress(mPageAddress);
+            mService.setDrawFormInfo(mFormInfo, mRecordId);
             mTask.getRecord();
         }
 
