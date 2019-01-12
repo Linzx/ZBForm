@@ -1,13 +1,18 @@
 package com.zbform.penform.activity;
 
 import android.app.Activity;
+import android.app.Service;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -25,6 +30,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.zbform.penform.R;
 import com.zbform.penform.ZBformApplication;
+import com.zbform.penform.dialog.LoadingDialog;
 import com.zbform.penform.json.FormInfo;
 import com.zbform.penform.json.FormItem;
 import com.zbform.penform.json.HwData;
@@ -32,6 +38,7 @@ import com.zbform.penform.json.Point;
 import com.zbform.penform.json.RecordDataItem;
 import com.zbform.penform.json.RecordInfo;
 import com.zbform.penform.net.ApiAddress;
+import com.zbform.penform.services.ZBFormService;
 import com.zbform.penform.task.FormTask;
 import com.zbform.penform.task.RecordTask;
 
@@ -56,9 +63,10 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     private String mFormId;
     private String mRecordId;
     private String mRecordCode;
+    private String mPageAddress;
     private int mPage;
 
-    ProgressBar mProgressBar;
+    private LoadingDialog mLoadingDialog;
     ActionBar mActionBar;
     ImageView mRecordImg;
     Bitmap mRecordBitmapImg;
@@ -71,6 +79,21 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     private FormInfo mFormInfo = null;
 
     private Context mContext;
+    private ZBFormService mService;
+
+
+    ServiceConnection conn = new ServiceConnection() {
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d(TAG, "onServiceConnected");
+            ZBFormService.LocalBinder binder = (ZBFormService.LocalBinder) service;
+            mService = binder.getService();
+            mService.setCurrentPageAddress(mPageAddress);
+        }
+
+        public void onServiceDisconnected(ComponentName name) {
+            mService = null;
+        }
+    };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -80,7 +103,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
         mContext = this;
         mRecordImg = findViewById(R.id.record_img);
-        mProgressBar = findViewById(R.id.progress_img);
         mFormId = getIntent().getStringExtra("formId");
         mRecordId = getIntent().getStringExtra("recordId");
         mPage = getIntent().getIntExtra("page", 0);
@@ -92,6 +114,15 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         initData();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mService != null) {
+            mService.stopDraw();
+        }
+        dismissLoading();
+        unbindService(conn);
+    }
     private void setToolBar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -234,24 +265,48 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
             getFormImg(getUrl());
         }
+
+        if (mService != null) {
+            mService.setCurrentPage(mCurrentPage);
+        }
     }
 
+    private void showLoading(){
+        Log.i(TAG,"showLoading");
+        if(mLoadingDialog != null && mLoadingDialog.isShowing())
+            return;
+        mLoadingDialog = new LoadingDialog(this,getString(R.string.loading));
+        mLoadingDialog.show();
+    }
 
+    private void dismissLoading(){
+        if (mLoadingDialog != null){
+            Log.i(TAG,"dismissLoading");
+            mLoadingDialog.dismiss();
+        }
+    }
     @Override
     public void onTaskFail() {
-        mProgressBar.setVisibility(View.INVISIBLE);
+        dismissLoading();
     }
 
 
     private void getFormImg(String url) {
         try {
-            mProgressBar.setVisibility(View.VISIBLE);
+            showLoading();
             Glide.with(RecordActivity.this)
                     .load(url)
                     .asBitmap()
                     .transform(new RecordImgTransformation(mContext))
                     .into(mRecordImg);
-            //.get();
+
+            if (mService != null) {
+                Log.i(TAG,"startDraw");
+                mService.setDrawFormInfo(mFormInfo, mRecordId);
+                mService.startDraw();
+
+                ZBformApplication.sBlePenManager.setDrawView(mRecordImg, mRecordBitmapImg, mRecordBitmapImg.getWidth(), mRecordBitmapImg.getHeight());
+            }
         } catch (Exception e) {
             Log.i(TAG, "load bitmap ex=" + e.getMessage());
             e.printStackTrace();
@@ -312,7 +367,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             ((Activity)mContext).runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mProgressBar.setVisibility(View.INVISIBLE);
+                    dismissLoading();
                 }
             });
             return toTransform;
@@ -343,18 +398,23 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
         @Override
         public void onStartGet() {
-            mProgressBar.setVisibility(View.VISIBLE);
+            showLoading();
         }
 
         @Override
         public void onGetSuccess(FormInfo form) {
             mFormInfo = form;
+            mPageAddress = mFormInfo.results[0].getRinit();
+
+            Log.i(TAG, "bind service: zbform service");
+            Intent intent = new Intent(RecordActivity.this, ZBFormService.class);
+            bindService(intent, conn, Service.BIND_AUTO_CREATE);
             mTask.getRecord();
         }
 
         @Override
         public void onGetFail() {
-            mProgressBar.setVisibility(View.INVISIBLE);
+            dismissLoading();
         }
     };
 }

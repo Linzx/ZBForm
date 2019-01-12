@@ -92,6 +92,7 @@ public class ZBFormBlePenManager {
     }
 
     public interface IBlePenStateCallBack {
+        void onOpenPenStreamSuccess();
         void onRemainBattery(final int percent);
 
         void onMemoryFillLevel(final int percent, final int byteNum);
@@ -134,7 +135,8 @@ public class ZBFormBlePenManager {
     }
 
     public void setZBBleGattCallback(IZBBleGattCallback callback){
-        mIZBBleGattCallbackList.add(callback);
+        if(!mIZBBleGattCallbackList.contains(callback))
+            mIZBBleGattCallbackList.add(callback);
     }
 
     public void setBleDevice(BleDevice device) {
@@ -191,6 +193,9 @@ public class ZBFormBlePenManager {
             @Override
             public void onOpenPenStreamSuccess() {
                 Log.d(TAG, "onOpenPenStreamSuccess: ");
+                if (mIBlePenStateCallBack != null) {
+                    mIBlePenStateCallBack.onOpenPenStreamSuccess();
+                }
             }
 
             @Override
