@@ -182,11 +182,11 @@ public class ZBformMain extends BaseActivity {
                         startActivity(intent);
                         drawerLayout.closeDrawers();
                         break;
-                    case 3:
+//                    case 3:
                         // 更新
 //                        finish();
-                        drawerLayout.closeDrawers();
-                    case 4:
+//                        drawerLayout.closeDrawers();
+                    case 3:
                         // 退出
                         finish();
                         drawerLayout.closeDrawers();

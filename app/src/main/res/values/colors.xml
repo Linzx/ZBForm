@@ -2,11 +2,11 @@
 <resources>
 
     <!-- for signui -->
-    <color name="colorPrimary">#3086BE</color>
-    <color name="colorPrimaryDark">#3086BE</color>
-    <color name="colorAccent">#3086BE</color>
+    <color name="colorPrimary">#0061b2</color>
+    <color name="colorPrimaryDark">#0061b2</color>
+    <color name="colorAccent">#0061b2</color>
     <color name="btn_press">#ff336BA3</color>
-    <color name="accent_material_light">#3086BE</color><!-- login color-->
+    <color name="accent_material_light">#0061b2</color><!-- login color-->
     <!-- for signui -->
 
     <color name="white_text">#fafafa</color>
