@@ -18,9 +18,7 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
@@ -44,7 +42,6 @@ import com.zbform.penform.task.RecordTask;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 public class RecordActivity extends BaseActivity implements RecordTask.OnTaskListener {
@@ -55,7 +52,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     private static final int NEXT_IMG = 2;
 
     private int mCurrentPage = 1;
-    private HashMap<Integer, Bitmap> mCacheImg = new HashMap<Integer, Bitmap>();
+//    private HashMap<Integer, Bitmap> mCacheImg = new HashMap<Integer, Bitmap>();
 
     private static List<RecordInfo.Results> recordResults = new ArrayList<>();
     private List<RecordDataItem> mCurrentItems = new ArrayList<>();
@@ -259,9 +256,10 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             return;
         }
         Log.i(TAG, "page size = " + mPage);
-        if (!mCacheImg.containsKey(mCurrentPage)) {
-            mCacheImg.put(mCurrentPage, mRecordBitmapImg);
-        }
+//        if (!mCacheImg.containsKey(mCurrentPage)) {
+//            Log.i(TAG, "put img to cache， page = "+mCurrentPage+"   hascode = " +mRecordBitmapImg.hashCode());
+//            mCacheImg.put(mCurrentPage, mRecordBitmapImg);
+//        }
         Log.i(TAG, "Current Page = " + mCurrentPage);
         if (action == PRE_IMG) {
             if (mCurrentPage > 1) {
@@ -272,15 +270,17 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                 mCurrentPage += 1;
             }
         }
-        if (mCacheImg.containsKey(mCurrentPage)) {
-            Log.i(TAG, "use cache img");
-            Bitmap cache = mCacheImg.get(mCurrentPage);
-            mRecordImg.setImageBitmap(cache);
-        } else {
-            Log.i(TAG, "get new page img");
-
-            getFormImg(getUrl());
-        }
+        getFormImg(getUrl());
+//        if (mCacheImg.containsKey(mCurrentPage)) {
+//            Log.i(TAG, "use cache img");
+//            Bitmap cache = mCacheImg.get(mCurrentPage);
+//            Log.i(TAG , "cache hash code = "+cache.hashCode());
+//            mRecordImg.setImageBitmap(cache);
+//        } else {
+//            Log.i(TAG, "get new page img");
+//
+//            getFormImg(getUrl());
+//        }
 
         if (mService != null) {
             mService.setCurrentPage(mCurrentPage);
