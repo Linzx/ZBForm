@@ -133,6 +133,10 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         super.onResume();
 
         if (mService != null) {
+            if(mPageAddress != null && mFormInfo != null && mRecordId!= null) {
+                mService.setCurrentPageAddress(mPageAddress);
+                mService.setDrawFormInfo(mFormInfo, mRecordId);
+            }
             Log.i(TAG, "startDraw");
             mService.startDraw();
         }
@@ -313,7 +317,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                     .transform(new RecordImgTransformation(mContext))
                     .into(mRecordImg);
 
-
         } catch (Exception e) {
             Log.i(TAG, "load bitmap ex=" + e.getMessage());
             e.printStackTrace();
@@ -372,6 +375,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
             mRecordBitmapImg = toTransform;
             ZBformApplication.sBlePenManager.setDrawView(mRecordImg, mRecordBitmapImg, mRecordBitmapImg.getWidth(), mRecordBitmapImg.getHeight());
+            mService.startDraw();
 
             mPath.reset();
             ((Activity) mContext).runOnUiThread(new Runnable() {

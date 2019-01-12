@@ -111,7 +111,6 @@ public class ZBFormService extends Service {
 
         @Override
         public void onCoordDraw(String pageAddress, int nX, int nY) {
-            Log.i(TAG, "page address = "+pageAddress);
             if (!TextUtils.isEmpty(pageAddress)) {
                 if (!"0.0.0.0".equals(pageAddress) &&
                         !mPageAddress.equals(pageAddress)) {
