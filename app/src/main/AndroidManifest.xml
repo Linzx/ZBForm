@@ -68,6 +68,16 @@
             android:screenOrientation="portrait"
             android:theme="@style/FormImgThem">
         </activity>
+        <activity
+            android:name="com.zbform.penform.activity.PenNav1"
+            android:screenOrientation="portrait"
+            android:theme="@style/FormImgThem">
+        </activity>
+        <activity
+            android:name="com.zbform.penform.activity.PenNav2"
+            android:screenOrientation="portrait"
+            android:theme="@style/FormImgThem">
+        </activity>
        <activity
             android:name="com.zbform.penform.activity.SettingActivity"
             android:screenOrientation="portrait"

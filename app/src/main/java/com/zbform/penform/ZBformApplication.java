@@ -66,6 +66,8 @@ public class ZBformApplication extends Application {
         sBlePenManager.setBleInitSuccess(initSuccess);
     }
 
+
+
     public static String getmLoginUserId() {
         return mLoginUserId;
     }

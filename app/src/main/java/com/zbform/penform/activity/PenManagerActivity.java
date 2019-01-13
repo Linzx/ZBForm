@@ -2,7 +2,6 @@ package com.zbform.penform.activity;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
 import android.content.Context;
@@ -18,13 +17,10 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.view.animation.LinearInterpolator;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,6 +31,7 @@ import com.tstudy.blepenlib.exception.BleException;
 import com.zbform.penform.R;
 import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
+import com.zbform.penform.dialog.LoadingDialog;
 import com.zbform.penform.settings.DeviceAdapter;
 
 import java.util.List;
@@ -48,12 +45,12 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     private static final int REQUEST_CODE_PERMISSION_LOCATION = 2;
     private static final int REQUEST_OPEN_BT_CODE = 3;
 
-    private Button btn_scan;
-    private ImageView img_loading;
+    private TextView btn_scan;
+    private TextView scan_result_title;
+    private ProgressBar loading_progress;
 
-    private Animation operatingAnim;
     private DeviceAdapter mDeviceAdapter;
-    private ProgressDialog progressDialog;
+    private LoadingDialog progressDialog;
     private Context mContext;
     private BleDevice mBleDevice;
     private LinearLayout mPenInfoLayout;
@@ -93,8 +90,9 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.btn_scan:
+            case R.id.pen_nav_scan:
                 if (btn_scan.getText().equals(getString(R.string.start_scan))) {
+                    Log.i(TAG, "START Scan");
                     checkPermissions();
                 } else if (btn_scan.getText().equals(getString(R.string.stop_scan))) {
                     BlePenManager.getInstance().cancelScan();
@@ -124,16 +122,30 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
         return super.onOptionsItemSelected(item);
     }
 
+    private void showLoading() {
+        Log.i(TAG, "showLoading");
+        if (progressDialog != null && progressDialog.isShowing())
+            return;
+        progressDialog = new LoadingDialog(this, getString(R.string.connecting_pen));
+        progressDialog.show();
+    }
+
+    private void dismissLoading() {
+        if (progressDialog != null) {
+            Log.i(TAG, "dismissLoading");
+            progressDialog.dismiss();
+        }
+    }
     private void initView() {
-        btn_scan = findViewById(R.id.btn_scan);
+        btn_scan = findViewById(R.id.pen_nav_scan);
         btn_scan.setText(getString(R.string.start_scan));
         btn_scan.setOnClickListener(this);
+
+        scan_result_title = findViewById(R.id.pen_nav_scan_result_title);
+        scan_result_title.setVisibility(View.GONE);
         setToolBar();
 
-        img_loading = findViewById(R.id.img_loading);
-        operatingAnim = AnimationUtils.loadAnimation(mContext, R.anim.rotate_test);
-        operatingAnim.setInterpolator(new LinearInterpolator());
-        progressDialog = new ProgressDialog(mContext);
+        loading_progress = findViewById(R.id.loading_progress);
 
         mDeviceAdapter = new DeviceAdapter(mContext);
         mDeviceAdapter.setOnDeviceClickListener(new DeviceAdapter.OnDeviceClickListener() {
@@ -143,22 +155,6 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
                     //如果当前设备未连接，取消扫描，连接选中设备。
                     BlePenManager.getInstance().cancelScan();
                     connect(bleDevice);
-                }
-            }
-
-            @Override
-            public void onDisConnect(final BleDevice bleDevice) {
-                if (BlePenManager.getInstance().isConnected(bleDevice)) {
-                    //如果当前设备已连接，断开连接。
-                    //BlePenManager.getInstance().disconnect(bleDevice);
-                }
-            }
-
-            @Override
-            public void onDetail(BleDevice bleDevice) {
-                if (BlePenManager.getInstance().isConnected(bleDevice)) {
-                    //跳到绘制界面
-                    Log.i(TAG, "connected: onDetail clicked.");
                 }
             }
         });
@@ -184,6 +180,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     }
 
     private void startScan() {
+        Log.i(TAG, "startScan()");
         BlePenManager.getInstance().scan(mScanCallback);
         mPenInfoLayout.setVisibility(View.GONE);
     }
@@ -192,10 +189,11 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     BleScanCallback mScanCallback = new BleScanCallback() {
         @Override
         public void onScanStarted(boolean success) {
+            Log.i(TAG, "onScanStarted()");
+
             mDeviceAdapter.clearScanDevice();
             mDeviceAdapter.notifyDataSetChanged();
-            img_loading.startAnimation(operatingAnim);
-            img_loading.setVisibility(View.VISIBLE);
+            loading_progress.setVisibility(View.VISIBLE);
             btn_scan.setText(getString(R.string.stop_scan));
         }
 
@@ -206,15 +204,15 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
 
         @Override
         public void onScanning(BleDevice bleDevice) {
+            scan_result_title.setVisibility(View.VISIBLE);
             mDeviceAdapter.addDevice(bleDevice);
-//                mBleDevice = bleDevice;
+            mBleDevice = bleDevice;
             mDeviceAdapter.notifyDataSetChanged();
         }
 
         @Override
         public void onScanFinished(List<BleDevice> scanResultList) {
-            img_loading.clearAnimation();
-            img_loading.setVisibility(View.INVISIBLE);
+            loading_progress.setVisibility(View.GONE);
             btn_scan.setText(getString(R.string.start_scan));
             mDeviceAdapter.notifyDataSetChanged();
         }
@@ -228,20 +226,14 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     ZBFormBlePenManager.IZBBleGattCallback mBleGattCallback = new ZBFormBlePenManager.IZBBleGattCallback() {
         @Override
         public void onStartConnect() {
-            if (!progressDialog.isShowing() && !PenManagerActivity.this.isFinishing() && !PenManagerActivity.this.isDestroyed()) {
-                progressDialog.setMessage("正在连接蓝牙点阵笔!");
-                progressDialog.show();
-            }
+            showLoading();
         }
 
         @Override
         public void onConnectFail(BleDevice bleDevice, BleException exception) {
-            img_loading.clearAnimation();
-            img_loading.setVisibility(View.INVISIBLE);
+            loading_progress.setVisibility(View.INVISIBLE);
             btn_scan.setText(getString(R.string.start_scan));
-            if (progressDialog != null && progressDialog.isShowing()) {
-                progressDialog.dismiss();
-            }
+            dismissLoading();
 //                Toast.makeText(MainActivity.this, getString(R.string.connect_fail), Toast.LENGTH_LONG).show();
         }
 
@@ -250,18 +242,15 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
             mBleDevice = bleDevice;
             Log.i(TAG, "onConnectSuccess");
             mBlePenManager.setBleDevice(mBleDevice);
-            if (progressDialog != null && progressDialog.isShowing()) {
-                progressDialog.dismiss();
-            }
+            dismissLoading();
             mDeviceAdapter.addDevice(0,bleDevice);
 //                mDeviceAdapter.notifyDataSetChanged();
         }
 
         @Override
         public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
-            if (progressDialog != null && progressDialog.isShowing()) {
-                progressDialog.dismiss();
-            }
+            dismissLoading();
+
         }
     };
 
@@ -290,7 +279,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
                 //permission denied, boo! Disable the functionality that depends on this permission.
                 //这里进行权限被拒绝的处理
                 if (ActivityCompat.shouldShowRequestPermissionRationale((Activity) mContext, Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                    Toast.makeText(mContext, "自Android 6.0开始需要打开位置权限才可以搜索到Ble设备", Toast.LENGTH_LONG).show();
+                    Toast.makeText(mContext, "需要打开位置权限才可以搜索到数码笔设备", Toast.LENGTH_LONG).show();
                 }
             }
 
@@ -300,7 +289,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     private void checkPermissions() {
         BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (bluetoothAdapter == null) {
-            Toast.makeText(mContext, "检查设备是否支持蓝牙BLE", Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, "检查设备是否支持蓝牙", Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -316,7 +305,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
             if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 //判断是否需要向用户解释为什么需要申请该权限
                 if (ActivityCompat.shouldShowRequestPermissionRationale((Activity) mContext, Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                    Toast.makeText(mContext, "自Android 6.0开始需要打开位置权限才可以搜索到Ble设备", Toast.LENGTH_LONG).show();
+                    Toast.makeText(mContext, "需要打开位置权限才可以搜索到数码笔设备", Toast.LENGTH_LONG).show();
                 }
                 //请求权限
                 ActivityCompat.requestPermissions((Activity) mContext,

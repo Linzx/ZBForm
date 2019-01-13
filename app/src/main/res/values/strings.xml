@@ -45,12 +45,12 @@
     <string name="loading_next">下一页...</string>
 
 
-    <string name="menu_item_connect">数码笔已链接</string>
-    <string name="menu_item_disconnect">数码笔未链接</string>
+    <string name="menu_item_connect">数码笔已连接</string>
+    <string name="menu_item_disconnect">数码笔未连接</string>
 
     <!-- 设置 -->
     <string name="pref_header_account">个人信息</string>
-    <string name="pref_header_pen_manage">蓝牙笔管理</string>
+    <string name="pref_header_pen_manage">数码笔管理</string>
 
     <!-- 设置：个人账号信息-->
     <string name="setting_account_code_name">用户名</string>
@@ -60,12 +60,12 @@
     <string name="setting_account_user_name">姓名</string>
 
     <!-- 设置：蓝牙笔管理-笔的基本信息 -->
-    <string name="pen_name_title">蓝牙笔：</string>
+    <string name="pen_name_title">数码笔：</string>
     <string name="pen_power_title">剩余电量：</string>
     <string name="pen_mac_title">MAC：</string>
     <string name="pen_version_title">固件版本：</string>
 
-
+    <string name="pen_nav_start_to_connect">开始连接</string>
 
     <string name="setting_pref_category_key">setting_category</string>
     <string name="setting_pref_codename_key">setting_pref_codename</string>
@@ -88,6 +88,19 @@
     <string name="cube_ptr_hours_ago">&#160;小时之前</string>
 
 
-    <string name="connect_pen">开始扫描蓝牙笔</string>
+    <string name="connect_pen">开始扫描数码笔</string>
+    <string name="pen_nav_start_info">1. 开始连接你的数码笔</string>
+    <string name="pen_nav_open_info">2. 打开数码笔开关</string>
+    <string name="pen_nav_next">下一步</string>
+    <string name="pen_nav_open_info_more">1. 打开数码笔开关，LED 灯显示为蓝色或者蓝色闪烁</string>
+    <string name="pen_nav_open_info_more2">2. 若数码笔指示灯异常，请检查数码笔电量</string>
+    <string name="pen_nav_open_info_indicate">提示：</string>
+    <string name="pen_nav_title">连接数码笔</string>
+    <string name="pen_nav_connect_info">3. 连接数码笔</string>
+    <string name="pen_nav_connect_info_indicate">连接前请注意：</string>
+    <string name="pen_nav_connect_info_more">1. 请保持数码笔和手机在1米范围内</string>
+    <string name="pen_nav_connect_info_more2">2. 查看数码笔MAC编号，确认后点击连接</string>
+    <string name="pen_nav_scan_result_title">扫描到的设备：</string>
+    <string name="connecting_pen">正在连接数码笔</string>
 
 </resources>

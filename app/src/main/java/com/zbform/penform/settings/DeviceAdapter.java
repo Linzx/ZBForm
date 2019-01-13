@@ -123,15 +123,11 @@ public class DeviceAdapter extends BaseAdapter {
             convertView = View.inflate(context, R.layout.adapter_device, null);
             holder = new ViewHolder();
             convertView.setTag(holder);
-            holder.img_blue = (ImageView) convertView.findViewById(R.id.img_blue);
-            holder.txt_name = (TextView) convertView.findViewById(R.id.txt_name);
-            holder.txt_mac = (TextView) convertView.findViewById(R.id.txt_mac);
-            holder.txt_rssi = (TextView) convertView.findViewById(R.id.txt_rssi);
-            holder.layout_idle = (LinearLayout) convertView.findViewById(R.id.layout_idle);
-            holder.layout_connected = (LinearLayout) convertView.findViewById(R.id.layout_connected);
-            holder.btn_disconnect = (Button) convertView.findViewById(R.id.btn_disconnect);
-            holder.btn_connect = (Button) convertView.findViewById(R.id.btn_connect);
-            holder.btn_detail = (Button) convertView.findViewById(R.id.btn_detail);
+            holder.img_blue = convertView.findViewById(R.id.img_blue);
+            holder.txt_name = convertView.findViewById(R.id.txt_name);
+            holder.txt_mac = convertView.findViewById(R.id.txt_mac);
+            holder.layout_idle = convertView.findViewById(R.id.layout_idle);
+            holder.btn_connect = convertView.findViewById(R.id.btn_connect);
         }
 
         final BleDevice bleDevice = getItem(position);
@@ -139,22 +135,18 @@ public class DeviceAdapter extends BaseAdapter {
             boolean isConnected = BlePenManager.getInstance().isConnected(bleDevice);
             String name = bleDevice.getName();
             String mac = bleDevice.getMac();
-            int rssi = bleDevice.getRssi();
             holder.txt_name.setText(name);
             holder.txt_mac.setText(mac);
-            holder.txt_rssi.setText(String.valueOf(rssi));
             if (isConnected) {
 //                holder.img_blue.setImageResource(R.mipmap.ic_blue_connected);
                 holder.txt_name.setTextColor(0xFF1DE9B6);
                 holder.txt_mac.setTextColor(0xFF1DE9B6);
                 holder.layout_idle.setVisibility(View.GONE);
-                holder.layout_connected.setVisibility(View.VISIBLE);
             } else {
 //                holder.img_blue.setImageResource(R.mipmap.ic_blue_remote);
                 holder.txt_name.setTextColor(0xFF000000);
                 holder.txt_mac.setTextColor(0xFF000000);
                 holder.layout_idle.setVisibility(View.VISIBLE);
-                holder.layout_connected.setVisibility(View.GONE);
             }
         }
 
@@ -167,23 +159,6 @@ public class DeviceAdapter extends BaseAdapter {
             }
         });
 
-        holder.btn_disconnect.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (mListener != null) {
-                    mListener.onDisConnect(bleDevice);
-                }
-            }
-        });
-
-        holder.btn_detail.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (mListener != null) {
-                    mListener.onDetail(bleDevice);
-                }
-            }
-        });
 
         return convertView;
     }
@@ -192,20 +167,12 @@ public class DeviceAdapter extends BaseAdapter {
         ImageView img_blue;
         TextView txt_name;
         TextView txt_mac;
-        TextView txt_rssi;
         LinearLayout layout_idle;
-        LinearLayout layout_connected;
-        Button btn_disconnect;
-        Button btn_connect;
-        Button btn_detail;
+        TextView btn_connect;
     }
 
     public interface OnDeviceClickListener {
         void onConnect(BleDevice bleDevice);
-
-        void onDisConnect(BleDevice bleDevice);
-
-        void onDetail(BleDevice bleDevice);
     }
 
     private OnDeviceClickListener mListener;

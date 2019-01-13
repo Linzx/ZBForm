@@ -148,6 +148,7 @@ public class ZBFormBlePenManager {
         mBleDeviceName = mBleDevice.getName();
         mBleDeviceMac = mBleDevice.getMac();
         initBlePenStream();
+        BlePenStreamManager.getInstance().clearMemoryCache();
         BlePenStreamManager.getInstance().getPenInfo();
         BlePenStreamManager.getInstance().setStandMode();
     }

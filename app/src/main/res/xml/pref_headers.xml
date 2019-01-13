@@ -4,11 +4,11 @@
 
     <header
         android:fragment="com.zbform.penform.fragment.AccountFragment"
-        android:icon="@drawable/setting_user"
+        android:icon="@drawable/ic_renyuanjieshao"
         android:title="@string/pref_header_account" />
 
     <header
-        android:icon="@drawable/setting_ble_pen"
+        android:icon="@drawable/ic_pencircle"
         android:title="@string/pref_header_pen_manage" />
 
 </preference-headers>

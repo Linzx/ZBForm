@@ -36,7 +36,7 @@ public class SettingActivity extends AppCompatPreferenceActivity {
         super.onHeaderClick(header, position);
         Log.i("Setting", "header position  = "+position);
         if(position == 1){
-            Intent intent = new Intent(this, PenManagerActivity.class);
+            Intent intent = new Intent(this, PenNav1.class);
             startActivity(intent);
         }
     }
