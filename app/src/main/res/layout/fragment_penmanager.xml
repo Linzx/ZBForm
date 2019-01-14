@@ -32,7 +32,17 @@
         </android.support.v7.widget.Toolbar>
     </android.support.design.widget.AppBarLayout>
 
+    <include layout="@layout/activity_pen_nav1"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    </include>
+    <include layout="@layout/activity_pen_nav2"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+    </include>
     <LinearLayout
+        android:id="@+id/activity_pen_nav3"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginLeft="16dp"
@@ -40,7 +50,8 @@
         android:layout_marginRight="16dp"
         android:layout_marginBottom="16dp"
         android:orientation="vertical"
-        android:paddingBottom="16dp">
+        android:paddingBottom="16dp"
+        android:visibility="gone">
 
         <TextView
             android:id="@+id/pen_nav_connect_info"

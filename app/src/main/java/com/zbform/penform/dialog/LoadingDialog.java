@@ -69,7 +69,9 @@ public class LoadingDialog extends Dialog {
 
     @Override
     public void dismiss() {
-        mRotateAnimation.cancel();
+        if(mRotateAnimation != null) {
+            mRotateAnimation.cancel();
+        }
         super.dismiss();
     }
 

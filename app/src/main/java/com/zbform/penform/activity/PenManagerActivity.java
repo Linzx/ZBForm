@@ -17,7 +17,6 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -53,6 +52,10 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     private LoadingDialog progressDialog;
     private Context mContext;
     private BleDevice mBleDevice;
+    private TextView mStartOpen;
+    private TextView mStartConnect;
+    private LinearLayout mPenNav1Layout;
+    private LinearLayout mPenNav2Layout;
     private LinearLayout mPenInfoLayout;
     private LinearLayout mScanLayout;
     private TextView mPenName;
@@ -90,6 +93,19 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
+            case R.id.pen_nav_start_connect:
+                mPenNav1Layout.setVisibility(View.GONE);
+                mPenNav2Layout.setVisibility(View.VISIBLE);
+                mScanLayout.setVisibility(View.GONE);
+                mPenInfoLayout.setVisibility(View.GONE);
+                break;
+            case R.id.pen_nav_start_open_pen:
+
+                mPenNav1Layout.setVisibility(View.GONE);
+                mPenNav2Layout.setVisibility(View.GONE);
+                mScanLayout.setVisibility(View.VISIBLE);
+                mPenInfoLayout.setVisibility(View.GONE);
+                break;
             case R.id.pen_nav_scan:
                 if (btn_scan.getText().equals(getString(R.string.start_scan))) {
                     Log.i(TAG, "START Scan");
@@ -114,6 +130,8 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     public boolean onOptionsItemSelected(final MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
+                Intent intent = new Intent(this, SettingActivity.class);
+                startActivity(intent);
                 finish();
                 return true;
             default:
@@ -123,20 +141,31 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     }
 
     private void showLoading() {
-        Log.i(TAG, "showLoading");
-        if (progressDialog != null && progressDialog.isShowing())
-            return;
-        progressDialog = new LoadingDialog(this, getString(R.string.connecting_pen));
-        progressDialog.show();
+        if(progressDialog != null) {
+            if(!progressDialog.isShowing())
+            Log.i(TAG, "showLoading");
+            progressDialog.show();
+        } else {
+            Log.i(TAG, "showLoading, create");
+            progressDialog = new LoadingDialog(PenManagerActivity.this, getString(R.string.connecting_pen));
+            progressDialog.show();
+        }
     }
 
     private void dismissLoading() {
-        if (progressDialog != null) {
+        if (progressDialog != null && progressDialog.isShowing()) {
             Log.i(TAG, "dismissLoading");
             progressDialog.dismiss();
         }
     }
     private void initView() {
+        mPenNav1Layout = findViewById(R.id.activity_pen_nav1);
+        mPenNav2Layout = findViewById(R.id.activity_pen_nav2);
+        mStartConnect = findViewById(R.id.pen_nav_start_connect);
+        mStartOpen = findViewById(R.id.pen_nav_start_open_pen);
+        mStartOpen.setOnClickListener(this);
+        mStartConnect.setOnClickListener(this);
+
         btn_scan = findViewById(R.id.pen_nav_scan);
         btn_scan.setText(getString(R.string.start_scan));
         btn_scan.setOnClickListener(this);
@@ -146,6 +175,8 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
         setToolBar();
 
         loading_progress = findViewById(R.id.loading_progress);
+
+        progressDialog = new LoadingDialog(mContext, getString(R.string.connecting_pen));
 
         mDeviceAdapter = new DeviceAdapter(mContext);
         mDeviceAdapter.setOnDeviceClickListener(new DeviceAdapter.OnDeviceClickListener() {
@@ -161,7 +192,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
         ListView listView_device = findViewById(R.id.list_device);
         listView_device.setAdapter(mDeviceAdapter);
 
-        mScanLayout = findViewById(R.id.scan);
+        mScanLayout = findViewById(R.id.activity_pen_nav3);
         mPenInfoLayout = findViewById(R.id.pen_info);
         mPenName = findViewById(R.id.pen_name);
         mPenMac = findViewById(R.id.pen_mac);
@@ -170,11 +201,16 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
 
         if (mBlePenManager.isConnectedBleDevice()) {
             Log.i(TAG, "ble device has connected.");
+            mPenNav1Layout.setVisibility(View.GONE);
+            mPenNav2Layout.setVisibility(View.GONE);
+            mScanLayout.setVisibility(View.GONE);
+            mPenInfoLayout.setVisibility(View.VISIBLE);
             setPenInfo();
         } else {
             Log.i(TAG, "ble device not connected yet.");
-
-            mScanLayout.setVisibility(View.VISIBLE);
+            mPenNav1Layout.setVisibility(View.VISIBLE);
+            mPenNav2Layout.setVisibility(View.GONE);
+            mScanLayout.setVisibility(View.GONE);
             mPenInfoLayout.setVisibility(View.GONE);
         }
     }
@@ -256,8 +292,6 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
 
 
     public void setPenInfo() {
-        mPenInfoLayout.setVisibility(View.VISIBLE);
-        mScanLayout.setVisibility(View.GONE);
         mPenName.setText(mBlePenManager.getBleDeviceName());
         mPenMac.setText(mBlePenManager.getBleDeviceMac());
         mPenPower.setText(mBlePenManager.getBleDevicePower() + "%");
