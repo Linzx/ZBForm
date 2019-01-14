@@ -24,6 +24,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.tstudy.blepenlib.BlePenManager;
 import com.tstudy.blepenlib.data.BleDevice;
 import com.tstudy.blepenlib.exception.BleException;
 import com.zbform.penform.R;
@@ -237,6 +238,7 @@ public class ZBformMain extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        BlePenManager.getInstance().disconnectAllDevice();
 //        stopService(mService);
     }
 
