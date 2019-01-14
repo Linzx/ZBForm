@@ -74,6 +74,8 @@
             android:label="@string/menu_item_setting"
             android:theme="@style/SettingTheme"/>
         <service android:name=".services.ZBFormService" />
+
+        <service android:name=".services.BleConnectService" />
         <!-- 广播注册 -->
         <receiver android:name="com.zbform.penform.update.InstallReceiver">
             <intent-filter android:priority="20">

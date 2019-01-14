@@ -130,8 +130,6 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     public boolean onOptionsItemSelected(final MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                Intent intent = new Intent(this, SettingActivity.class);
-                startActivity(intent);
                 finish();
                 return true;
             default:

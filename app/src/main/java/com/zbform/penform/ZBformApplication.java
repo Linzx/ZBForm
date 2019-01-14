@@ -8,6 +8,7 @@ import android.util.Log;
 
 import com.lidroid.xutils.DbUtils;
 import com.tstudy.blepenlib.BlePenManager;
+import com.tstudy.blepenlib.BlePenStreamManager;
 import com.zbform.penform.blepen.MyLicense;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.handler.UnceHandler;
@@ -66,7 +67,12 @@ public class ZBformApplication extends Application {
         sBlePenManager.setBleInitSuccess(initSuccess);
     }
 
-
+    @Override
+    public void onTerminate() {
+        super.onTerminate();
+        Log.i(TAG, "onTerminate, disconnect all device.");
+        BlePenManager.getInstance().disconnectAllDevice();
+    }
 
     public static String getmLoginUserId() {
         return mLoginUserId;
