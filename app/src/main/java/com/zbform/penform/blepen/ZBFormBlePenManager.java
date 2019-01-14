@@ -183,6 +183,7 @@ public class ZBFormBlePenManager {
     }
 
     public void connect(final BleDevice bleDevice) {
+        BlePenManager.getInstance().removeConnectGattCallback(bleDevice);
         BlePenManager.getInstance().connect(bleDevice, mBleGattCallback);
     }
 

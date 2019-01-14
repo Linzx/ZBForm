@@ -2,6 +2,7 @@ package com.zbform.penform.activity;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
 import android.content.Context;
@@ -9,6 +10,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -35,7 +38,7 @@ import com.zbform.penform.settings.DeviceAdapter;
 
 import java.util.List;
 
-public class PenManagerActivity extends BaseActivity implements View.OnClickListener, ZBFormBlePenManager.IBlePenStateCallBack {
+public class PenManagerActivity extends BaseActivity implements View.OnClickListener, ZBFormBlePenManager.IBlePenStateCallBack, ZBFormBlePenManager.IZBBleGattCallback {
 
 
     public static final String TAG = PenManagerActivity.class.getSimpleName();
@@ -74,7 +77,6 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
         mContext = this;
         initView();
         mBlePenManager.setBlePenStateCallBack(this);
-        mBlePenManager.setZBBleGattCallback(mBleGattCallback);
         boolean initSuccess = mBlePenManager.isBleInitSuccess();
         if (initSuccess) {
             Log.i(TAG, "initSuccess");
@@ -139,23 +141,22 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     }
 
     private void showLoading() {
-        if(progressDialog != null) {
-            if(!progressDialog.isShowing())
-            Log.i(TAG, "showLoading");
+        Log.i(TAG, "showLoading, create");
+        progressDialog = new LoadingDialog(PenManagerActivity.this, getString(R.string.connecting_pen));
+        try {
             progressDialog.show();
-        } else {
-            Log.i(TAG, "showLoading, create");
-            progressDialog = new LoadingDialog(PenManagerActivity.this, getString(R.string.connecting_pen));
-            progressDialog.show();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
     private void dismissLoading() {
-        if (progressDialog != null && progressDialog.isShowing()) {
+        if (progressDialog != null) {
             Log.i(TAG, "dismissLoading");
             progressDialog.dismiss();
         }
     }
+
     private void initView() {
         mPenNav1Layout = findViewById(R.id.activity_pen_nav1);
         mPenNav2Layout = findViewById(R.id.activity_pen_nav2);
@@ -173,8 +174,6 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
         setToolBar();
 
         loading_progress = findViewById(R.id.loading_progress);
-
-        progressDialog = new LoadingDialog(mContext, getString(R.string.connecting_pen));
 
         mDeviceAdapter = new DeviceAdapter(mContext);
         mDeviceAdapter.setOnDeviceClickListener(new DeviceAdapter.OnDeviceClickListener() {
@@ -253,40 +252,47 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     };
 
     private void connect(final BleDevice bleDevice) {
-        mBlePenManager.connect(bleDevice);
+        mBlePenManager.connect(bleDevice,this);
     }
 
     //连接回调
-    ZBFormBlePenManager.IZBBleGattCallback mBleGattCallback = new ZBFormBlePenManager.IZBBleGattCallback() {
-        @Override
-        public void onStartConnect() {
-            showLoading();
-        }
+//    ZBFormBlePenManager.IZBBleGattCallback mBleGattCallback = new ZBFormBlePenManager.IZBBleGattCallback() {
+    @Override
+    public void onStartConnect() {
+        showLoading();
+    }
 
-        @Override
-        public void onConnectFail(BleDevice bleDevice, BleException exception) {
-            loading_progress.setVisibility(View.INVISIBLE);
-            btn_scan.setText(getString(R.string.start_scan));
-            dismissLoading();
-//                Toast.makeText(MainActivity.this, getString(R.string.connect_fail), Toast.LENGTH_LONG).show();
-        }
+    @Override
+    public void onConnectFail(BleDevice bleDevice, BleException exception) {
+        PenManagerActivity.this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                loading_progress.setVisibility(View.INVISIBLE);
+                btn_scan.setText(getString(R.string.start_scan));
+                dismissLoading();
+                Toast.makeText(mContext, getString(R.string.pen_connect_fail), Toast.LENGTH_LONG).show();
+            }
+        });
 
-        @Override
-        public void onConnectSuccess(BleDevice bleDevice, BluetoothGatt gatt, int status) {
-            mBleDevice = bleDevice;
-            Log.i(TAG, "onConnectSuccess");
-            mBlePenManager.setBleDevice(mBleDevice);
-            dismissLoading();
-            mDeviceAdapter.addDevice(0,bleDevice);
+    }
+
+    @Override
+    public void onConnectSuccess(BleDevice bleDevice, BluetoothGatt gatt, int status) {
+        mBleDevice = bleDevice;
+        Log.i(TAG, "onConnectSuccess");
+        mBlePenManager.setBleDevice(mBleDevice);
+        dismissLoading();
+
+        mDeviceAdapter.addDevice(0, bleDevice);
 //                mDeviceAdapter.notifyDataSetChanged();
-        }
+    }
 
-        @Override
-        public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
-            dismissLoading();
+    @Override
+    public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
+        dismissLoading();
 
-        }
-    };
+    }
+//    };
 
 
     public void setPenInfo() {
