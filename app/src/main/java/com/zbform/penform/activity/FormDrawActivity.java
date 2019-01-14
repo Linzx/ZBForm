@@ -25,6 +25,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation;
 import com.bumptech.glide.request.animation.GlideAnimation;
@@ -160,6 +161,7 @@ public class FormDrawActivity extends BaseActivity {
                     .load(getUrl())
                     .asBitmap()
                     .transform(new FormDrawImgTransformation(this,action))
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .into(mImgView);
 //                    .into(mOriginTarget);
         } catch (Exception e) {
@@ -292,6 +294,7 @@ public class FormDrawActivity extends BaseActivity {
             return;
         }
         Log.i(TAG, "mPage=" + mPage);
+
         mCacheImg.put(mCurrentPage, mZBFormBlePenManager.getDrawBitmap());
         Log.i(TAG, "mCurrentPage1=" + mCurrentPage);
         if (action == ACTION_PRE_IMG) {

@@ -48,6 +48,11 @@
 
     </style>
 
+    <style name="WelcomTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="android:windowTranslucentStatus">true</item>
+    </style>
+
     <style name="SettingTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <!--控制各个控件被选中时的颜色-->
@@ -63,6 +68,7 @@
         <item name="colorAccent">@color/colorAccent</item>
         <!--Appbar背景色-->
         <item name="android:colorPrimary">@color/colorPrimary</item>
+        <item name="android:windowAnimationStyle">@style/activityAnimation</item>
 
     </style>
 

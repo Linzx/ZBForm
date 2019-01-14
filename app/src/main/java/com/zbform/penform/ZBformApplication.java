@@ -25,6 +25,7 @@ public class ZBformApplication extends Application {
      * mUser: 记录登录用户账号信息
      */
     public static UserInfo.Results mUser;
+    private static String mLoginUserName;
     private static String mLoginUserId;
     private static String mLoginUserKey;
     public static Context context;
@@ -76,6 +77,14 @@ public class ZBformApplication extends Application {
 
     public static String getmLoginUserId() {
         return mLoginUserId;
+    }
+
+    public static String getLoginUserName() {
+        return mLoginUserName;
+    }
+
+    public static String setLoginUserName(String name) {
+        return mLoginUserName = name;
     }
 
     public static void setmLoginUserId(String id) {

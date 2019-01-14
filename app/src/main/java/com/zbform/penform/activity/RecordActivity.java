@@ -119,6 +119,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     protected void onDestroy() {
         super.onDestroy();
         if (mService != null) {
+            mService.setIsRecordDraw(false);
             mService.stopDraw();
         }
         dismissLoading();
@@ -132,6 +133,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         if (mService != null) {
             if(mPageAddress != null && mFormInfo != null && mRecordId!= null) {
                 mService.setCurrentPageAddress(mPageAddress);
+                mService.setIsRecordDraw(true);
                 mService.setDrawFormInfo(mFormInfo, mRecordId);
             }
             Log.i(TAG, "startDraw");

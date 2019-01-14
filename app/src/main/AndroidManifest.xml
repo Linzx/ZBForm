@@ -26,7 +26,8 @@
         android:theme="@style/AppTheme">
         <activity
             android:name="com.zbform.penform.activity.WelcomeActivity"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:theme="@style/WelcomTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -42,6 +43,7 @@
 
         </activity>
         <activity android:name="com.zbform.penform.activity.SignInActivity"
+            android:label="@string/sign_up_title"
             android:windowSoftInputMode="adjustUnspecified|stateHidden"
             android:configChanges="orientation|keyboardHidden"/>
         <activity
@@ -68,7 +70,7 @@
             android:screenOrientation="portrait"
             android:theme="@style/FormImgThem">
         </activity>
-        <activity
+       <activity
             android:name="com.zbform.penform.activity.SettingActivity"
             android:screenOrientation="portrait"
             android:label="@string/menu_item_setting"

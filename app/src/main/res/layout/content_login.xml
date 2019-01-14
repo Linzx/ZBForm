@@ -10,7 +10,8 @@
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="200dp"
-        android:src="@drawable/logo"
+        android:scaleType="centerInside"
+        android:src="@drawable/zbform_login_log"
         />
 
     <ScrollView

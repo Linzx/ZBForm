@@ -9,6 +9,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Gravity;
@@ -113,8 +114,6 @@ public class ZBformMain extends BaseActivity {
         selectFragment(mCurrentFragmet);
         mService = new Intent(this, ZBFormService.class);
         startService(mService);
-
-//        new UpLoadStrokeTask(this).execute();
     }
 
     private void setUpMenu(Menu menu) {
@@ -140,7 +139,7 @@ public class ZBformMain extends BaseActivity {
         setSupportActionBar(mToolbar);
         mActionBar = getSupportActionBar();
         mActionBar.setDisplayHomeAsUpEnabled(true);
-        mActionBar.setHomeAsUpIndicator(R.drawable.ic_menu);
+//        mActionBar.setHomeAsUpIndicator(R.drawable.ic_menu);
         mActionBar.setTitle("");
     }
 
@@ -149,18 +148,26 @@ public class ZBformMain extends BaseActivity {
     }
 
     private void setUpDrawer() {
+        ActionBarDrawerToggle mActionBarDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout,
+                mToolbar, R.string.drawer_layout_open,
+                R.string.drawer_layout_close);
+        mActionBarDrawerToggle.setDrawerIndicatorEnabled(true);
+        mActionBarDrawerToggle.setHomeAsUpIndicator(R.drawable.ic_menu);
+        mActionBarDrawerToggle.syncState();
+        drawerLayout.addDrawerListener(mActionBarDrawerToggle);
+
         LayoutInflater inflater = LayoutInflater.from(this);
         View header = inflater.inflate(R.layout.nav_header_main, mLvLeftMenu, false);
         TextView user = header.findViewById(R.id.top_login_name);
-        user.setText(ZBformApplication.getmLoginUserId());
+        user.setText(ZBformApplication.getLoginUserName());
         mLvLeftMenu.addHeaderView(header);
-        //圆形头像
-        ImageView avtar = findViewById(R.id.top_bac);
-        Glide.with(this)
-                .load(R.drawable.logo)
-                .error(R.drawable.logo)
-                .transform(new GlideCircleTransform(this))
-                .into(avtar);
+
+//        ImageView avtar = findViewById(R.id.top_bac);
+//        Glide.with(this)
+//                .load(R.drawable.logo)
+//                .error(R.drawable.logo)
+//                .transform(new GlideCircleTransform(this))
+//                .into(avtar);
 
         mLvLeftMenu.setAdapter(new MenuItemAdapter(this));
         mLvLeftMenu.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -237,8 +244,10 @@ public class ZBformMain extends BaseActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        ZBformApplication.sBlePenManager.removeZBBleGattCallback(bleGattCallback);
+        
         BlePenManager.getInstance().disconnectAllDevice();
+		super.onDestroy();
 //        stopService(mService);
     }
 

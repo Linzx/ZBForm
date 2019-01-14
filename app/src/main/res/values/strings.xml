@@ -11,8 +11,10 @@
 
 
 
-
+    <string name="drawer_layout_open">drawer open</string>
+    <string name="drawer_layout_close">drawer close</string>
     <string name="skip">Y U DO DIS TO ME?</string>
+    <string name="sign_up_title">请登录</string>
     <string name="sign_up">登录</string>
     <string name="prompt_username">用户名</string>
     <string name="prompt_password">密码</string>

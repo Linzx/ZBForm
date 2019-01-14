@@ -27,6 +27,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.lidroid.xutils.BitmapUtils;
 import com.lidroid.xutils.bitmap.BitmapDisplayConfig;
 import com.lidroid.xutils.bitmap.callback.BitmapLoadFrom;
@@ -224,7 +225,10 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
                     ZBformApplication.getmLoginUserId(),item.getUuid(),1);
             holder.url = url;
             //缩略图显示第一页
-            Glide.with(mContext).load(url).crossFade().thumbnail(0.2f).into(holder.itemImg);
+            Glide.with(mContext).load(url).crossFade()
+                    .thumbnail(0.2f)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .into(holder.itemImg);
 //            mBitmapUtils.display(holder.itemImg,url,new CustomBitmapLoadCallBack(holder));
         }
 

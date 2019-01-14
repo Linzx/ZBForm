@@ -58,6 +58,7 @@ public class ZBFormService extends Service {
     private boolean mStopRecordCoord = true;
     private int mCurrentPage = 1;
     private String mPageAddress ="0.0.0.0";
+    private boolean mIsRecordDraw = false;
     //    private Executor mExecutor = Executors.newCachedThreadPool();
     private IntentFilter mIntentFilter;
     private NetworkChangeReceiver mNetworkChangeReceiver;
@@ -191,7 +192,7 @@ public class ZBFormService extends Service {
                         mCurrentPage = 1;
                         mDrawFormInfo = null;
                         mRecordId = "";
-                        mPageAddress ="0.0.0.0";
+                        Log.i(TAG,"stop!!!!!");
                         break;
                     }
                     HwData stroke = mCoordQueue.take();
@@ -622,7 +623,13 @@ public class ZBFormService extends Service {
     }
 
     public void stopDraw() {
+        if (!mIsRecordDraw) {
+            mPageAddress = "0.0.0.0";
+            Log.i(TAG,"clear pageaddress!!!!!");
+        }
+        Log.i(TAG,"SERVICE stopdraw0");
         if (mStopRecordCoord) return;
+        Log.i(TAG,"SERVICE stopdraw1");
         mStopRecordCoord = true;
         ZBformApplication.sBlePenManager.stopDraw();
         HwData coord = new HwData();
@@ -644,5 +651,9 @@ public class ZBFormService extends Service {
 
     public void setCurrentPageAddress(String page){
         mPageAddress = page;
+    }
+
+    public void setIsRecordDraw(boolean draw){
+        mIsRecordDraw = draw;
     }
 }
