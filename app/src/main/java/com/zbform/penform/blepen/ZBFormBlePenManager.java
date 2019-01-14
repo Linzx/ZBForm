@@ -142,6 +142,15 @@ public class ZBFormBlePenManager {
         }
     }
 
+    public void removeZBBleGattCallback(IZBBleGattCallback callback){
+        if(mIZBBleGattCallbackList.contains(callback)) {
+            Log.i(TAG,"remove call back");
+
+            mIZBBleGattCallbackList.remove(callback);
+        }
+    }
+
+
     public void setBleDevice(BleDevice device) {
         Log.i(TAG, "setBleDevice");
         mBleDevice = device;
