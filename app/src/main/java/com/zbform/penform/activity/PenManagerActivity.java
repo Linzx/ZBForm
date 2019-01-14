@@ -77,6 +77,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
         mContext = this;
         initView();
         mBlePenManager.setBlePenStateCallBack(this);
+        mBlePenManager.setZBBleGattCallback(this);
         boolean initSuccess = mBlePenManager.isBleInitSuccess();
         if (initSuccess) {
             Log.i(TAG, "initSuccess");
@@ -90,6 +91,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     @Override
     public void onDestroy() {
         super.onDestroy();
+        mBlePenManager.removeZBBleGattCallback(this);
     }
 
     @Override
@@ -252,7 +254,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     };
 
     private void connect(final BleDevice bleDevice) {
-        mBlePenManager.connect(bleDevice,this);
+        mBlePenManager.connect(bleDevice);
     }
 
     //连接回调
