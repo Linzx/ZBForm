@@ -41,10 +41,12 @@
     <string name="toast_already_first">已经是第一页!</string>
     <string name="toast_already_last">已经是最后一页!</string>
     <string name="toast_new_record">记录已创建，请开始书写!</string>
+    <string name="toast_img_error">加载错误，请重新打开表单!</string>
     <string name="loading">加载中...</string>
     <string name="loading_new_record">正在创建记录...</string>
     <string name="loading_pre">上一页...</string>
     <string name="loading_next">下一页...</string>
+    <string name="page_title">第<xliff:g id="page">%d</xliff:g>页</string>
 
 
     <string name="menu_item_connect">数码笔已连接</string>

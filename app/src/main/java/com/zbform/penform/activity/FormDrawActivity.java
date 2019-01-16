@@ -66,6 +66,7 @@ public class FormDrawActivity extends BaseActivity {
     //保存当前显示的图
     private HashMap<Integer, Bitmap> mCacheImg = new HashMap<Integer, Bitmap>();
     private ImageView mImgView;
+    private TextView mPageTitle;
     private Toolbar mToolbar;
     private ImageView mToolbarState;
     private LoadingDialog mLoadingDialog;
@@ -99,6 +100,8 @@ public class FormDrawActivity extends BaseActivity {
         mImgView = (ImageView) findViewById(R.id.form_img);
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         mToolbarState = findViewById(R.id.toolbar_state);
+
+        mPageTitle = findViewById(R.id.page_title);
         setToolBar();
 
         Intent intent = new Intent(this, ZBFormService.class);
@@ -140,12 +143,18 @@ public class FormDrawActivity extends BaseActivity {
             mPageAddress = intent.getStringExtra("pageaddress");
             mFormID = intent.getStringExtra("formid");
             mFormName = intent.getStringExtra("formname");
-
-//            TextView title = findViewById(R.id.toolbar_title);
-//            title.setText(mFormName);
+            setUpPageTitle();
         }
     }
 
+    private void setUpPageTitle(){
+        if (mPage >1) {
+            mPageTitle.setVisibility(View.VISIBLE);
+            mPageTitle.setText(getResources().getString(R.string.page_title,mCurrentPage));
+        } else {
+            mPageTitle.setVisibility(View.GONE);
+        }
+    }
     private void startLoadingForm(int action) {
         try {
             if (action == ACTION_PRE_IMG) {
@@ -295,8 +304,30 @@ public class FormDrawActivity extends BaseActivity {
         }
         Log.i(TAG, "mPage=" + mPage);
 
-        mCacheImg.put(mCurrentPage, mZBFormBlePenManager.getDrawBitmap());
         Log.i(TAG, "mCurrentPage1=" + mCurrentPage);
+
+        Log.i(TAG, "clone begin=" + mCurrentPage);
+        Bitmap current = mZBFormBlePenManager.getDrawBitmap();
+        if (current == null){
+            Toast.makeText(FormDrawActivity.this,
+                    FormDrawActivity.this.getResources().getString(R.string.toast_img_error),
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        //clone 缓存当前图片
+        Bitmap clone = current.copy(current.getConfig(),true);
+
+        if (mCacheImg.containsKey(mCurrentPage) &&
+                current == mCacheImg.get(mCurrentPage)){
+            Log.i(TAG, "recycle=" + mCurrentPage);
+            recycleBitmap(current);
+        }
+
+        mCacheImg.put(mCurrentPage, clone);
+        //clone
+
+        Log.i(TAG, "clone after=" + mCurrentPage);
         if (action == ACTION_PRE_IMG) {
             if (mCurrentPage > 1) {
                 mCurrentPage -= 1;
@@ -319,6 +350,14 @@ public class FormDrawActivity extends BaseActivity {
         }
         if (mService != null) {
             mService.setCurrentPage(mCurrentPage);
+        }
+        setUpPageTitle();
+    }
+
+    private void recycleBitmap(Bitmap bitmap){
+        if(bitmap != null){
+            bitmap.recycle();
+            System.gc();
         }
     }
 

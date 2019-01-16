@@ -8,7 +8,7 @@
     android:layout_gravity="center"
     android:id="@+id/img_welcome"
     android:scaleType="centerCrop"
-    android:src="@drawable/welcom_icon" />
+    android:src="@drawable/welcom_log" />
 </FrameLayout>
 
 
