@@ -42,6 +42,7 @@ import com.zbform.penform.net.ErrorCode;
 import com.zbform.penform.net.IZBformNetBeanCallBack;
 import com.zbform.penform.net.ZBformNetBean;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -82,6 +83,11 @@ public class ZBFormService extends Service {
         HwData mStroke = null;//一个笔画
         long mBeginTime;
 
+        private class TargetForm{
+            FormListInfo.Results mForm;
+            int mCurrentPage;
+            String mAddress;
+        }
         @Override
         public void onPenDown() {
             if (!ZBformApplication.sBlePenManager.getCanDraw()){
@@ -112,12 +118,12 @@ public class ZBFormService extends Service {
 
         @Override
         public void onCoordDraw(String pageAddress, int nX, int nY) {
+            Log.i(TAG, "START ACT onCoordDraw mPageAddress="+mPageAddress);
+            Log.i(TAG, "START ACT onCoordDraw pageAddress="+pageAddress);
             if (!TextUtils.isEmpty(pageAddress)) {
                 if (!"0.0.0.0".equals(pageAddress) &&
                         !mPageAddress.equals(pageAddress)) {
-                    Log.i(TAG, "START ACT onCoordDraw mPageAddress="+mPageAddress);
-                    Log.i(TAG, "START ACT onCoordDraw pageAddress="+pageAddress);
-                    FormListInfo.Results form = findPageForm(pageAddress);
+                    TargetForm form = findPageForm(pageAddress);
                     startPageFormActivity(form);
                     mPageAddress = pageAddress;
                 }
@@ -141,29 +147,110 @@ public class ZBFormService extends Service {
             }
         }
 
-        private FormListInfo.Results findPageForm(String address){
+        private TargetForm findPageForm(String address) {
             FormListInfo.Results formTarget = null;
+            TargetForm result = null;
+            int page = 1;
 
-            if(mFormList != null && mFormList.size()>0) {
+            if (mFormList != null && mFormList.size() > 0) {
                 for (FormListInfo.Results form : mFormList) {
-                    if (form.getRinit().equals(address)) {
-                        formTarget = form;
-                        break;
+                    //多页查找其他页地址
+                    if (form.getPage() > 1) {
+                        HashMap<String, Integer> valAddress = findValidateAddress(form.getRinit(), form.getPage());
+                        if (valAddress.containsKey(address)) {
+                            formTarget = form;
+                            page = valAddress.get(address);
+                            break;
+                        }
+                    } else {
+                        if (form.getRinit().equals(address)) {
+                            formTarget = form;
+                            page = 1;
+                            break;
+                        }
                     }
                 }
             }
+            if (formTarget != null) {
+                result = new TargetForm();
+                result.mForm = formTarget;
+                result.mCurrentPage = page;
+                result.mAddress = address;
+            }
 
-            return formTarget;
+            return result;
         }
 
-        private void startPageFormActivity(FormListInfo.Results form){
+        /*
+         * address:1536.671.58.6
+         *         1536.A  .B .C
+         *         A 1536
+         *         B 0~72
+         *         C 0~107
+         */
+        private HashMap<String, Integer> findValidateAddress(String address, int pages) {
+            HashMap<String, Integer> valAddress = new HashMap<String, Integer>();
+            valAddress.put(address,1);
+            if (TextUtils.isEmpty(address)) {
+                Log.i(TAG, "findValidateAddress null");
+                return valAddress;
+            }
+            Log.i(TAG, "findValidateAddress address="+address);
+            String[] addressArray = address.split("\\.");
+            if (addressArray == null || addressArray.length < 4) {
+                if(address==null){
+                    Log.i(TAG, "findValidateAddress null1");
+                } else {
+                    Log.i(TAG, "findValidateAddress invalid="+addressArray.length);
+                }
+                return valAddress;
+            }
+
+            //key:page value:key
+
+            try {
+                int addressStatic = Integer.valueOf(addressArray[0]);
+                int addressA = Integer.valueOf(addressArray[1]);
+                int addressB = Integer.valueOf(addressArray[2]);
+                int addressC = Integer.valueOf(addressArray[3]);
+
+                for (int i = 1; i < pages; i++) {
+                    int nextA = addressA;
+                    int nextB = addressB;
+                    int nextC = addressC + i;
+                    if (nextC > 107) {
+                        nextB += 1;
+                        if (nextB > 72) {
+                            nextA += 1;
+                            nextB = 0;
+                        }
+                        nextC = i - 1;
+                    }
+                    String nextAddress = String.valueOf(addressStatic) + "." +
+                            String.valueOf(nextA) + "." +
+                            String.valueOf(nextB) + "." +
+                            String.valueOf(nextC);
+                    valAddress.put(nextAddress, i + 1);
+
+                    Log.i(TAG, "nextAddress=" + nextAddress);
+                }
+            }catch (Exception e){
+                Log.i(TAG, "findValidateAddress e=" + e.getMessage());
+            }
+
+            return valAddress;
+        }
+
+        private void startPageFormActivity(TargetForm form){
             if (form == null) return;
             Intent intent = new Intent(mContext, FormDrawActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.putExtra("page",form.getPage());
-            intent.putExtra("pageaddress",form.getRinit());
-            intent.putExtra("formid",form.getUuid());
-            intent.putExtra("formname",form.getName().replace(".pdf",""));
+            intent.putExtra("currentpage", form.mCurrentPage);
+            Log.i(TAG, "startPageFormActivity currentpage=" + form.mCurrentPage);
+            intent.putExtra("page",form.mForm.getPage());
+            intent.putExtra("pageaddress",form.mAddress);
+            intent.putExtra("formid",form.mForm.getUuid());
+            intent.putExtra("formname",form.mForm.getName().replace(".pdf",""));
             startActivity(intent);
         }
     }
