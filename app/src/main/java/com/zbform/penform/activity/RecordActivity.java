@@ -75,6 +75,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
     private FormTask mFormTask;
     private FormInfo mFormInfo = null;
+    private double mFormHeight;
+    private double mFormWidth;
 
     private Context mContext;
     private ZBFormService mService;
@@ -85,7 +87,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             Log.d(TAG, "onServiceConnected");
             ZBFormService.LocalBinder binder = (ZBFormService.LocalBinder) service;
             mService = binder.getService();
-//            mService.setCurrentPageAddress(mPageAddress);
         }
 
         public void onServiceDisconnected(ComponentName name) {
@@ -111,9 +112,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
         initData();
 
-        Log.i(TAG, "bind service: zbform service");
-        Intent intent = new Intent(this, ZBFormService.class);
-        bindService(intent, conn, Service.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -123,13 +121,16 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             mService.setIsRecordDraw(false);
             mService.stopDraw();
         }
-        dismissLoading();
         unbindService(conn);
+        dismissLoading();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        Log.i(TAG, "onresume, bind service: zbform service");
+        Intent intent = new Intent(this, ZBFormService.class);
+        bindService(intent, conn, Service.BIND_AUTO_CREATE);
 
         if (mService != null) {
             if (mPageAddress != null && mFormInfo != null && mRecordId != null) {
@@ -358,11 +359,21 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
             //计算scale
             if (width > height) {
-                mScaleX = (float) width / 7920f;
-                mScaleY = (float) height / 5600f;
+                if(mFormWidth > mFormHeight) {
+                    mScaleX = (float) width / (float)mFormWidth;
+                    mScaleY = (float) height / (float)mFormHeight;
+                } else {
+                    mScaleX = (float) width / (float)mFormHeight;
+                    mScaleY = (float) height / (float)mFormWidth;
+                }
             } else {
-                mScaleY = (float) height / 7920f;
-                mScaleX = (float) width / 5600f;
+                if(mFormWidth > mFormHeight) {
+                    mScaleY = (float) height / (float)mFormWidth;
+                    mScaleX = (float) width / (float)mFormHeight;
+                } else {
+                    mScaleY = (float) height / (float)mFormHeight;
+                    mScaleX = (float) width / (float)mFormWidth;
+                }
             }
 
             mCurrentItems = getCurrentItems();
@@ -428,6 +439,10 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             mFormInfo = form;
             mPageAddress = mFormInfo.results[0].getRinit();
 
+            mFormHeight = convertPageSize(mFormInfo.results[0].getHeigh());
+            mFormWidth = convertPageSize(mFormInfo.results[0].getWidth());
+            Log.i(TAG, "FORM height = "+mFormHeight + "   width="+mFormWidth);
+
             Log.i(TAG, "set page address to service: " + mPageAddress);
             mService.setCurrentPageAddress(mPageAddress);
             mService.setDrawFormInfo(mFormInfo, mRecordId);
@@ -444,4 +459,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
         }
     };
+
+    public double convertPageSize(double x){
+        return x*10*8/0.3;
+    }
 }
