@@ -2,6 +2,7 @@ package com.zbform.penform;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
 
@@ -14,6 +15,7 @@ import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.handler.UnceHandler;
 import com.zbform.penform.json.UserInfo;
 import com.zbform.penform.permissions.Nammu;
+import com.zbform.penform.services.BleConnectService;
 
 /**
  */

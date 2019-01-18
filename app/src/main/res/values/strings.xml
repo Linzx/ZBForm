@@ -107,4 +107,5 @@
     <string name="pen_nav_scan_result_title">扫描到的设备：</string>
     <string name="connecting_pen">正在连接数码笔</string>
     <string name="pen_connect_fail">连接失败，请尝试重新连接！</string>
+    <string name="scan_connect_pen_success">已成功连接数码笔</string>
 </resources>

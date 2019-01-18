@@ -2,7 +2,6 @@ package com.zbform.penform.activity;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
 import android.content.Context;
@@ -10,8 +9,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -27,7 +24,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.tstudy.blepenlib.BlePenManager;
-import com.tstudy.blepenlib.callback.BleScanCallback;
 import com.tstudy.blepenlib.data.BleDevice;
 import com.tstudy.blepenlib.exception.BleException;
 import com.zbform.penform.R;
@@ -35,10 +31,12 @@ import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.dialog.LoadingDialog;
 import com.zbform.penform.settings.DeviceAdapter;
+import com.zbform.penform.util.PreferencesUtility;
 
 import java.util.List;
 
-public class PenManagerActivity extends BaseActivity implements View.OnClickListener, ZBFormBlePenManager.IBlePenStateCallBack, ZBFormBlePenManager.IZBBleGattCallback {
+public class PenManagerActivity extends BaseActivity implements View.OnClickListener,
+        ZBFormBlePenManager.IBlePenStateCallBack, ZBFormBlePenManager.IZBBleGattCallback, ZBFormBlePenManager.IZBBleScanCallback {
 
 
     public static final String TAG = PenManagerActivity.class.getSimpleName();
@@ -78,6 +76,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
         initView();
         mBlePenManager.setBlePenStateCallBack(this);
         mBlePenManager.setZBBleGattCallback(this);
+        mBlePenManager.setZBBleScanCallback(this);
         boolean initSuccess = mBlePenManager.isBleInitSuccess();
         if (initSuccess) {
             Log.i(TAG, "initSuccess");
@@ -92,6 +91,8 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     public void onDestroy() {
         super.onDestroy();
         mBlePenManager.removeZBBleGattCallback(this);
+        mBlePenManager.removeZBBleScanCallback(this);
+
     }
 
     @Override
@@ -216,49 +217,44 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
 
     private void startScan() {
         Log.i(TAG, "startScan()");
-        BlePenManager.getInstance().scan(mScanCallback);
+        mBlePenManager.scan();
         mPenInfoLayout.setVisibility(View.GONE);
     }
 
-    //扫描回调
-    BleScanCallback mScanCallback = new BleScanCallback() {
-        @Override
-        public void onScanStarted(boolean success) {
-            Log.i(TAG, "onScanStarted()");
+    @Override
+    public void onScanStarted(boolean success) {
+        Log.i(TAG, "onScanStarted()");
 
-            mDeviceAdapter.clearScanDevice();
-            mDeviceAdapter.notifyDataSetChanged();
-            loading_progress.setVisibility(View.VISIBLE);
-            btn_scan.setText(getString(R.string.stop_scan));
-        }
+        mDeviceAdapter.clearScanDevice();
+        mDeviceAdapter.notifyDataSetChanged();
+        loading_progress.setVisibility(View.VISIBLE);
+        btn_scan.setText(getString(R.string.stop_scan));
+    }
 
-        @Override
-        public void onLeScan(BleDevice bleDevice) {
-            super.onLeScan(bleDevice);
-        }
+    @Override
+    public void onLeScan(BleDevice bleDevice) {
+    }
 
-        @Override
-        public void onScanning(BleDevice bleDevice) {
-            scan_result_title.setVisibility(View.VISIBLE);
-            mDeviceAdapter.addDevice(bleDevice);
-            mBleDevice = bleDevice;
-            mDeviceAdapter.notifyDataSetChanged();
-        }
+    @Override
+    public void onScanning(BleDevice bleDevice) {
+        scan_result_title.setVisibility(View.VISIBLE);
+        mDeviceAdapter.addDevice(bleDevice);
+        mBleDevice = bleDevice;
+        mDeviceAdapter.notifyDataSetChanged();
+    }
 
-        @Override
-        public void onScanFinished(List<BleDevice> scanResultList) {
-            loading_progress.setVisibility(View.GONE);
-            btn_scan.setText(getString(R.string.start_scan));
-            mDeviceAdapter.notifyDataSetChanged();
-        }
-    };
+    @Override
+    public void onScanFinished(List<BleDevice> scanResultList) {
+        loading_progress.setVisibility(View.GONE);
+        btn_scan.setText(getString(R.string.start_scan));
+        mDeviceAdapter.notifyDataSetChanged();
+    }
 
     private void connect(final BleDevice bleDevice) {
         mBlePenManager.connect(bleDevice);
     }
 
     //连接回调
-//    ZBFormBlePenManager.IZBBleGattCallback mBleGattCallback = new ZBFormBlePenManager.IZBBleGattCallback() {
     @Override
     public void onStartConnect() {
         showLoading();
@@ -282,19 +278,18 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     public void onConnectSuccess(BleDevice bleDevice, BluetoothGatt gatt, int status) {
         mBleDevice = bleDevice;
         Log.i(TAG, "onConnectSuccess");
-        mBlePenManager.setBleDevice(mBleDevice);
-        dismissLoading();
+//        mBlePenManager.setBleDevice(mBleDevice);
+        PreferencesUtility.getInstance(mContext).setPreferenceValue(PreferencesUtility.BLEPEN_MAC, bleDevice.getMac());
+        PreferencesUtility.getInstance(mContext).setPreferenceValue(PreferencesUtility.BLEPEN_NAME, bleDevice.getName());
 
+        dismissLoading();
         mDeviceAdapter.addDevice(0, bleDevice);
-//                mDeviceAdapter.notifyDataSetChanged();
     }
 
     @Override
     public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
         dismissLoading();
-
     }
-//    };
 
 
     public void setPenInfo() {

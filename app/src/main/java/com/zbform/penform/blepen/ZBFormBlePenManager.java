@@ -21,6 +21,7 @@ import com.tstudy.blepenlib.callback.BleGattCallback;
 import com.tstudy.blepenlib.callback.BlePenStreamCallback;
 import com.tstudy.blepenlib.callback.BleScanCallback;
 import com.tstudy.blepenlib.data.BleDevice;
+import com.tstudy.blepenlib.data.BleScanState;
 import com.tstudy.blepenlib.exception.BleException;
 
 import java.text.SimpleDateFormat;
@@ -34,6 +35,7 @@ import static com.tstudy.blepenlib.constant.Constant.PEN_DOWN_MESSAGE;
 import static com.tstudy.blepenlib.constant.Constant.PEN_UP_MESSAGE;
 import static com.tstudy.blepenlib.constant.Constant.WARN_BATTERY;
 import static com.tstudy.blepenlib.constant.Constant.WARN_MEMORY;
+
 /*
   ZBFormBlePenManager Must run in UI thread
  */
@@ -81,8 +83,10 @@ public class ZBFormBlePenManager {
     private IBlePenStateCallBack mIBlePenStateCallBack;
     private IBlePenDrawCallBack mIBlePenDrawCallBack;
     private ArrayList<IZBBleGattCallback> mIZBBleGattCallbackList;
+    private List<IZBBleScanCallback> mIZBBleScanCallbackList = new ArrayList<>();
 
     private static ZBFormBlePenManager mZBFormBlePenManager;
+
     public static ZBFormBlePenManager getInstance(Context context) {
         if (mZBFormBlePenManager == null) {
             mZBFormBlePenManager = new ZBFormBlePenManager(context);
@@ -93,6 +97,7 @@ public class ZBFormBlePenManager {
 
     public interface IBlePenStateCallBack {
         void onOpenPenStreamSuccess();
+
         void onRemainBattery(final int percent);
 
         void onMemoryFillLevel(final int percent, final int byteNum);
@@ -103,8 +108,11 @@ public class ZBFormBlePenManager {
     public interface IBlePenDrawCallBack {
 
         void onPenDown();
+
         void onPenUp();
+
         void onCoordDraw(final String pageAddress, final int nX, final int nY);
+
         void onOffLineCoordDraw(final String pageAddress, final int nX, final int nY);
     }
 
@@ -116,6 +124,16 @@ public class ZBFormBlePenManager {
         void onConnectSuccess(BleDevice bleDevice, BluetoothGatt gatt, int status);
 
         void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status);
+    }
+
+    public interface IZBBleScanCallback {
+        void onScanStarted(boolean success);
+
+        void onLeScan(BleDevice bleDevice);
+
+        void onScanning(BleDevice bleDevice);
+
+        void onScanFinished(List<BleDevice> scanResultList);
     }
 
     private ZBFormBlePenManager(Context context) {
@@ -134,19 +152,33 @@ public class ZBFormBlePenManager {
         mIBlePenDrawCallBack = callBack;
     }
 
-    public void setZBBleGattCallback(IZBBleGattCallback callback){
-        if(!mIZBBleGattCallbackList.contains(callback)) {
-            Log.i(TAG,"Add ble gatt call back, at set");
+    public void setZBBleGattCallback(IZBBleGattCallback callback) {
+        if (!mIZBBleGattCallbackList.contains(callback)) {
+            Log.i(TAG, "Add ble gatt call back, at set");
 
             mIZBBleGattCallbackList.add(callback);
         }
     }
 
-    public void removeZBBleGattCallback(IZBBleGattCallback callback){
-        if(mIZBBleGattCallbackList.contains(callback)) {
-            Log.i(TAG,"remove call back");
+    public void removeZBBleGattCallback(IZBBleGattCallback callback) {
+        if (mIZBBleGattCallbackList.contains(callback)) {
+            Log.i(TAG, "remove call back");
 
             mIZBBleGattCallbackList.remove(callback);
+        }
+    }
+
+    public void setZBBleScanCallback(IZBBleScanCallback callback) {
+        if (!mIZBBleScanCallbackList.contains(callback)) {
+            Log.i(TAG, "add scan call back to list");
+            mIZBBleScanCallbackList.add(callback);
+        }
+    }
+
+    public void removeZBBleScanCallback(IZBBleScanCallback callback) {
+        if (mIZBBleScanCallbackList.contains(callback)) {
+            Log.i(TAG, "remove scan call back");
+            mIZBBleScanCallbackList.remove(callback);
         }
     }
 
@@ -173,26 +205,40 @@ public class ZBFormBlePenManager {
 //        mImageView.setImageBitmap(mBitmap);
     }
 
-    public void startDraw(){
+    public void startDraw() {
         mCanDraw = true;
 //        BlePenStreamManager.getInstance().setStandMode();
     }
 
-    public void stopDraw(){
+    public void stopDraw() {
         mCanDraw = false;
 //        BlePenStreamManager.getInstance().setHoverMode();
     }
 
     public void connect(final BleDevice bleDevice, IZBBleGattCallback callback) {
         if (callback != null && !mIZBBleGattCallbackList.contains(callback)) {
-            Log.i(TAG,"Add ble gatt call back");
+            Log.i(TAG, "Add ble gatt call back");
             mIZBBleGattCallbackList.add(callback);
         }
         BlePenManager.getInstance().connect(bleDevice, mBleGattCallback);
     }
 
+    public void scan(){
+        if(getScanState() != BleScanState.STATE_IDLE){
+            cancelScan();
+        }
+        BlePenManager.getInstance().scan(mBleScanCallback);
+    }
+
+    public void cancelScan(){
+        BlePenManager.getInstance().cancelScan();
+    }
+
+    public BleScanState getScanState(){
+        return BlePenManager.getInstance().getScanSate();
+    }
+
     public void connect(final BleDevice bleDevice) {
-        BlePenManager.getInstance().removeConnectGattCallback(bleDevice);
         BlePenManager.getInstance().connect(bleDevice, mBleGattCallback);
     }
 
@@ -259,7 +305,7 @@ public class ZBFormBlePenManager {
                             if (mIBlePenDrawCallBack != null) {
                                 mIBlePenDrawCallBack.onPenDown();
                             }
-                            Log.i("whd", "PEN_DOWN_MESSAGE pageAddress="+pageAddress);
+                            Log.i("whd", "PEN_DOWN_MESSAGE pageAddress=" + pageAddress);
                         }
                         break;
                     case PEN_COODINAT_MESSAGE:
@@ -272,11 +318,11 @@ public class ZBFormBlePenManager {
                             }
 
                             if (mIBlePenDrawCallBack != null) {
-                                mIBlePenDrawCallBack.onCoordDraw(pageAddress,nX,nY);
+                                mIBlePenDrawCallBack.onCoordDraw(pageAddress, nX, nY);
                             }
                         }
 
-                        Log.i("whd", "onCoordDraw pageAddress="+pageAddress);
+                        Log.i("whd", "onCoordDraw pageAddress=" + pageAddress);
                         if (!TextUtils.isEmpty(pageAddress)) {
                             if (!"0.0.0.0".equals(mPageAddress) && !mPageAddress.equals(pageAddress)) {
                                 Log.i("whd", "onCoordDraw drawClear=");
@@ -329,7 +375,7 @@ public class ZBFormBlePenManager {
                                 }
                             }
                             if (mIBlePenDrawCallBack != null) {
-                                mIBlePenDrawCallBack.onOffLineCoordDraw(pageAddress,nX,nY);
+                                mIBlePenDrawCallBack.onOffLineCoordDraw(pageAddress, nX, nY);
                             }
                         }
                         if (!TextUtils.isEmpty(pageAddress)) {
@@ -427,28 +473,38 @@ public class ZBFormBlePenManager {
         mBleScanCallback = new BleScanCallback() {
             @Override
             public void onScanStarted(boolean success) {
-//                if (progressDialog != null && !progressDialog.isShowing()) {
-//                    progressDialog.show();
-//                }
-//                txt_connect_status.setText(getString(R.string.start_scan));
+                for (IZBBleScanCallback callback : mIZBBleScanCallbackList) {
+                    if (callback != null) {
+                        callback.onScanStarted(success);
+                    }
+                }
             }
 
             @Override
             public void onLeScan(BleDevice bleDevice) {
-                super.onLeScan(bleDevice);
+                for (IZBBleScanCallback callback : mIZBBleScanCallbackList) {
+                    if (callback != null) {
+                        callback.onLeScan(bleDevice);
+                    }
+                }
             }
 
             @Override
             public void onScanning(BleDevice bleDevice) {
-                if (bleDevice != null && bleDevice.getMac() != null) {
-                    if (bleDevice.getMac().equals(mBleDeviceMac)) {
-//                        connect(bleDevice);
+                for (IZBBleScanCallback callback : mIZBBleScanCallbackList) {
+                    if (callback != null) {
+                        callback.onScanning(bleDevice);
                     }
                 }
             }
 
             @Override
             public void onScanFinished(List<BleDevice> scanResultList) {
+                for (IZBBleScanCallback callback : mIZBBleScanCallbackList) {
+                    if (callback != null) {
+                        callback.onScanFinished(scanResultList);
+                    }
+                }
             }
         };
 
@@ -456,8 +512,8 @@ public class ZBFormBlePenManager {
         mBleGattCallback = new BleGattCallback() {
             @Override
             public void onStartConnect() {
-                for (IZBBleGattCallback callback : mIZBBleGattCallbackList){
-                    if (callback != null){
+                for (IZBBleGattCallback callback : mIZBBleGattCallbackList) {
+                    if (callback != null) {
                         callback.onStartConnect();
                     }
                 }
@@ -465,9 +521,9 @@ public class ZBFormBlePenManager {
 
             @Override
             public void onConnectFail(BleDevice bleDevice, BleException exception) {
-                for (IZBBleGattCallback callback : mIZBBleGattCallbackList){
-                    if (callback != null){
-                        callback.onConnectFail(bleDevice,exception);
+                for (IZBBleGattCallback callback : mIZBBleGattCallbackList) {
+                    if (callback != null) {
+                        callback.onConnectFail(bleDevice, exception);
                     }
                 }
             }
@@ -476,9 +532,10 @@ public class ZBFormBlePenManager {
             public void onConnectSuccess(BleDevice bleDevice, BluetoothGatt gatt, int status) {
                 for (IZBBleGattCallback callback : mIZBBleGattCallbackList) {
                     if (callback != null) {
-                        callback.onConnectSuccess(bleDevice, gatt,status);
+                        callback.onConnectSuccess(bleDevice, gatt, status);
                     }
                 }
+                setBleDevice(bleDevice);
             }
 
             @Override
@@ -502,7 +559,7 @@ public class ZBFormBlePenManager {
         System.gc();
         mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
         synchronized (TouchImageView.class) {
-            if(mImageView != null) {
+            if (mImageView != null) {
                 mImageView.setImageBitmap(mBitmap);
                 mImageView.invalidate();
             }
@@ -625,15 +682,15 @@ public class ZBFormBlePenManager {
         isBleInitSuccess = bleInitSuccess;
     }
 
-    public boolean isConnectedBleDevice(){
+    public boolean isConnectedBleDevice() {
         return BlePenManager.getInstance().isConnected(mBleDevice);
     }
 
-    public Bitmap getDrawBitmap(){
+    public Bitmap getDrawBitmap() {
         return mBitmap;
     }
 
-    public boolean getCanDraw(){
+    public boolean getCanDraw() {
         return mCanDraw;
     }
 }

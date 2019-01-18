@@ -35,6 +35,7 @@ import com.zbform.penform.adapter.MenuItemAdapter;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.fragment.BaseFragment;
 import com.zbform.penform.fragment.FormListFragment;
+import com.zbform.penform.services.BleConnectService;
 import com.zbform.penform.services.ZBFormService;
 
 import java.util.ArrayList;
@@ -114,6 +115,10 @@ public class ZBformMain extends BaseActivity {
         selectFragment(mCurrentFragmet);
         mService = new Intent(this, ZBFormService.class);
         startService(mService);
+
+        // 开启数码笔连接服务
+        Intent scanService = new Intent(this, BleConnectService.class);
+        startService(scanService);
     }
 
     private void setUpMenu(Menu menu) {

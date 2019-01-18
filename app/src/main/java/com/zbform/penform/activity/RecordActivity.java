@@ -42,6 +42,7 @@ import com.zbform.penform.task.RecordTask;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 public class RecordActivity extends BaseActivity implements RecordTask.OnTaskListener {
@@ -52,7 +53,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     private static final int NEXT_IMG = 2;
 
     private int mCurrentPage = 1;
-//    private HashMap<Integer, Bitmap> mCacheImg = new HashMap<Integer, Bitmap>();
+    private HashMap<Integer, Bitmap> mCacheImg = new HashMap<Integer, Bitmap>();
 
     private static List<RecordInfo.Results> recordResults = new ArrayList<>();
     private List<RecordDataItem> mCurrentItems = new ArrayList<>();
@@ -131,7 +132,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         super.onResume();
 
         if (mService != null) {
-            if(mPageAddress != null && mFormInfo != null && mRecordId!= null) {
+            if (mPageAddress != null && mFormInfo != null && mRecordId != null) {
                 mService.setCurrentPageAddress(mPageAddress);
                 mService.setIsRecordDraw(true);
                 mService.setDrawFormInfo(mFormInfo, mRecordId);
@@ -258,10 +259,15 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             return;
         }
         Log.i(TAG, "page size = " + mPage);
-//        if (!mCacheImg.containsKey(mCurrentPage)) {
-//            Log.i(TAG, "put img to cache， page = "+mCurrentPage+"   hascode = " +mRecordBitmapImg.hashCode());
-//            mCacheImg.put(mCurrentPage, mRecordBitmapImg);
+//        Bitmap newBitmap = mRecordBitmapImg.copy(mRecordBitmapImg.getConfig(), true);
+//        if(mCacheImg.containsKey(mCurrentPage) && mCacheImg.get(mCurrentPage) == mRecordBitmapImg){
+//            Log.i(TAG, "recycle cache bitmap and re put");
+//            mRecordBitmapImg.recycle();
+//            System.gc();
 //        }
+//        Log.i(TAG, "put img to cache， page = " + mCurrentPage + "   hascode = " + newBitmap.hashCode());
+//
+//        mCacheImg.put(mCurrentPage, newBitmap);
         Log.i(TAG, "Current Page = " + mCurrentPage);
         if (action == PRE_IMG) {
             if (mCurrentPage > 1) {
@@ -276,7 +282,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 //        if (mCacheImg.containsKey(mCurrentPage)) {
 //            Log.i(TAG, "use cache img");
 //            Bitmap cache = mCacheImg.get(mCurrentPage);
-//            Log.i(TAG , "cache hash code = "+cache.hashCode());
+//            Log.i(TAG, "cache hash code = " + cache.hashCode());
 //            mRecordImg.setImageBitmap(cache);
 //        } else {
 //            Log.i(TAG, "get new page img");
@@ -375,7 +381,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
             canvas.drawPath(mPath, paint);
 
-            mRecordBitmapImg = toTransform;
+            mRecordBitmapImg = toTransform.copy(toTransform.getConfig(), true);
             ZBformApplication.sBlePenManager.setDrawView(mRecordImg, mRecordBitmapImg, mRecordBitmapImg.getWidth(), mRecordBitmapImg.getHeight());
             mService.startDraw();
 

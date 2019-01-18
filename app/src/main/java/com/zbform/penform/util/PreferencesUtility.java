@@ -16,6 +16,10 @@ public final class PreferencesUtility {
     public static final String SHARED_LAST_APK_VERSION_KEY = "last_apk_version";
     private static final String PRE_INTRODUCE_SHOWED = "show_introduce";
 
+    public static final String BLEPEN_NAME = "ble_pen_name";
+    public static final String BLEPEN_MAC = "ble_pen_mac";
+
+
     private static PreferencesUtility sInstance;
 
     private static SharedPreferences mPreferences;
@@ -74,4 +78,15 @@ public final class PreferencesUtility {
     public boolean getShowIntroduce() {
         return mPreferences.getBoolean(PRE_INTRODUCE_SHOWED,false);
     }
+
+    public void setPreferenceValue(String key, String value){
+        final SharedPreferences.Editor editor = mPreferences.edit();
+        editor.putString(key, value);
+        editor.commit();
+    }
+
+    public String getPreferenceValue(String key, String defaultValue){
+        return mPreferences.getString(key,defaultValue);
+    }
+
 }
