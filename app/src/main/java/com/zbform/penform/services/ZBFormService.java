@@ -123,8 +123,12 @@ public class ZBFormService extends Service {
             if (!TextUtils.isEmpty(pageAddress)) {
                 if (!"0.0.0.0".equals(pageAddress) &&
                         !mPageAddress.equals(pageAddress)) {
-                    TargetForm form = findPageForm(pageAddress);
-                    startPageFormActivity(form);
+
+                    //如果现在是在修改记录界面。不要再识别新的了
+                    if (!mIsRecordDraw) {
+                        TargetForm form = findPageForm(pageAddress);
+                        startPageFormActivity(form);
+                    }
                     mPageAddress = pageAddress;
                 }
             }
@@ -289,7 +293,11 @@ public class ZBFormService extends Service {
                     for (Point point : stroke.dList) {
                         ZBStrokeEntity strokeEntity = new ZBStrokeEntity();
                         strokeEntity.setUserid(ZBformApplication.getmLoginUserId());
-                        strokeEntity.setFormid(mDrawFormInfo.results[0].getUuid());
+                        try {
+                            strokeEntity.setFormid(mDrawFormInfo.results[0].getUuid());
+                        } catch(Exception e){
+                            continue;
+                        }
                         strokeEntity.setRecordid(mRecordId);
 
                         String itemId = findFormRecordId(point.getX(), point.getY());
@@ -339,19 +347,19 @@ public class ZBFormService extends Service {
 
                 double xoff = x * 0.3 / 8 / 10;
                 double yoff = y * 0.3 / 8 / 10;
-                Log.i(TAG, "xoff=" + xoff);
-                Log.i(TAG, "yoff" + yoff);
-                Log.i(TAG, "item.getLocaX()=" + item.getLocaX());
-                Log.i(TAG, "item.getLocaY()=" + item.getLocaY());
-                Log.i(TAG, "LocaX()+LocaW=" + (item.getLocaX() + item.getLocaW()));
-                Log.i(TAG, "LocaY()+LocaH()=" + (item.getLocaY() + item.getLocaH()));
+//                Log.i(TAG, "xoff=" + xoff);
+//                Log.i(TAG, "yoff" + yoff);
+//                Log.i(TAG, "item.getLocaX()=" + item.getLocaX());
+//                Log.i(TAG, "item.getLocaY()=" + item.getLocaY());
+//                Log.i(TAG, "LocaX()+LocaW=" + (item.getLocaX() + item.getLocaW()));
+//                Log.i(TAG, "LocaY()+LocaH()=" + (item.getLocaY() + item.getLocaH()));
 
                 if (xoff >= item.getLocaX() &&
                         yoff >= item.getLocaY() &&
                         xoff <= (item.getLocaX() + item.getLocaW()) &&
                         yoff <= (item.getLocaY() + item.getLocaH())) {
                     id = item.getItem();
-                    Log.i(TAG, "form item id: " + id);
+//                    Log.i(TAG, "form item id: " + id);
                     break;
                 }
 

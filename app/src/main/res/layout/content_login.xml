@@ -10,6 +10,7 @@
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="200dp"
+        android:layout_marginTop="50dp"
         android:scaleType="centerInside"
         android:src="@drawable/zbform_login_log"
         />

@@ -446,6 +446,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             Log.i(TAG, "set page address to service: " + mPageAddress);
             mService.setCurrentPageAddress(mPageAddress);
             mService.setDrawFormInfo(mFormInfo, mRecordId);
+            mService.setIsRecordDraw(true);
             mTask.getRecord();
         }
 

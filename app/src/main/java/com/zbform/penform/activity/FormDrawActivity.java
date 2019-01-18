@@ -48,6 +48,9 @@ public class FormDrawActivity extends BaseActivity {
     private static final int ACTION_NEXT_IMG = 2;
     private static final int ACTION_NEW_RECORD = 3;
     private static final int ACTION_PREVIEW = 4;
+    private static final int ACTION_AUTO_OPEN = 5;
+
+
 
     private static final int STATE_PREVIEW = 100;
     private static final int STATE_DRAW = 200;
@@ -58,6 +61,7 @@ public class FormDrawActivity extends BaseActivity {
     //    private static final ColorDrawable TRANSPARENT_DRAWABLE = new ColorDrawable(android.R.color.transparent);
     private FormInfo mFormInfo;
     private int mCurrentPage = 1;
+    private int mOldCurrentPage = mCurrentPage;
     private int mPage;
     private String mPageAddress;
     private String mFormID;
@@ -115,17 +119,17 @@ public class FormDrawActivity extends BaseActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         Log.i(TAG, "onNewIntent");
-        // 自动识别纸后，停止上次的draw
-        if (mService != null){
-            mService.stopDraw();
-        }
         initFormData(intent);
 
         if (mToolbar != null) {
             Menu menu = mToolbar.getMenu();
             setUpMenu(menu);
         }
-        startLoadingForm(ACTION_PREVIEW);
+        if (mDrawState == STATE_DRAW){
+            switchPages(ACTION_AUTO_OPEN);
+        } else {
+            startLoadingForm(ACTION_PREVIEW);
+        }
     }
 
     @Override
@@ -135,14 +139,27 @@ public class FormDrawActivity extends BaseActivity {
 
     private void initFormData(Intent intent){
         if (intent != null) {
-            mDrawState = STATE_PREVIEW;
-            mCurrentPage = 1;
-            mCacheImg.clear();
-            setUpToolBarState(false);
+
+            String newFormID= intent.getStringExtra("formid");
+
+            if(!newFormID.equals(mFormID)) {
+                // 自动识别新的表单，停止上次的draw
+                mFormID = newFormID;
+                if (mService != null) {
+                    Log.i(TAG, "initFormData stopDraw");
+                    mService.stopDraw();
+                }
+                mDrawState = STATE_PREVIEW;
+                mCurrentPage = 1;
+                mCacheImg.clear();
+
+                setUpToolBarState(false);
+            }
+
             mPage = intent.getIntExtra("page", 1);
             mPageAddress = intent.getStringExtra("pageaddress");
-            mFormID = intent.getStringExtra("formid");
             mFormName = intent.getStringExtra("formname");
+            mCurrentPage = intent.getIntExtra("currentpage",1);
             setUpPageTitle();
         }
     }
@@ -155,6 +172,7 @@ public class FormDrawActivity extends BaseActivity {
             mPageTitle.setVisibility(View.GONE);
         }
     }
+
     private void startLoadingForm(int action) {
         try {
             if (action == ACTION_PRE_IMG) {
@@ -220,6 +238,11 @@ public class FormDrawActivity extends BaseActivity {
                         }
                     });
                 }
+                if (mService != null) {
+                    mService.setCurrentPageAddress(mPageAddress);
+                }
+
+                mOldCurrentPage = mCurrentPage;
             } else {
                 Log.i(TAG, "bitmap! null");
             }
@@ -241,9 +264,6 @@ public class FormDrawActivity extends BaseActivity {
         @Override
         public void onGetSuccess(FormInfo form) {
             mFormInfo = form;
-            if (mService != null) {
-                mService.setCurrentPageAddress(mPageAddress);
-            }
             dismissLoading();
         }
 
@@ -318,13 +338,23 @@ public class FormDrawActivity extends BaseActivity {
         //clone 缓存当前图片
         Bitmap clone = current.copy(current.getConfig(),true);
 
-        if (mCacheImg.containsKey(mCurrentPage) &&
-                current == mCacheImg.get(mCurrentPage)){
-            Log.i(TAG, "recycle=" + mCurrentPage);
-            recycleBitmap(current);
-        }
+        if (action == ACTION_AUTO_OPEN) {
+            if (mCacheImg.containsKey(mOldCurrentPage) &&
+                    current == mCacheImg.get(mOldCurrentPage)) {
+                Log.i(TAG, "recycle=" + mOldCurrentPage);
+                recycleBitmap(current);
+            }
 
-        mCacheImg.put(mCurrentPage, clone);
+            mCacheImg.put(mOldCurrentPage, clone);
+        } else {
+            if (mCacheImg.containsKey(mCurrentPage) &&
+                    current == mCacheImg.get(mCurrentPage)) {
+                Log.i(TAG, "recycle=" + mCurrentPage);
+                recycleBitmap(current);
+            }
+
+            mCacheImg.put(mCurrentPage, clone);
+        }
         //clone
 
         Log.i(TAG, "clone after=" + mCurrentPage);
@@ -351,6 +381,7 @@ public class FormDrawActivity extends BaseActivity {
         if (mService != null) {
             mService.setCurrentPage(mCurrentPage);
         }
+        mOldCurrentPage = mCurrentPage;
         setUpPageTitle();
     }
 
