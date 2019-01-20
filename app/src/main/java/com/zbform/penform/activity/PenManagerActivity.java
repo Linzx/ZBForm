@@ -65,6 +65,8 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     private TextView mPenVersion;
     private ActionBar mActionBar;
 
+    public boolean mIsConnectButtonPressed = false;
+
     private ZBFormBlePenManager mBlePenManager = ZBformApplication.sBlePenManager;
 
     @Override
@@ -154,7 +156,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     }
 
     private void dismissLoading() {
-        if (progressDialog != null) {
+        if (progressDialog != null && progressDialog.isShowing()) {
             Log.i(TAG, "dismissLoading");
             progressDialog.dismiss();
         }
@@ -185,6 +187,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
                 if (!BlePenManager.getInstance().isConnected(bleDevice)) {
                     //如果当前设备未连接，取消扫描，连接选中设备。
                     BlePenManager.getInstance().cancelScan();
+                    mIsConnectButtonPressed = true;
                     connect(bleDevice);
                 }
             }
@@ -257,7 +260,9 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     //连接回调
     @Override
     public void onStartConnect() {
-        showLoading();
+        if (mIsConnectButtonPressed) {
+            showLoading();
+        }
     }
 
     @Override
@@ -268,6 +273,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
                 loading_progress.setVisibility(View.INVISIBLE);
                 btn_scan.setText(getString(R.string.start_scan));
                 dismissLoading();
+                mIsConnectButtonPressed = false;
                 Toast.makeText(mContext, getString(R.string.pen_connect_fail), Toast.LENGTH_LONG).show();
             }
         });
@@ -281,13 +287,14 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
 //        mBlePenManager.setBleDevice(mBleDevice);
         PreferencesUtility.getInstance(mContext).setPreferenceValue(PreferencesUtility.BLEPEN_MAC, bleDevice.getMac());
         PreferencesUtility.getInstance(mContext).setPreferenceValue(PreferencesUtility.BLEPEN_NAME, bleDevice.getName());
-
+        mIsConnectButtonPressed = false;
         dismissLoading();
         mDeviceAdapter.addDevice(0, bleDevice);
     }
 
     @Override
     public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
+        mIsConnectButtonPressed = false;
         dismissLoading();
     }
 

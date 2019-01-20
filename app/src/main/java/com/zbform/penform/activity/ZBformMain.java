@@ -53,6 +53,7 @@ public class ZBformMain extends BaseActivity {
     private TextView mTootBarTitle;
     private long time = 0;
     private Intent mService;
+    private Intent mScanService;
 
     private FragmentManager fragmentManager;
 
@@ -117,8 +118,8 @@ public class ZBformMain extends BaseActivity {
         startService(mService);
 
         // 开启数码笔连接服务
-        Intent scanService = new Intent(this, BleConnectService.class);
-        startService(scanService);
+        mScanService = new Intent(this, BleConnectService.class);
+        startService(mScanService);
     }
 
     private void setUpMenu(Menu menu) {
@@ -250,7 +251,7 @@ public class ZBformMain extends BaseActivity {
     @Override
     protected void onDestroy() {
         ZBformApplication.sBlePenManager.removeZBBleGattCallback(bleGattCallback);
-        
+        stopService(mScanService);
         BlePenManager.getInstance().disconnectAllDevice();
 		super.onDestroy();
 //        stopService(mService);

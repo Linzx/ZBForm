@@ -662,7 +662,7 @@ public class ZBFormService extends Service {
     @Override
     public void onCreate() {
         Log.i(TAG, "ZBFormService onCreate");
-        ZBformApplication.sBlePenManager.setIBlePenDrawCallBack(mIBlePenDrawCallBack);
+        ZBformApplication.sBlePenManager.setBlePenDrawCallback(mIBlePenDrawCallBack);
 
         mUpLoadQueryHandler = new UpLoadQueryHandler();
         mContext = this;

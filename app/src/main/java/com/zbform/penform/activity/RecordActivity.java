@@ -28,6 +28,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.zbform.penform.R;
 import com.zbform.penform.ZBformApplication;
+import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.dialog.LoadingDialog;
 import com.zbform.penform.json.FormInfo;
 import com.zbform.penform.json.FormItem;
@@ -45,12 +46,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-public class RecordActivity extends BaseActivity implements RecordTask.OnTaskListener {
+public class RecordActivity extends BaseActivity implements RecordTask.OnTaskListener, ZBFormBlePenManager.IBlePenDrawCallBack {
 
     public static final String TAG = RecordActivity.class.getSimpleName();
 
     private static final int PRE_IMG = 1;
     private static final int NEXT_IMG = 2;
+    private static final int AUTO_IMG = 3;
 
     private int mCurrentPage = 1;
     private HashMap<Integer, Bitmap> mCacheImg = new HashMap<Integer, Bitmap>();
@@ -62,6 +64,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     private String mRecordId;
     private String mRecordCode;
     private String mPageAddress;
+    private String mBasePageAddress = null;
     private int mPage;
 
     private LoadingDialog mLoadingDialog;
@@ -75,8 +78,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
     private FormTask mFormTask;
     private FormInfo mFormInfo = null;
-    private double mFormHeight;
-    private double mFormWidth;
+    private double mFormHeight = 0;
+    private double mFormWidth = 0;
 
     private Context mContext;
     private ZBFormService mService;
@@ -112,6 +115,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
         initData();
 
+        ZBformApplication.sBlePenManager.setBlePenDrawCallback(this);
+
     }
 
     @Override
@@ -123,6 +128,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         }
         unbindService(conn);
         dismissLoading();
+        ZBformApplication.sBlePenManager.removeBlePenDrawCallback(this);
+
     }
 
     @Override
@@ -251,6 +258,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     }
 
     private void switchPages(int action) {
+        // 默认自动跳转的不会超出页数范围
         if (action == PRE_IMG && mCurrentPage == 1) {
             Toast.makeText(this, this.getResources().getString(R.string.toast_already_first), Toast.LENGTH_SHORT).show();
             return;
@@ -293,6 +301,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
         if (mService != null) {
             mService.setCurrentPage(mCurrentPage);
+            mService.setCurrentPageAddress(mPageAddress);
         }
     }
 
@@ -334,6 +343,35 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         }
     }
 
+    @Override
+    public void onPenDown() {
+    }
+
+    @Override
+    public void onPenUp() {
+
+    }
+
+    @Override
+    public void onCoordDraw(String pageAddress, int nX, int nY) {
+        mPageAddress = pageAddress;
+        int p = computeCurrentPage(mBasePageAddress, mPageAddress);
+        if (p > mPage || p < 1) {
+            return;
+        }
+        if(mCurrentPage != p) {
+            mCurrentPage = p;
+            Log.i(TAG, "onCoordDraw: mCurrentPage = " + mCurrentPage);
+
+            switchPages(AUTO_IMG);
+        }
+    }
+
+    @Override
+    public void onOffLineCoordDraw(String pageAddress, int nX, int nY) {
+
+    }
+
     private class RecordImgTransformation extends BitmapTransformation {
 
         public RecordImgTransformation(Context context) {
@@ -359,20 +397,20 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
             //计算scale
             if (width > height) {
-                if(mFormWidth > mFormHeight) {
-                    mScaleX = (float) width / (float)mFormWidth;
-                    mScaleY = (float) height / (float)mFormHeight;
+                if (mFormWidth > mFormHeight) {
+                    mScaleX = (float) width / (float) mFormWidth;
+                    mScaleY = (float) height / (float) mFormHeight;
                 } else {
-                    mScaleX = (float) width / (float)mFormHeight;
-                    mScaleY = (float) height / (float)mFormWidth;
+                    mScaleX = (float) width / (float) mFormHeight;
+                    mScaleY = (float) height / (float) mFormWidth;
                 }
             } else {
-                if(mFormWidth > mFormHeight) {
-                    mScaleY = (float) height / (float)mFormWidth;
-                    mScaleX = (float) width / (float)mFormHeight;
+                if (mFormWidth > mFormHeight) {
+                    mScaleY = (float) height / (float) mFormWidth;
+                    mScaleX = (float) width / (float) mFormHeight;
                 } else {
-                    mScaleY = (float) height / (float)mFormHeight;
-                    mScaleX = (float) width / (float)mFormWidth;
+                    mScaleY = (float) height / (float) mFormHeight;
+                    mScaleX = (float) width / (float) mFormWidth;
                 }
             }
 
@@ -395,7 +433,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             mRecordBitmapImg = toTransform.copy(toTransform.getConfig(), true);
             ZBformApplication.sBlePenManager.setDrawView(mRecordImg, mRecordBitmapImg, mRecordBitmapImg.getWidth(), mRecordBitmapImg.getHeight());
             mService.startDraw();
-
             mPath.reset();
             ((Activity) mContext).runOnUiThread(new Runnable() {
                 @Override
@@ -438,13 +475,16 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         public void onGetSuccess(FormInfo form) {
             mFormInfo = form;
             mPageAddress = mFormInfo.results[0].getRinit();
+            mBasePageAddress = mPageAddress;
+            Log.i(TAG, "base address = " + mBasePageAddress);
 
             mFormHeight = convertPageSize(mFormInfo.results[0].getHeigh());
             mFormWidth = convertPageSize(mFormInfo.results[0].getWidth());
-            Log.i(TAG, "FORM height = "+mFormHeight + "   width="+mFormWidth);
+            Log.i(TAG, "FORM height = " + mFormHeight + "   width=" + mFormWidth);
 
-            Log.i(TAG, "set page address to service: " + mPageAddress);
+            Log.i(TAG, "set current pageAddress to service: " + mPageAddress);
             mService.setCurrentPageAddress(mPageAddress);
+            mService.setCurrentPage(1);
             mService.setDrawFormInfo(mFormInfo, mRecordId);
             mService.setIsRecordDraw(true);
             mTask.getRecord();
@@ -461,7 +501,37 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         }
     };
 
-    public double convertPageSize(double x){
-        return x*10*8/0.3;
+    public double convertPageSize(double x) {
+        return x * 10 * 8 / 0.3;
+    }
+
+    public double convertPageSizeToMM(double x) {
+        return x * 0.3 / 8;
+    }
+
+    public int computeCurrentPage(String base, String current) {
+        Log.i(TAG,"base = "+base +"  current = "+current );
+        int baseNum = 0, currentNum = 0;  // 计算ABC总值
+        int page = 0;
+        if (mFormHeight != 0 && mFormWidth != 0) {
+            double length = mFormHeight > mFormWidth ? mFormHeight : mFormWidth;
+            length = convertPageSizeToMM(length);
+            Log.i(TAG, "compute page num: length = " + length);
+            String[] baseArray = base.split("\\.");
+            String[] currentArray = current.split("\\.");
+            if (length > 418 && length < 422) {  // A3纸
+                // A3纸范围  1713.A.B.C  0<=B<=52, 0<=C<=107
+                baseNum = Integer.parseInt(baseArray[3]) + Integer.parseInt(baseArray[2]) * 108 + Integer.parseInt(baseArray[1]) * 108 * 53;
+                currentNum = Integer.parseInt(currentArray[3]) + Integer.parseInt(currentArray[2]) * 108 + Integer.parseInt(currentArray[1]) * 108 * 53;
+                page = 1 + currentNum - baseNum;
+            } else if (length > 295 && length < 299) {  // A4纸
+                // A4纸范围  1536.A.B.C  0<=B<=72, 0<=C<=107
+                baseNum = Integer.parseInt(baseArray[3]) + Integer.parseInt(baseArray[2]) * 108 + Integer.parseInt(baseArray[1]) * 108 * 73;
+                currentNum = Integer.parseInt(currentArray[3]) + Integer.parseInt(currentArray[2]) * 108 + Integer.parseInt(currentArray[1]) * 108 * 73;
+                page = 1 + currentNum - baseNum;
+            }
+        }
+
+        return page;
     }
 }

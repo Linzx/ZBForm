@@ -46,7 +46,7 @@ public class BleConnectService extends Service implements ZBFormBlePenManager.IZ
     private Runnable mScanRunnable = new Runnable() {
         @Override
         public void run() {
-            if (!isConnectSuccess) {
+            if (!isConnectSuccess && !ZBformApplication.sBlePenManager.getIsConnectedNow()) {
                 if (mBlePenManager.getScanState() == BleScanState.STATE_IDLE) {
                     Log.i(TAG, "Scan Runnable, idle state, start scan");
                     mBlePenManager.scan();

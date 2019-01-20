@@ -84,6 +84,8 @@ public class ZBFormBlePenManager {
     private IBlePenDrawCallBack mIBlePenDrawCallBack;
     private ArrayList<IZBBleGattCallback> mIZBBleGattCallbackList;
     private List<IZBBleScanCallback> mIZBBleScanCallbackList = new ArrayList<>();
+    private List<IBlePenDrawCallBack> mIZBBlePenDrawCallbackList = new ArrayList<>();
+
 
     private static ZBFormBlePenManager mZBFormBlePenManager;
 
@@ -148,10 +150,25 @@ public class ZBFormBlePenManager {
         mIBlePenStateCallBack = callBack;
     }
 
-    public void setIBlePenDrawCallBack(IBlePenDrawCallBack callBack) {
-        mIBlePenDrawCallBack = callBack;
+//    public void setIBlePenDrawCallBack(IBlePenDrawCallBack callBack) {
+//        mIBlePenDrawCallBack = callBack;
+//    }
+
+    public void setBlePenDrawCallback(IBlePenDrawCallBack callback) {
+        if (!mIZBBlePenDrawCallbackList.contains(callback)) {
+            Log.i(TAG, "Add ble pen draw call back, at set");
+
+            mIZBBlePenDrawCallbackList.add(callback);
+        }
     }
 
+    public void removeBlePenDrawCallback(IBlePenDrawCallBack callback) {
+        if (mIZBBlePenDrawCallbackList.contains(callback)) {
+            Log.i(TAG, "remove pen draw call back");
+
+            mIZBBlePenDrawCallbackList.remove(callback);
+        }
+    }
     public void setZBBleGattCallback(IZBBleGattCallback callback) {
         if (!mIZBBleGattCallbackList.contains(callback)) {
             Log.i(TAG, "Add ble gatt call back, at set");
@@ -162,7 +179,7 @@ public class ZBFormBlePenManager {
 
     public void removeZBBleGattCallback(IZBBleGattCallback callback) {
         if (mIZBBleGattCallbackList.contains(callback)) {
-            Log.i(TAG, "remove call back");
+            Log.i(TAG, "remove ble gatt call back");
 
             mIZBBleGattCallbackList.remove(callback);
         }
@@ -302,8 +319,13 @@ public class ZBFormBlePenManager {
                             if (mStreamingController != null) {
                                 mStreamingController.penDown();
                             }
-                            if (mIBlePenDrawCallBack != null) {
-                                mIBlePenDrawCallBack.onPenDown();
+//                            if (mIBlePenDrawCallBack != null) {
+//                                mIBlePenDrawCallBack.onPenDown();
+//                            }
+                            for(IBlePenDrawCallBack callback: mIZBBlePenDrawCallbackList){
+                                if (callback != null) {
+                                    callback.onPenDown();
+                                }
                             }
                             Log.i("whd", "PEN_DOWN_MESSAGE pageAddress=" + pageAddress);
                         }
@@ -317,8 +339,13 @@ public class ZBFormBlePenManager {
                                 }
                             }
 
-                            if (mIBlePenDrawCallBack != null) {
-                                mIBlePenDrawCallBack.onCoordDraw(pageAddress, nX, nY);
+//                            if (mIBlePenDrawCallBack != null) {
+//                                mIBlePenDrawCallBack.onCoordDraw(pageAddress, nX, nY);
+//                            }
+                            for(IBlePenDrawCallBack callback: mIZBBlePenDrawCallbackList){
+                                if (callback != null) {
+                                    callback.onCoordDraw(pageAddress, nX, nY);
+                                }
                             }
                         }
 
@@ -337,8 +364,13 @@ public class ZBFormBlePenManager {
                             if (mStreamingController != null) {
                                 mStreamingController.penUp();
                             }
-                            if (mIBlePenDrawCallBack != null) {
-                                mIBlePenDrawCallBack.onPenUp();
+//                            if (mIBlePenDrawCallBack != null) {
+//                                mIBlePenDrawCallBack.onPenUp();
+//                            }
+                            for(IBlePenDrawCallBack callback: mIZBBlePenDrawCallbackList){
+                                if (callback != null) {
+                                    callback.onPenUp();
+                                }
                             }
                         }
 
@@ -374,8 +406,13 @@ public class ZBFormBlePenManager {
                                     mStreamingController.addCoordinate(nX, nY, nForce, pageAddress);
                                 }
                             }
-                            if (mIBlePenDrawCallBack != null) {
-                                mIBlePenDrawCallBack.onOffLineCoordDraw(pageAddress, nX, nY);
+//                            if (mIBlePenDrawCallBack != null) {
+//                                mIBlePenDrawCallBack.onOffLineCoordDraw(pageAddress, nX, nY);
+//                            }
+                            for(IBlePenDrawCallBack callback: mIZBBlePenDrawCallbackList){
+                                if (callback != null) {
+                                    callback.onOffLineCoordDraw(pageAddress, nX, nY);
+                                }
                             }
                         }
                         if (!TextUtils.isEmpty(pageAddress)) {
@@ -526,6 +563,7 @@ public class ZBFormBlePenManager {
                         callback.onConnectFail(bleDevice, exception);
                     }
                 }
+                isConnectedNow = false;
             }
 
             @Override
@@ -535,6 +573,7 @@ public class ZBFormBlePenManager {
                         callback.onConnectSuccess(bleDevice, gatt, status);
                     }
                 }
+                isConnectedNow = true;
                 setBleDevice(bleDevice);
             }
 
@@ -545,6 +584,7 @@ public class ZBFormBlePenManager {
                         callback.onDisConnected(isActiveDisConnected, bleDevice, gatt, status);
                     }
                 }
+                isConnectedNow = false;
             }
         };
 
@@ -684,6 +724,10 @@ public class ZBFormBlePenManager {
 
     public boolean isConnectedBleDevice() {
         return BlePenManager.getInstance().isConnected(mBleDevice);
+    }
+
+    public boolean getIsConnectedNow(){
+        return isConnectedNow || isConnectedBleDevice();
     }
 
     public Bitmap getDrawBitmap() {
