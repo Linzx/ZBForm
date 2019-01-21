@@ -110,5 +110,16 @@ public class ZBformNetBean {
                 mDialog.dismiss();
             }
         }
+
+        @Override
+        public void onCancelled() {
+            super.onCancelled();
+            if (mZBformNetBeanCallBack != null) {
+                mZBformNetBeanCallBack.onCancelled();
+            }
+            if (mDialog != null) {
+                mDialog.dismiss();
+            }
+        }
     };
 }

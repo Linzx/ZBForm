@@ -55,14 +55,13 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
     private PtrClassicFrameLayout ptrClassicFrameLayout;
     private RecyclerView mRecyclerView;
     private RecyclerViewAdapter mAdapter;
-    private List<String> mData = new ArrayList<>();
     private Handler handler = new Handler();
     private FormListTask mTask;
 
     private Context mContext;
     private ZBFormService mService;
-    @SuppressLint("ResourceAsColor")
-    private static final ColorDrawable TRANSPARENT_DRAWABLE = new ColorDrawable(android.R.color.transparent);
+//    @SuppressLint("ResourceAsColor")
+//    private static final ColorDrawable TRANSPARENT_DRAWABLE = new ColorDrawable(android.R.color.transparent);
 
     ServiceConnection conn = new ServiceConnection() {
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -225,8 +224,8 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
             holder.url = url;
             //缩略图显示第一页
             Glide.with(mContext).load(url).crossFade()
-                    .thumbnail(0.2f)
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .thumbnail(0.16f)
+//                    .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .into(holder.itemImg);
 //            mBitmapUtils.display(holder.itemImg,url,new CustomBitmapLoadCallBack(holder));
         }

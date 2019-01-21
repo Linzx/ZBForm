@@ -36,16 +36,31 @@ public class StreamingController {
     Path m_path = new Path();
 
     // 屏幕的宽高像素/纸张的宽高像素
-    public StreamingController(int width, int height) {
-        if (width < 1000) {
+    public StreamingController(int screenWidth, int screenHeight,
+                               float paperWidth, float paperHeight) {
+        if (screenWidth < 1000) {
             StrokeWidth = 0.5f;
         }
-        if (width > height) {
-            m_scaleX = ((float) (width) / 7920f);
-            m_scaleY = ((float) (height) / 5600f);
+        if (screenWidth > screenHeight) {
+            if(paperWidth > paperHeight) {
+                m_scaleX = (float) screenWidth / (float)paperWidth;
+                m_scaleY = (float) screenHeight / (float)paperHeight;
+            } else {
+                m_scaleX = (float) screenWidth / (float)paperHeight;
+                m_scaleY = (float) screenHeight / (float)paperWidth;
+            }
+//            m_scaleX = ((float) (width) / 7920f); //7920f
+//            m_scaleY = ((float) (height) / 5600f); //5600f
         } else {
-            m_scaleX = ((float) (width) / 5600f);
-            m_scaleY = ((float) (height) / 7920f);
+            if(paperWidth > paperHeight) {
+                m_scaleY = (float) screenHeight / (float)paperWidth;
+                m_scaleX = (float) screenWidth / (float)paperHeight;
+            } else {
+                m_scaleY = (float) screenHeight / (float)paperHeight;
+                m_scaleX = (float) screenWidth / (float)paperWidth;
+            }
+//            m_scaleX = ((float) (width) / 5600f); //5600f
+//            m_scaleY = ((float) (height) / 7920f);//7920f
         }
 //        m_paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG | Paint.FILTER_BITMAP_FLAG);
 //        m_paint.setAntiAlias(true);

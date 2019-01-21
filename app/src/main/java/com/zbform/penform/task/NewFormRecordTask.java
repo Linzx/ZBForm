@@ -27,6 +27,8 @@ public class NewFormRecordTask implements IZBformNetBeanCallBack {
 		public void onNewSuccess(String uuid);
 
 		public void onNewFail();
+
+		public void onCancelled();
 	}
 
 	public void execute(Context context, String formid) {
@@ -52,7 +54,9 @@ public class NewFormRecordTask implements IZBformNetBeanCallBack {
 
 	@Override
 	public void onCancelled() {
-		// TODO Auto-generated method stub
+		if (mOnNewRecordTaskListener != null) {
+			mOnNewRecordTaskListener.onCancelled();
+		}
 
 	}
 
