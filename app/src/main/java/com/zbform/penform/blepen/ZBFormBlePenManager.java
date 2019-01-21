@@ -565,13 +565,13 @@ public class ZBFormBlePenManager {
 
         }
         System.gc();
-        mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
-        synchronized (TouchImageView.class) {
-            if (mImageView != null) {
-                mImageView.setImageBitmap(mBitmap);
-                mImageView.invalidate();
-            }
-        }
+//        mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
+//        synchronized (TouchImageView.class) {
+//            if (mImageView != null) {
+//                mImageView.setImageBitmap(mBitmap);
+//                mImageView.invalidate();
+//            }
+//        }
     }
 
     private synchronized void drawBitmap() {

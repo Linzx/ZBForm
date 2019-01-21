@@ -8,31 +8,23 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.Matrix;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
-import com.bumptech.glide.load.engine.cache.DiskCache;
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation;
 import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.animation.GlideAnimation;
-import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.target.Target;
 import com.zbform.penform.R;
 import com.zbform.penform.ZBformApplication;
@@ -84,8 +76,8 @@ public class FormDrawActivity extends BaseActivity {
     private ActionBar mActionBar;
     private ZBFormBlePenManager mZBFormBlePenManager;
     private Resources mResources;
-    private double mFormHeight;
-    private double mFormWidth;
+    private double mFormHeight = 0;
+    private double mFormWidth = 0;
 
     ServiceConnection conn = new ServiceConnection() {
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -119,7 +111,6 @@ public class FormDrawActivity extends BaseActivity {
 
         initFormData(getIntent());
         startLoadingForm(ACTION_PREVIEW);
-//
 //        DisplayMetrics displayMetrics = new DisplayMetrics();
 //        this.getWindowManager().getDefaultDisplay()
 //                .getMetrics(displayMetrics);
@@ -164,7 +155,8 @@ public class FormDrawActivity extends BaseActivity {
                 }
                 mDrawState = STATE_PREVIEW;
                 mCurrentPage = 1;
-                mCacheImg.clear();
+//                mCacheImg.clear();
+                clearCache();
 
                 setUpToolBarState(false);
             }
@@ -238,6 +230,9 @@ public class FormDrawActivity extends BaseActivity {
                 Log.i(TAG, "onResourceReady H=" + resource.getHeight());
 
                 mZBFormBlePenManager.setDrawView(mImgView, resource);
+                if (mFormHeight >0 && mFormWidth >0) {
+                    mZBFormBlePenManager.setPaperSize((float) mFormWidth, (float) mFormHeight);
+                }
 
                 if (mAction == ACTION_NEW_RECORD) {
                     startNewRecord();
@@ -480,6 +475,9 @@ public class FormDrawActivity extends BaseActivity {
             mImgView.setImageBitmap(cache);
 
             mZBFormBlePenManager.setDrawView(mImgView, cache);
+            if (mFormHeight >0 && mFormWidth >0) {
+                mZBFormBlePenManager.setPaperSize((float) mFormWidth, (float) mFormHeight);
+            }
         } else {
             Log.i(TAG, "mCurrentPage4");
             startLoadingForm(action);
@@ -494,8 +492,17 @@ public class FormDrawActivity extends BaseActivity {
     private void recycleBitmap(Bitmap bitmap){
         if(bitmap != null){
             bitmap.recycle();
-            System.gc();
         }
+    }
+
+    private void clearCache(){
+        for(Bitmap cache : mCacheImg.values()){
+            if(cache != null && !cache.isRecycled()){
+                cache.recycle();
+            }
+        }
+        System.gc();
+        mCacheImg.clear();
     }
 
     private void setToolBar() {
@@ -561,7 +568,8 @@ public class FormDrawActivity extends BaseActivity {
             case R.id.add_record:
                 if (mDrawState == STATE_DRAW) {
                     mCurrentPage = 1;
-                    mCacheImg.clear();
+//                    mCacheImg.clear();
+                    clearCache();
                     startLoadingForm(ACTION_NEW_RECORD);
                 } else {
                     showLoading(mResources.getString(R.string.loading_new_record));
@@ -588,6 +596,7 @@ public class FormDrawActivity extends BaseActivity {
         }
         dismissLoading();
         unbindService(conn);
+        clearCache();
         super.onDestroy();
     }
 
