@@ -120,8 +120,8 @@ public class ApiAddress {
         sb.append(ApiAddress.Form_Get_Img);
         sb.append("?signcode=");
         sb.append(Uri.encode(signCode));
-        sb.append("&timestamp=");
-        sb.append(Uri.encode(getTimeStamp()));
+//        sb.append("&timestamp=");
+//        sb.append(Uri.encode(getTimeStamp()));
         sb.append("&uuid=");
         sb.append(Uri.encode(uuid));
         sb.append("&page=");

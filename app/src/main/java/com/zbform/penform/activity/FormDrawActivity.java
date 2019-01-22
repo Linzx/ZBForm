@@ -8,28 +8,24 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.Matrix;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
-import android.util.DisplayMetrics;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation;
-import com.bumptech.glide.request.animation.GlideAnimation;
-import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.zbform.penform.R;
 import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
@@ -80,6 +76,8 @@ public class FormDrawActivity extends BaseActivity {
     private ActionBar mActionBar;
     private ZBFormBlePenManager mZBFormBlePenManager;
     private Resources mResources;
+    private double mFormHeight = 0;
+    private double mFormWidth = 0;
 
     ServiceConnection conn = new ServiceConnection() {
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -113,6 +111,12 @@ public class FormDrawActivity extends BaseActivity {
 
         initFormData(getIntent());
         startLoadingForm(ACTION_PREVIEW);
+//        DisplayMetrics displayMetrics = new DisplayMetrics();
+//        this.getWindowManager().getDefaultDisplay()
+//                .getMetrics(displayMetrics);
+//
+//        Log.i(TAG,"wp="+ displayMetrics.widthPixels);
+//        Log.i(TAG,"wp="+ displayMetrics.heightPixels);
     }
 
     @Override
@@ -151,7 +155,8 @@ public class FormDrawActivity extends BaseActivity {
                 }
                 mDrawState = STATE_PREVIEW;
                 mCurrentPage = 1;
-                mCacheImg.clear();
+//                mCacheImg.clear();
+                clearCache();
 
                 setUpToolBarState(false);
             }
@@ -164,10 +169,10 @@ public class FormDrawActivity extends BaseActivity {
         }
     }
 
-    private void setUpPageTitle(){
-        if (mPage >1) {
+    private void setUpPageTitle() {
+        if (mPage > 1) {
             mPageTitle.setVisibility(View.VISIBLE);
-            mPageTitle.setText(getResources().getString(R.string.page_title,mCurrentPage));
+            mPageTitle.setText(getResources().getString(R.string.page_title, mCurrentPage));
         } else {
             mPageTitle.setVisibility(View.GONE);
         }
@@ -187,8 +192,9 @@ public class FormDrawActivity extends BaseActivity {
             Glide.with(this)
                     .load(getUrl())
                     .asBitmap()
+                    .listener(new DrawImgRequestListener(this,action))
                     .transform(new FormDrawImgTransformation(this,action))
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+//                    .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .into(mImgView);
 //                    .into(mOriginTarget);
         } catch (Exception e) {
@@ -200,36 +206,41 @@ public class FormDrawActivity extends BaseActivity {
     }
 
     private void startNewRecord(){
-        mNewRecordTask = new NewFormRecordTask();
-        mNewRecordTask.execute(FormDrawActivity.this, mFormID);
-        mNewRecordTask.setOnNewFormTaskListener(mNewRecordListener);
+        mFromTask = new FormTask();
+//        mFormTaskListener.setTargetDraw(resource);
+        mFromTask.setOnFormTaskListener(mFormTaskListener);
+        mFromTask.execute(FormDrawActivity.this, mFormID);
     }
 
-    private class FormDrawImgTransformation extends BitmapTransformation {
+    private class DrawImgRequestListener implements RequestListener<String,Bitmap> {
         private int mAction;
-
-        public FormDrawImgTransformation(Context context, int action) {
-            super(context);
+        public DrawImgRequestListener(Context context, int action) {
+            super();
             mAction = action;
+        }
+        @Override
+        public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
+            return false;
         }
 
         @Override
-        protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
-            Log.i(TAG, "transform， outWidth = " + outWidth + "   outHeight = " + outHeight);
-            Log.i(TAG, "bitmapp width = " + toTransform.getWidth() + "  height = " + toTransform.getHeight());
-            if (toTransform != null) {
-                Log.i(TAG, "scalbitmap W=" + toTransform.getWidth());
-                Log.i(TAG, "scalbitmap H=" + toTransform.getHeight());
+        public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
+            if (resource != null) {
+                Log.i(TAG, "onResourceReady W=" + resource.getWidth());
+                Log.i(TAG, "onResourceReady H=" + resource.getHeight());
 
-                mZBFormBlePenManager.setDrawView(mImgView, toTransform,
-                        toTransform.getWidth(), toTransform.getHeight());
+                mZBFormBlePenManager.setDrawView(mImgView, resource);
+                if (mFormHeight >0 && mFormWidth >0) {
+                    mZBFormBlePenManager.setPaperSize((float) mFormWidth, (float) mFormHeight);
+                }
 
                 if (mAction == ACTION_NEW_RECORD) {
                     startNewRecord();
-                } else if (mAction == ACTION_PREVIEW) {
-                    mFromTask = new FormTask();
-                    mFromTask.setOnFormTaskListener(mFormTaskListener);
-                    mFromTask.execute(FormDrawActivity.this, mFormID);
+//                } else if (mAction == ACTION_PREVIEW) {
+//                    mFromTask = new FormTask();
+//                    mFormTaskListener.setTargetDraw(resource);
+//                    mFromTask.setOnFormTaskListener(mFormTaskListener);
+//                    mFromTask.execute(FormDrawActivity.this, mFormID);
                 } else {
                     FormDrawActivity.this.runOnUiThread(new Runnable() {
                         @Override
@@ -246,6 +257,52 @@ public class FormDrawActivity extends BaseActivity {
             } else {
                 Log.i(TAG, "bitmap! null");
             }
+            return false;
+        }
+    }
+
+    private class FormDrawImgTransformation extends BitmapTransformation {
+        private int mAction;
+
+        public FormDrawImgTransformation(Context context, int action) {
+            super(context);
+            mAction = action;
+        }
+
+        @Override
+        protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
+            Log.i(TAG, "transform， outWidth = " + outWidth + "   outHeight = " + outHeight);
+            Log.i(TAG, "bitmapp width = " + toTransform.getWidth() + "  height = " + toTransform.getHeight());
+            if (toTransform != null) {
+//                Log.i(TAG, "scalbitmap W=" + toTransform.getWidth());
+//                Log.i(TAG, "scalbitmap H=" + toTransform.getHeight());
+//
+//                mZBFormBlePenManager.setDrawView(mImgView, toTransform,
+//                        (float)mFormWidth, (float)mFormHeight);
+//
+//                if (mAction == ACTION_NEW_RECORD) {
+//                    startNewRecord();
+//                } else if (mAction == ACTION_PREVIEW) {
+//                    mFromTask = new FormTask();
+//                    mFormTaskListener.setTargetDraw(toTransform);
+//                    mFromTask.setOnFormTaskListener(mFormTaskListener);
+//                    mFromTask.execute(FormDrawActivity.this, mFormID);
+//                } else {
+//                    FormDrawActivity.this.runOnUiThread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            dismissLoading();
+//                        }
+//                    });
+//                }
+//                if (mService != null) {
+//                    mService.setCurrentPageAddress(mPageAddress);
+//                }
+//
+//                mOldCurrentPage = mCurrentPage;
+            } else {
+                Log.i(TAG, "bitmap! null");
+            }
             return toTransform;
         }
 
@@ -255,7 +312,14 @@ public class FormDrawActivity extends BaseActivity {
         }
     }
 
-    private FormTask.OnFormTaskListener mFormTaskListener = new FormTask.OnFormTaskListener() {
+    private FormTaskListener mFormTaskListener = new FormTaskListener();
+    public class FormTaskListener implements FormTask.OnFormTaskListener {
+
+//        private Bitmap targetDraw;
+//
+//        public void setTargetDraw(Bitmap bitmap) {
+//            targetDraw = bitmap;
+//        }
 
         @Override
         public void onStartGet() {
@@ -264,19 +328,42 @@ public class FormDrawActivity extends BaseActivity {
         @Override
         public void onGetSuccess(FormInfo form) {
             mFormInfo = form;
-            dismissLoading();
+            Log.i(TAG, "form onGetSuccess dis");
+
+            mFormHeight = convertPageSize(mFormInfo.results[0].getHeigh());
+            mFormWidth = convertPageSize(mFormInfo.results[0].getWidth());
+            Log.i(TAG, "form onGetSuccess mFormHeigh="+mFormHeight);
+            Log.i(TAG, "form onGetSuccess mFormWidth="+mFormWidth);
+            mZBFormBlePenManager.setPaperSize((float)mFormWidth, (float)mFormHeight);
+
+            if (TextUtils.isEmpty(mFormID) || mFormInfo == null) {
+                Toast.makeText(FormDrawActivity.this,
+                        FormDrawActivity.this.getResources().getString(R.string.toast_new_record_fail),
+                        Toast.LENGTH_SHORT).show();
+                dismissLoading();
+                return;
+            }
+            mNewRecordTask = new NewFormRecordTask();
+            mNewRecordTask.execute(FormDrawActivity.this, mFormID);
+            mNewRecordTask.setOnNewFormTaskListener(mNewRecordListener);
+
+//            mZBFormBlePenManager.setDrawView(mImgView, targetDraw,
+//                    (float)mFormWidth, (float)mFormHeight);
+//            dismissLoading();
         }
 
         @Override
         public void onGetFail() {
+            Log.i(TAG, "onGetFail dis");
             dismissLoading();
         }
 
         @Override
         public void onCancelled() {
+            Log.i(TAG, "onCancelled dis");
             dismissLoading();
         }
-    };
+    }
 
     private NewFormRecordTask.OnNewRecordTaskListener mNewRecordListener = new NewFormRecordTask.OnNewRecordTaskListener() {
         @Override
@@ -300,10 +387,24 @@ public class FormDrawActivity extends BaseActivity {
 
         @Override
         public void onNewFail() {
+            Toast.makeText(FormDrawActivity.this,
+                    FormDrawActivity.this.getResources().getString(R.string.toast_new_record_fail),
+                    Toast.LENGTH_SHORT).show();
+            dismissLoading();
+        }
+
+        @Override
+        public void onCancelled() {
+            Toast.makeText(FormDrawActivity.this,
+                    FormDrawActivity.this.getResources().getString(R.string.toast_new_record_fail),
+                    Toast.LENGTH_SHORT).show();
             dismissLoading();
         }
     };
 
+    public double convertPageSize(double x) {
+        return x * 10 * 8 / 0.3;
+    }
 
     private String getUrl() {
         if (mCurrentPage < 0 || mCurrentPage > mPage) {
@@ -373,7 +474,10 @@ public class FormDrawActivity extends BaseActivity {
             Bitmap cache = mCacheImg.get(mCurrentPage);
             mImgView.setImageBitmap(cache);
 
-            mZBFormBlePenManager.setDrawView(mImgView, cache, cache.getWidth(), cache.getHeight());
+            mZBFormBlePenManager.setDrawView(mImgView, cache);
+            if (mFormHeight >0 && mFormWidth >0) {
+                mZBFormBlePenManager.setPaperSize((float) mFormWidth, (float) mFormHeight);
+            }
         } else {
             Log.i(TAG, "mCurrentPage4");
             startLoadingForm(action);
@@ -388,8 +492,17 @@ public class FormDrawActivity extends BaseActivity {
     private void recycleBitmap(Bitmap bitmap){
         if(bitmap != null){
             bitmap.recycle();
-            System.gc();
         }
+    }
+
+    private void clearCache(){
+        for(Bitmap cache : mCacheImg.values()){
+            if(cache != null && !cache.isRecycled()){
+                cache.recycle();
+            }
+        }
+        System.gc();
+        mCacheImg.clear();
     }
 
     private void setToolBar() {
@@ -455,7 +568,8 @@ public class FormDrawActivity extends BaseActivity {
             case R.id.add_record:
                 if (mDrawState == STATE_DRAW) {
                     mCurrentPage = 1;
-                    mCacheImg.clear();
+//                    mCacheImg.clear();
+                    clearCache();
                     startLoadingForm(ACTION_NEW_RECORD);
                 } else {
                     showLoading(mResources.getString(R.string.loading_new_record));
@@ -482,116 +596,10 @@ public class FormDrawActivity extends BaseActivity {
         }
         dismissLoading();
         unbindService(conn);
+        clearCache();
         super.onDestroy();
     }
 
-
-    ////////////////////////////////////////////////////////////////////
-
-    private SimpleTarget mOriginTarget = new SimpleTarget<Bitmap>() {
-        @Override
-        public void onResourceReady(Bitmap bitmap, GlideAnimation glideAnimation) {
-            // do something with the bitmap
-            // for demonstration purposes, let's just set it to an ImageView
-            if (bitmap != null) {
-                computeBitmapSize(bitmap, mImgView);
-            } else {
-                Log.i("whd", "bitmap! null");
-            }
-        }
-    };
-
-    public void computeBitmapSize(Bitmap bitmap, ImageView image) {
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        this.getWindowManager().getDefaultDisplay()
-                .getMetrics(displayMetrics);
-
-        float scalew = (float) displayMetrics.widthPixels
-                / (float) bitmap.getWidth();
-        image.setScaleType(ImageView.ScaleType.MATRIX);
-        Matrix matrix = new Matrix();
-        image.setAdjustViewBounds(true);
-
-        if (displayMetrics.widthPixels < bitmap.getWidth()) {
-            matrix.postScale(scalew, scalew);
-        } else {
-            matrix.postScale(1 / scalew, 1 / scalew);
-            scalew = 1 / scalew;
-        }
-        image.setImageMatrix(matrix);
-
-        Log.i("whd", "displayMetrics W=" + displayMetrics.widthPixels);
-        Log.i("whd", "displayMetrics H=" + displayMetrics.heightPixels);
-        Log.i("whd", "bitmap W=" + bitmap.getWidth());
-        Log.i("whd", "bitmap H=" + bitmap.getHeight());
-
-        float w = scalew * bitmap.getWidth();
-        float h = scalew * bitmap.getHeight();
-
-        Log.i("whd", "w=" + w);
-        Log.i("whd", "h=" + h);
-//        image.setImageBitmap(bitmap);
-
-        Log.i("whd", "image w=" + image.getWidth());
-        Log.i("whd", "image h=" + image.getHeight());
-
-        new BitmapTask(this, (int) w, (int) h).execute();
-
-
-//        image.setMaxWidth(displayMetrics.widthPixels);
-//        float imageViewHeight = displayMetrics.heightPixels > bitmap.getHeight() ? displayMetrics.heightPixels
-//                : bitmap.getHeight();
-//        image.setMaxHeight((int) imageViewHeight);
-
-//        parent.addView(image);
-
-    }
-
-    class BitmapTask extends AsyncTask<Integer, Void, Bitmap> {
-        private int mWidth;
-        private int mHeight;
-
-        BitmapTask(Context context, int width, int height) {
-
-            mWidth = width;
-            mHeight = height;
-        }
-
-        @Override
-        protected Bitmap doInBackground(Integer... params) {
-            Bitmap scaleImg = null;
-            try {
-                Log.i("whd", "BitmapTask doInBackground");
-                scaleImg = Glide.with(FormDrawActivity.this)
-                        .load(getUrl())
-                        .asBitmap()
-                        .into(mWidth, mHeight)
-                        .get();
-
-            } catch (Exception e) {
-                Log.i(TAG, "e W=" + e.getMessage());
-                e.printStackTrace();
-            }
-            return scaleImg;
-        }
-
-        @Override
-        protected void onPostExecute(Bitmap bitmap) {
-            super.onPostExecute(bitmap);
-            Log.i("whd", "BitmapTask onPostExecute");
-            if (bitmap != null) {
-                Log.i("whd", "scalbitmap W=" + bitmap.getWidth());
-                Log.i("whd", "scalbitmap H=" + bitmap.getHeight());
-                mImgView.setImageBitmap(bitmap);
-
-//                mProgressBar.setVisibility(View.INVISIBLE);
-                dismissLoading();
-                mZBFormBlePenManager.setDrawView(mImgView, bitmap, bitmap.getWidth(), bitmap.getHeight());
-            } else {
-                Log.i("whd", "bitmap! null");
-            }
-        }
-    }
 //    private void fadeInDisplay(ImageView imageView, Bitmap bitmap) {
 //        final TransitionDrawable transitionDrawable =
 //                new TransitionDrawable(new Drawable[]{

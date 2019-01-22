@@ -45,7 +45,8 @@
         <activity android:name="com.zbform.penform.activity.SignInActivity"
             android:label="@string/sign_up_title"
             android:windowSoftInputMode="adjustUnspecified|stateHidden"
-            android:configChanges="orientation|keyboardHidden"/>
+            android:configChanges="orientation|keyboardHidden"
+            android:theme="@style/SignTheme"/>
         <activity
             android:name="com.zbform.penform.appintro.FadeAnimation"
             android:screenOrientation="portrait">
@@ -53,7 +54,7 @@
         <activity
             android:name="com.zbform.penform.activity.FormDrawActivity"
             android:screenOrientation="portrait"
-            android:launchMode="singleInstance"
+            android:launchMode="singleTask"
             android:theme="@style/FormImgThem"/>
         <activity
             android:name="com.zbform.penform.activity.RecordActivity"

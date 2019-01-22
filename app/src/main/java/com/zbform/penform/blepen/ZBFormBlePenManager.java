@@ -36,9 +36,6 @@ import static com.tstudy.blepenlib.constant.Constant.PEN_UP_MESSAGE;
 import static com.tstudy.blepenlib.constant.Constant.WARN_BATTERY;
 import static com.tstudy.blepenlib.constant.Constant.WARN_MEMORY;
 
-/*
-  ZBFormBlePenManager Must run in UI thread
- */
 public class ZBFormBlePenManager {
     private static final String TAG = "ZBFormBlePenManager";
 
@@ -211,15 +208,26 @@ public class ZBFormBlePenManager {
         BlePenStreamManager.getInstance().setStandMode();
     }
 
-    public void setDrawView(ImageView view, Bitmap bitmap, int width, int height) {
+    public void setDrawView(ImageView view, Bitmap bitmap,
+                            float paperWidth, float paperHeight) {
         mImageView = view;
         mImageView.getDrawingCache(true);
-        mWidth = width;
-        mHeight = height;
-        mStreamingController = new StreamingController(mWidth, mHeight);
+        mWidth = bitmap.getWidth();
+        mHeight = bitmap.getHeight();
+        mStreamingController = new StreamingController(mWidth, mHeight, paperWidth, paperHeight);
         mBitmap = bitmap;
-//        mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
-//        mImageView.setImageBitmap(mBitmap);
+    }
+
+    public void setDrawView(ImageView view, Bitmap bitmap) {
+        mImageView = view;
+        mImageView.getDrawingCache(true);
+        mWidth = bitmap.getWidth();
+        mHeight = bitmap.getHeight();
+        mBitmap = bitmap;
+    }
+
+    public void setPaperSize(float paperWidth, float paperHeight){
+        mStreamingController = new StreamingController(mWidth, mHeight, paperWidth, paperHeight);
     }
 
     public void startDraw() {
@@ -597,13 +605,13 @@ public class ZBFormBlePenManager {
 
         }
         System.gc();
-        mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
-        synchronized (TouchImageView.class) {
-            if (mImageView != null) {
-                mImageView.setImageBitmap(mBitmap);
-                mImageView.invalidate();
-            }
-        }
+//        mBitmap = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
+//        synchronized (TouchImageView.class) {
+//            if (mImageView != null) {
+//                mImageView.setImageBitmap(mBitmap);
+//                mImageView.invalidate();
+//            }
+//        }
     }
 
     private synchronized void drawBitmap() {

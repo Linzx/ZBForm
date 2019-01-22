@@ -304,7 +304,9 @@ public class ZBFormService extends Service {
                         //笔迹不在item内，记录为page * -1
                         if (TextUtils.isEmpty(itemId)) {
                             itemId = String.valueOf(-1 * mCurrentPage);
+                            Log.i(TAG,"findFormRecordId null");
                         }
+                        Log.i(TAG,"findFormRecordId id ="+itemId);
                         strokeEntity.setItemid(itemId);
 
                         strokeEntity.setIsupload(false);
