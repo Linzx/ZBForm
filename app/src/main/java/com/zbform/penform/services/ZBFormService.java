@@ -41,6 +41,8 @@ import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.net.ErrorCode;
 import com.zbform.penform.net.IZBformNetBeanCallBack;
 import com.zbform.penform.net.ZBformNetBean;
+import com.zbform.penform.util.CommonUtils;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -60,7 +62,7 @@ public class ZBFormService extends Service {
     private int mCurrentPage = 1;
     private String mPageAddress ="0.0.0.0";
     private boolean mIsRecordDraw = false;
-    //    private Executor mExecutor = Executors.newCachedThreadPool();
+//    private Executor mExecutor = Executors.newCachedThreadPool();
     private IntentFilter mIntentFilter;
     private NetworkChangeReceiver mNetworkChangeReceiver;
 
@@ -76,6 +78,11 @@ public class ZBFormService extends Service {
     private UpLoadQueryHandler mUpLoadQueryHandler;
     private LinkedBlockingQueue<HwData> mCoordQueue = new LinkedBlockingQueue<HwData>();
     private LinkedBlockingQueue<ZBFormInnerItem> mUpLoadQueue = new LinkedBlockingQueue<ZBFormInnerItem>();
+
+    private IGetHwDataCallBack mIGetHwDataCallBack;
+    public interface IGetHwDataCallBack {
+        void onGetHwData(HwData data);
+    }
 
     private PenDrawCallBack mIBlePenDrawCallBack = new PenDrawCallBack();
 
@@ -110,6 +117,9 @@ public class ZBFormService extends Service {
             int c = (int) (endTime - mBeginTime);//一个笔画的耗时
             mStroke.setC(c);
             try {
+                if(mIGetHwDataCallBack != null){
+                    mIGetHwDataCallBack.onGetHwData(mStroke);
+                }
                 mCoordQueue.put(mStroke);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -160,10 +170,11 @@ public class ZBFormService extends Service {
                 for (FormListInfo.Results form : mFormList) {
                     //多页查找其他页地址
                     if (form.getPage() > 1) {
-                        HashMap<String, Integer> valAddress = findValidateAddress(form.getRinit(), form.getPage());
+                        HashMap<String, String> valAddress = CommonUtils.findValidateAddress(
+                                true, form.getRinit(), form.getPage());
                         if (valAddress.containsKey(address)) {
                             formTarget = form;
-                            page = valAddress.get(address);
+                            page = Integer.valueOf(valAddress.get(address));
                             break;
                         }
                     } else {
@@ -185,66 +196,6 @@ public class ZBFormService extends Service {
             return result;
         }
 
-        /*
-         * address:1536.671.58.6
-         *         1536.A  .B .C
-         *         A 1536
-         *         B 0~72
-         *         C 0~107
-         */
-        private HashMap<String, Integer> findValidateAddress(String address, int pages) {
-            HashMap<String, Integer> valAddress = new HashMap<String, Integer>();
-            valAddress.put(address,1);
-            if (TextUtils.isEmpty(address)) {
-                Log.i(TAG, "findValidateAddress null");
-                return valAddress;
-            }
-            Log.i(TAG, "findValidateAddress address="+address);
-            String[] addressArray = address.split("\\.");
-            if (addressArray == null || addressArray.length < 4) {
-                if(address==null){
-                    Log.i(TAG, "findValidateAddress null1");
-                } else {
-                    Log.i(TAG, "findValidateAddress invalid="+addressArray.length);
-                }
-                return valAddress;
-            }
-
-            //key:page value:key
-
-            try {
-                int addressStatic = Integer.valueOf(addressArray[0]);
-                int addressA = Integer.valueOf(addressArray[1]);
-                int addressB = Integer.valueOf(addressArray[2]);
-                int addressC = Integer.valueOf(addressArray[3]);
-
-                for (int i = 1; i < pages; i++) {
-                    int nextA = addressA;
-                    int nextB = addressB;
-                    int nextC = addressC + i;
-                    if (nextC > 107) {
-                        nextB += 1;
-                        if (nextB > 72) {
-                            nextA += 1;
-                            nextB = 0;
-                        }
-                        nextC = i - 1;
-                    }
-                    String nextAddress = String.valueOf(addressStatic) + "." +
-                            String.valueOf(nextA) + "." +
-                            String.valueOf(nextB) + "." +
-                            String.valueOf(nextC);
-                    valAddress.put(nextAddress, i + 1);
-
-                    Log.i(TAG, "nextAddress=" + nextAddress);
-                }
-            }catch (Exception e){
-                Log.i(TAG, "findValidateAddress e=" + e.getMessage());
-            }
-
-            return valAddress;
-        }
-
         private void startPageFormActivity(TargetForm form){
             if (form == null) return;
             Intent intent = new Intent(mContext, FormDrawActivity.class);
@@ -252,6 +203,7 @@ public class ZBFormService extends Service {
             intent.putExtra("currentpage", form.mCurrentPage);
             Log.i(TAG, "startPageFormActivity currentpage=" + form.mCurrentPage);
             intent.putExtra("page",form.mForm.getPage());
+            intent.putExtra("initaddress",form.mForm.getRinit());
             intent.putExtra("pageaddress",form.mAddress);
             intent.putExtra("formid",form.mForm.getUuid());
             intent.putExtra("formname",form.mForm.getName().replace(".pdf",""));
@@ -727,6 +679,8 @@ public class ZBFormService extends Service {
         Log.i(TAG,"SERVICE stopdraw0");
         if (mStopRecordCoord) return;
         Log.i(TAG,"SERVICE stopdraw1");
+
+        mIGetHwDataCallBack = null;
         mStopRecordCoord = true;
         ZBformApplication.sBlePenManager.stopDraw();
         HwData coord = new HwData();
@@ -752,5 +706,9 @@ public class ZBFormService extends Service {
 
     public void setIsRecordDraw(boolean draw){
         mIsRecordDraw = draw;
+    }
+
+    public void setGetHwDataCallBack(IGetHwDataCallBack callBack){
+        mIGetHwDataCallBack = callBack;
     }
 }

@@ -19,18 +19,15 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
 import com.tstudy.blepenlib.BlePenManager;
 import com.tstudy.blepenlib.data.BleDevice;
 import com.tstudy.blepenlib.exception.BleException;
 import com.zbform.penform.R;
 import com.zbform.penform.ZBformApplication;
-import com.zbform.penform.account.GlideCircleTransform;
 import com.zbform.penform.adapter.MenuItemAdapter;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.fragment.BaseFragment;
@@ -110,7 +107,7 @@ public class ZBformMain extends BaseActivity {
         ZBformApplication.sBlePenManager.setZBBleGattCallback(bleGattCallback);
         setToolBar();
         setUpDrawer();
-        setmTootBarTitle(getString(R.string.menu_item_formlist));
+        setTootBarTitle(getString(R.string.menu_item_formlist));
         mCurrentFragmet = new FormListFragment();
         selectFragment(mCurrentFragmet);
         mService = new Intent(this, ZBFormService.class);
@@ -148,7 +145,7 @@ public class ZBformMain extends BaseActivity {
         mActionBar.setTitle("");
     }
 
-    private void setmTootBarTitle(String title) {
+    private void setTootBarTitle(String title) {
         mTootBarTitle.setText(title);
     }
 
@@ -185,7 +182,7 @@ public class ZBformMain extends BaseActivity {
                         if (!(mCurrentFragmet instanceof FormListFragment)) {
                             mCurrentFragmet = new FormListFragment();
                             selectFragment(mCurrentFragmet);
-                            setmTootBarTitle(getString(R.string.menu_item_formlist));
+                            setTootBarTitle(getString(R.string.menu_item_formlist));
                         }
                         drawerLayout.closeDrawers();
                         break;
