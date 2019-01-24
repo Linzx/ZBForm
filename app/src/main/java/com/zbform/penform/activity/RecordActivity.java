@@ -22,8 +22,11 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.zbform.penform.R;
@@ -57,7 +60,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     private int mCurrentPage = 1;
     private HashMap<Integer, Bitmap> mCacheImg = new HashMap<Integer, Bitmap>();
 
-    private static List<RecordInfo.Results> recordResults = new ArrayList<>();
+    private List<RecordInfo.Results> recordResults = new ArrayList<>();
     private List<RecordDataItem> mCurrentItems = new ArrayList<>();
     private RecordTask mTask;
     private String mFormId;
@@ -83,7 +86,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
     private Context mContext;
     private ZBFormService mService;
-
 
     ServiceConnection conn = new ServiceConnection() {
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -228,6 +230,11 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         getFormImg(getUrl());
     }
 
+    @Override
+    public void onTaskFail() {
+        dismissLoading();
+    }
+
     private List<RecordDataItem> getCurrentItems() {
         if (mPage == 1 && recordResults != null && recordResults.size() > 0) {
             return Arrays.asList(recordResults.get(0).getItems());
@@ -237,12 +244,12 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             RecordDataItem[] items = recordResults.get(0).getItems();
             for (RecordDataItem item : items) {
 
-                String itemId = item.getItemcode();
-                for (FormItem formItem : mFormInfo.results[0].getItems()) {
-                    int p = formItem.getPage();
-                    if (mCurrentPage == p && itemId.equals(formItem.getItem())) {
-                        itemList.add(item);
-                    }
+                HwData hwData = new Gson().fromJson(item.getHwdata(), new TypeToken<HwData>() {
+                }.getType());
+                Log.i(TAG, "hwdata pageaddress = " + hwData.getP() + "   mPageAddress=" + mPageAddress);
+                if (hwData.getP().equals(mPageAddress)) {
+                    Log.i(TAG, "add item to list");
+                    itemList.add(item);
                 }
             }
         }
@@ -268,15 +275,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             return;
         }
         Log.i(TAG, "page size = " + mPage);
-//        Bitmap newBitmap = mRecordBitmapImg.copy(mRecordBitmapImg.getConfig(), true);
-//        if(mCacheImg.containsKey(mCurrentPage) && mCacheImg.get(mCurrentPage) == mRecordBitmapImg){
-//            Log.i(TAG, "recycle cache bitmap and re put");
-//            mRecordBitmapImg.recycle();
-//            System.gc();
-//        }
-//        Log.i(TAG, "put img to cache， page = " + mCurrentPage + "   hascode = " + newBitmap.hashCode());
-//
-//        mCacheImg.put(mCurrentPage, newBitmap);
         Log.i(TAG, "Current Page = " + mCurrentPage);
         if (action == PRE_IMG) {
             if (mCurrentPage > 1) {
@@ -288,17 +286,9 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             }
         }
         getFormImg(getUrl());
-//        if (mCacheImg.containsKey(mCurrentPage)) {
-//            Log.i(TAG, "use cache img");
-//            Bitmap cache = mCacheImg.get(mCurrentPage);
-//            Log.i(TAG, "cache hash code = " + cache.hashCode());
-//            mRecordImg.setImageBitmap(cache);
-//        } else {
-//            Log.i(TAG, "get new page img");
-//
-//            getFormImg(getUrl());
-//        }
 
+        mPageAddress = computeCurrentPageAddress(action);
+        Log.i(TAG, "new page address ="+mPageAddress);
         if (mService != null) {
             mService.setCurrentPage(mCurrentPage);
             mService.setCurrentPageAddress(mPageAddress);
@@ -320,24 +310,19 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         }
     }
 
-    @Override
-    public void onTaskFail() {
-        dismissLoading();
-    }
-
-
     private void getFormImg(String url) {
         try {
             showLoading();
             Glide.with(RecordActivity.this)
                     .load(url)
                     .asBitmap()
+                    .listener(new RecordImgRequestListener())
                     .transform(new RecordImgTransformation(mContext))
                     .into(mRecordImg);
-
         } catch (Exception e) {
             Log.i(TAG, "load bitmap ex=" + e.getMessage());
             e.printStackTrace();
+            dismissLoading();
         } finally {
 
         }
@@ -359,7 +344,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         if (p > mPage || p < 1) {
             return;
         }
-        if(mCurrentPage != p) {
+        if (mCurrentPage != p) {
             mCurrentPage = p;
             Log.i(TAG, "onCoordDraw: mCurrentPage = " + mCurrentPage);
 
@@ -372,19 +357,29 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
     }
 
-    private class RecordImgTransformation extends BitmapTransformation {
-
-        public RecordImgTransformation(Context context) {
-            super(context);
+    private class RecordImgRequestListener implements RequestListener<String, Bitmap> {
+        public RecordImgRequestListener() {
+            super();
         }
 
         @Override
-        protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
-            Log.i(TAG, "transform， outWidth = " + outWidth + "   outHeight = " + outHeight);
-            Log.i(TAG, "bitmapp width = " + toTransform.getWidth() + "  height = " + toTransform.getHeight());
-            int width = toTransform.getWidth();
-            int height = toTransform.getHeight();
-            Canvas canvas = new Canvas(toTransform);
+        public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
+            ((Activity) mContext).runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    dismissLoading();
+                }
+            });
+            return false;
+        }
+
+        @Override
+        public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
+            Log.i(TAG, "onResourceReady bitmap width = " + resource.getWidth() + "  height = " + resource.getHeight());
+            int width = resource.getWidth();
+            int height = resource.getHeight();
+
+            Canvas canvas = new Canvas(resource);
             Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
             paint.setStrokeWidth(2f);
             paint.setColor(Color.BLACK);
@@ -427,11 +422,10 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                 }
             }
 
-
             canvas.drawPath(mPath, paint);
+            mRecordBitmapImg = resource;
 
-            mRecordBitmapImg = toTransform.copy(toTransform.getConfig(), true);
-            ZBformApplication.sBlePenManager.setDrawView(mRecordImg, mRecordBitmapImg, mRecordBitmapImg.getWidth(), mRecordBitmapImg.getHeight());
+            ZBformApplication.sBlePenManager.setDrawView(mRecordImg, mRecordBitmapImg, (float) mFormWidth, (float) mFormHeight);
             mService.startDraw();
             mPath.reset();
             ((Activity) mContext).runOnUiThread(new Runnable() {
@@ -440,27 +434,99 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                     dismissLoading();
                 }
             });
-            return toTransform;
+            return false;
+        }
+    }
 
+    private class RecordImgTransformation extends BitmapTransformation {
+
+        public RecordImgTransformation(Context context) {
+            super(context);
         }
 
-        public void addHwData2Path(HwData hwData) {
-            Point lastP;
-            boolean firstP = true;
-            for (Point p : hwData.getD()) {
-                lastP = p;
-                if (firstP) {
-                    mPath.moveTo(p.getX() * mScaleX, p.getY() * mScaleY);
-                    firstP = false;
-                } else {
-                    mPath.cubicTo(lastP.getX() * mScaleX, lastP.getY() * mScaleY, ((lastP.getX() + p.getX()) / 2) * mScaleX, ((lastP.getY() + p.getY()) / 2) * mScaleY, p.getX() * mScaleX, p.getY() * mScaleY);
-                }
-            }
+        @Override
+        protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
+            Log.i(TAG, "transform， outWidth = " + outWidth + "   outHeight = " + outHeight);
+            Log.i(TAG, "bitmap width = " + toTransform.getWidth() + "  height = " + toTransform.getHeight());
+//            int width = toTransform.getWidth();
+//            int height = toTransform.getHeight();
+//            mRecordBitmapImg = toTransform.copy(toTransform.getConfig(), true);
+//            Canvas canvas = new Canvas(mRecordBitmapImg);
+//            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
+//            paint.setStrokeWidth(2f);
+//            paint.setColor(Color.BLACK);
+//            paint.setStyle(Paint.Style.STROKE);
+//            paint.setStrokeJoin(Paint.Join.ROUND);
+//            paint.setStrokeCap(Paint.Cap.ROUND);
+//            paint.setDither(true);
+//            paint.setAntiAlias(true);
+//            paint.setFilterBitmap(true);
+//
+//            //计算scale
+//            if (width > height) {
+//                if (mFormWidth > mFormHeight) {
+//                    mScaleX = (float) width / (float) mFormWidth;
+//                    mScaleY = (float) height / (float) mFormHeight;
+//                } else {
+//                    mScaleX = (float) width / (float) mFormHeight;
+//                    mScaleY = (float) height / (float) mFormWidth;
+//                }
+//            } else {
+//                if (mFormWidth > mFormHeight) {
+//                    mScaleY = (float) height / (float) mFormWidth;
+//                    mScaleX = (float) width / (float) mFormHeight;
+//                } else {
+//                    mScaleY = (float) height / (float) mFormHeight;
+//                    mScaleX = (float) width / (float) mFormWidth;
+//                }
+//            }
+//
+//            mCurrentItems = getCurrentItems();
+//
+//            if (mCurrentItems.size() > 0) {
+//                for (RecordDataItem item : mCurrentItems) {
+//
+//                    HwData hwData = new Gson().fromJson(item.getHwdata(), new TypeToken<HwData>() {
+//                    }.getType());
+//
+//                    //开始将笔迹数据添加到path中，最终在Form img中画出
+//                    addHwData2Path(hwData);
+//                }
+//            }
+//
+//
+//            canvas.drawPath(mPath, paint);
+//
+//            ZBformApplication.sBlePenManager.setDrawView(mRecordImg, mRecordBitmapImg, (float)mFormWidth, (float)mFormHeight);
+//            mService.startDraw();
+//            mPath.reset();
+//            ((Activity) mContext).runOnUiThread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    dismissLoading();
+//                }
+//            });
+            return toTransform;
+
         }
 
         @Override
         public String getId() {
             return "com.zbform.penform.RecordImgTransformation";
+        }
+    }
+
+    public void addHwData2Path(HwData hwData) {
+        Point lastP;
+        boolean firstP = true;
+        for (Point p : hwData.getD()) {
+            lastP = p;
+            if (firstP) {
+                mPath.moveTo(p.getX() * mScaleX, p.getY() * mScaleY);
+                firstP = false;
+            } else {
+                mPath.cubicTo(lastP.getX() * mScaleX, lastP.getY() * mScaleY, ((lastP.getX() + p.getX()) / 2) * mScaleX, ((lastP.getY() + p.getY()) / 2) * mScaleY, p.getX() * mScaleX, p.getY() * mScaleY);
+            }
         }
     }
 
@@ -481,6 +547,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             mFormHeight = convertPageSize(mFormInfo.results[0].getHeigh());
             mFormWidth = convertPageSize(mFormInfo.results[0].getWidth());
             Log.i(TAG, "FORM height = " + mFormHeight + "   width=" + mFormWidth);
+//            ZBformApplication.sBlePenManager.setPaperSize((float)mFormWidth, (float)mFormHeight);
 
             Log.i(TAG, "set current pageAddress to service: " + mPageAddress);
             mService.setCurrentPageAddress(mPageAddress);
@@ -510,7 +577,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     }
 
     public int computeCurrentPage(String base, String current) {
-        Log.i(TAG,"base = "+base +"  current = "+current );
+        Log.i(TAG, "base = " + base + "  current = " + current);
         int baseNum = 0, currentNum = 0;  // 计算ABC总值
         int page = 0;
         if (mFormHeight != 0 && mFormWidth != 0) {
@@ -519,12 +586,12 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             Log.i(TAG, "compute page num: length = " + length);
             String[] baseArray = base.split("\\.");
             String[] currentArray = current.split("\\.");
-            if (length > 418 && length < 422) {  // A3纸
+            if (baseArray[0].equals("1713") || (length > 418 && length < 422)) {  // A3纸
                 // A3纸范围  1713.A.B.C  0<=B<=52, 0<=C<=107
                 baseNum = Integer.parseInt(baseArray[3]) + Integer.parseInt(baseArray[2]) * 108 + Integer.parseInt(baseArray[1]) * 108 * 53;
                 currentNum = Integer.parseInt(currentArray[3]) + Integer.parseInt(currentArray[2]) * 108 + Integer.parseInt(currentArray[1]) * 108 * 53;
                 page = 1 + currentNum - baseNum;
-            } else if (length > 295 && length < 299) {  // A4纸
+            } else if (baseArray[0].equals("1536") || (length > 295 && length < 299)) {  // A4纸
                 // A4纸范围  1536.A.B.C  0<=B<=72, 0<=C<=107
                 baseNum = Integer.parseInt(baseArray[3]) + Integer.parseInt(baseArray[2]) * 108 + Integer.parseInt(baseArray[1]) * 108 * 73;
                 currentNum = Integer.parseInt(currentArray[3]) + Integer.parseInt(currentArray[2]) * 108 + Integer.parseInt(currentArray[1]) * 108 * 73;
@@ -533,5 +600,34 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         }
 
         return page;
+    }
+
+    public String computeCurrentPageAddress(int action) {
+        String[] addressArray = mPageAddress.split("\\.");
+        Log.i(TAG, "current page address = " + mPageAddress);
+
+        int a = Integer.parseInt(addressArray[1]);
+        int b = Integer.parseInt(addressArray[2]);
+        int c = Integer.parseInt(addressArray[3]);
+
+        int bMax = 0;
+        if(addressArray[0].equals("1713")) {
+            bMax = 53;
+        }else if(addressArray[0].equals("1536")){
+            bMax = 73;
+        }
+
+        int all = a * 108 * bMax + b * 108 + c;
+
+        if (action == NEXT_IMG) {
+            all += 1;
+        } else if(action == PRE_IMG){
+            all -= 1;
+        }
+
+        c = all % 108;
+        b = (all / 108) % bMax;
+        a = all / (108 * bMax);
+        return addressArray[0] +"."+ String.valueOf(a) + "."+ String.valueOf(b) + "."+ String.valueOf(c);
     }
 }

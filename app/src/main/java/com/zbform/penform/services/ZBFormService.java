@@ -41,6 +41,7 @@ import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.net.ErrorCode;
 import com.zbform.penform.net.IZBformNetBeanCallBack;
 import com.zbform.penform.net.ZBformNetBean;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -58,7 +59,7 @@ public class ZBFormService extends Service {
     private String mRecordId;
     private boolean mStopRecordCoord = true;
     private int mCurrentPage = 1;
-    private String mPageAddress ="0.0.0.0";
+    private String mPageAddress = "0.0.0.0";
     private boolean mIsRecordDraw = false;
     //    private Executor mExecutor = Executors.newCachedThreadPool();
     private IntentFilter mIntentFilter;
@@ -83,14 +84,15 @@ public class ZBFormService extends Service {
         HwData mStroke = null;//一个笔画
         long mBeginTime;
 
-        private class TargetForm{
+        private class TargetForm {
             FormListInfo.Results mForm;
             int mCurrentPage;
             String mAddress;
         }
+
         @Override
         public void onPenDown() {
-            if (!ZBformApplication.sBlePenManager.getCanDraw()){
+            if (!ZBformApplication.sBlePenManager.getCanDraw()) {
                 return;
             }
             //开始一个笔画
@@ -98,28 +100,32 @@ public class ZBFormService extends Service {
 
             mStroke.setT(ApiAddress.getTimeStamp());
             mBeginTime = System.currentTimeMillis();
+
         }
 
         @Override
         public void onPenUp() {
             //penup 一个笔画结束，开始存储
-            if (!ZBformApplication.sBlePenManager.getCanDraw()){
+            if (!ZBformApplication.sBlePenManager.getCanDraw()) {
                 return;
             }
             long endTime = System.currentTimeMillis();
             int c = (int) (endTime - mBeginTime);//一个笔画的耗时
-            mStroke.setC(c);
-            try {
-                mCoordQueue.put(mStroke);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            if (mStroke != null) {
+                mStroke.setC(c);
+
+                try {
+                    mCoordQueue.put(mStroke);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
         @Override
         public void onCoordDraw(String pageAddress, int nX, int nY) {
-            Log.i(TAG, "START ACT onCoordDraw mPageAddress="+mPageAddress);
-            Log.i(TAG, "START ACT onCoordDraw pageAddress="+pageAddress);
+            Log.i(TAG, "START ACT onCoordDraw mPageAddress=" + mPageAddress);
+            Log.i(TAG, "START ACT onCoordDraw pageAddress=" + pageAddress);
             if (!TextUtils.isEmpty(pageAddress)) {
                 if (!"0.0.0.0".equals(pageAddress) &&
                         !mPageAddress.equals(pageAddress)) {
@@ -132,8 +138,13 @@ public class ZBFormService extends Service {
                     mPageAddress = pageAddress;
                 }
             }
-            if (!ZBformApplication.sBlePenManager.getCanDraw()){
+            if (!ZBformApplication.sBlePenManager.getCanDraw()) {
                 return;
+            }
+            if (mStroke == null) {
+                mStroke = new HwData();
+                mStroke.setT(ApiAddress.getTimeStamp());
+                mBeginTime = System.currentTimeMillis();
             }
             mStroke.setP(pageAddress);
             Point point = new Point();
@@ -146,7 +157,7 @@ public class ZBFormService extends Service {
 
         @Override
         public void onOffLineCoordDraw(String pageAddress, int nX, int nY) {
-            if (!ZBformApplication.sBlePenManager.getCanDraw()){
+            if (!ZBformApplication.sBlePenManager.getCanDraw()) {
                 return;
             }
         }
@@ -194,18 +205,18 @@ public class ZBFormService extends Service {
          */
         private HashMap<String, Integer> findValidateAddress(String address, int pages) {
             HashMap<String, Integer> valAddress = new HashMap<String, Integer>();
-            valAddress.put(address,1);
+            valAddress.put(address, 1);
             if (TextUtils.isEmpty(address)) {
                 Log.i(TAG, "findValidateAddress null");
                 return valAddress;
             }
-            Log.i(TAG, "findValidateAddress address="+address);
+            Log.i(TAG, "findValidateAddress address=" + address);
             String[] addressArray = address.split("\\.");
             if (addressArray == null || addressArray.length < 4) {
-                if(address==null){
+                if (address == null) {
                     Log.i(TAG, "findValidateAddress null1");
                 } else {
-                    Log.i(TAG, "findValidateAddress invalid="+addressArray.length);
+                    Log.i(TAG, "findValidateAddress invalid=" + addressArray.length);
                 }
                 return valAddress;
             }
@@ -238,23 +249,23 @@ public class ZBFormService extends Service {
 
                     Log.i(TAG, "nextAddress=" + nextAddress);
                 }
-            }catch (Exception e){
+            } catch (Exception e) {
                 Log.i(TAG, "findValidateAddress e=" + e.getMessage());
             }
 
             return valAddress;
         }
 
-        private void startPageFormActivity(TargetForm form){
+        private void startPageFormActivity(TargetForm form) {
             if (form == null) return;
             Intent intent = new Intent(mContext, FormDrawActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             intent.putExtra("currentpage", form.mCurrentPage);
             Log.i(TAG, "startPageFormActivity currentpage=" + form.mCurrentPage);
-            intent.putExtra("page",form.mForm.getPage());
-            intent.putExtra("pageaddress",form.mAddress);
-            intent.putExtra("formid",form.mForm.getUuid());
-            intent.putExtra("formname",form.mForm.getName().replace(".pdf",""));
+            intent.putExtra("page", form.mForm.getPage());
+            intent.putExtra("pageaddress", form.mAddress);
+            intent.putExtra("formid", form.mForm.getUuid());
+            intent.putExtra("formname", form.mForm.getName().replace(".pdf", ""));
             startActivity(intent);
         }
     }
@@ -283,7 +294,7 @@ public class ZBFormService extends Service {
                         mCurrentPage = 1;
                         mDrawFormInfo = null;
                         mRecordId = "";
-                        Log.i(TAG,"stop!!!!!");
+                        Log.i(TAG, "stop!!!!!");
                         break;
                     }
                     HwData stroke = mCoordQueue.take();
@@ -295,7 +306,7 @@ public class ZBFormService extends Service {
                         strokeEntity.setUserid(ZBformApplication.getmLoginUserId());
                         try {
                             strokeEntity.setFormid(mDrawFormInfo.results[0].getUuid());
-                        } catch(Exception e){
+                        } catch (Exception e) {
                             continue;
                         }
                         strokeEntity.setRecordid(mRecordId);
@@ -304,9 +315,9 @@ public class ZBFormService extends Service {
                         //笔迹不在item内，记录为page * -1
                         if (TextUtils.isEmpty(itemId)) {
                             itemId = String.valueOf(-1 * mCurrentPage);
-                            Log.i(TAG,"findFormRecordId null");
+                            Log.i(TAG, "findFormRecordId null");
                         }
-                        Log.i(TAG,"findFormRecordId id ="+itemId);
+                        Log.i(TAG, "findFormRecordId id =" + itemId);
                         strokeEntity.setItemid(itemId);
 
                         strokeEntity.setIsupload(false);
@@ -651,7 +662,7 @@ public class ZBFormService extends Service {
 
             Log.i(TAG, "on handleMessage ");
             new UpLoadStrokeDBQuery().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-            Log.i(TAG, "can draw= "+ZBformApplication.sBlePenManager.getCanDraw());
+            Log.i(TAG, "can draw= " + ZBformApplication.sBlePenManager.getCanDraw());
             //停止书写则停止查询上传数据
             if (!mStopRecordCoord) {
                 Message msg = mUpLoadQueryHandler.obtainMessage();
@@ -710,7 +721,7 @@ public class ZBFormService extends Service {
     public void startDraw() {
         if (!mStopRecordCoord) return;
 
-        Log.i(TAG,"SERVICE startDraw");
+        Log.i(TAG, "SERVICE startDraw");
         mStopRecordCoord = false;
         new CoodSaveDBTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         ZBformApplication.sBlePenManager.startDraw();
@@ -722,11 +733,11 @@ public class ZBFormService extends Service {
     public void stopDraw() {
         if (!mIsRecordDraw) {
             mPageAddress = "0.0.0.0";
-            Log.i(TAG,"clear pageaddress!!!!!");
+            Log.i(TAG, "clear pageaddress!!!!!");
         }
-        Log.i(TAG,"SERVICE stopdraw0");
+        Log.i(TAG, "SERVICE stopdraw0");
         if (mStopRecordCoord) return;
-        Log.i(TAG,"SERVICE stopdraw1");
+        Log.i(TAG, "SERVICE stopdraw1");
         mStopRecordCoord = true;
         ZBformApplication.sBlePenManager.stopDraw();
         HwData coord = new HwData();
@@ -742,15 +753,15 @@ public class ZBFormService extends Service {
         mCurrentPage = page;
     }
 
-    public void setFormList(List<FormListInfo.Results> list){
+    public void setFormList(List<FormListInfo.Results> list) {
         mFormList = list;
     }
 
-    public void setCurrentPageAddress(String page){
+    public void setCurrentPageAddress(String page) {
         mPageAddress = page;
     }
 
-    public void setIsRecordDraw(boolean draw){
+    public void setIsRecordDraw(boolean draw) {
         mIsRecordDraw = draw;
     }
 }

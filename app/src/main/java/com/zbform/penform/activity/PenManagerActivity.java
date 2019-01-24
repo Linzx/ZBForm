@@ -296,6 +296,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
         mIsConnectButtonPressed = false;
         dismissLoading();
+        mDeviceAdapter.removeDevice(bleDevice);
     }
 
 
