@@ -41,12 +41,11 @@ import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.net.ErrorCode;
 import com.zbform.penform.net.IZBformNetBeanCallBack;
 import com.zbform.penform.net.ZBformNetBean;
+import com.zbform.penform.util.CommonUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class ZBFormService extends Service {
@@ -77,6 +76,12 @@ public class ZBFormService extends Service {
     private UpLoadQueryHandler mUpLoadQueryHandler;
     private LinkedBlockingQueue<HwData> mCoordQueue = new LinkedBlockingQueue<HwData>();
     private LinkedBlockingQueue<ZBFormInnerItem> mUpLoadQueue = new LinkedBlockingQueue<ZBFormInnerItem>();
+
+    private IGetHwDataCallBack mIGetHwDataCallBack;
+
+    public interface IGetHwDataCallBack {
+        void onGetHwData(HwData data);
+    }
 
     private PenDrawCallBack mIBlePenDrawCallBack = new PenDrawCallBack();
 
@@ -113,8 +118,10 @@ public class ZBFormService extends Service {
             int c = (int) (endTime - mBeginTime);//一个笔画的耗时
             if (mStroke != null) {
                 mStroke.setC(c);
-
                 try {
+                    if (mIGetHwDataCallBack != null) {
+                        mIGetHwDataCallBack.onGetHwData(mStroke);
+                    }
                     mCoordQueue.put(mStroke);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -171,10 +178,11 @@ public class ZBFormService extends Service {
                 for (FormListInfo.Results form : mFormList) {
                     //多页查找其他页地址
                     if (form.getPage() > 1) {
-                        HashMap<String, Integer> valAddress = findValidateAddress(form.getRinit(), form.getPage());
+                        HashMap<String, String> valAddress = CommonUtils.findValidateAddress(
+                                true, form.getRinit(), form.getPage());
                         if (valAddress.containsKey(address)) {
                             formTarget = form;
-                            page = valAddress.get(address);
+                            page = Integer.valueOf(valAddress.get(address));
                             break;
                         }
                     } else {
@@ -262,7 +270,9 @@ public class ZBFormService extends Service {
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             intent.putExtra("currentpage", form.mCurrentPage);
             Log.i(TAG, "startPageFormActivity currentpage=" + form.mCurrentPage);
+
             intent.putExtra("page", form.mForm.getPage());
+            intent.putExtra("initaddress", form.mForm.getRinit());
             intent.putExtra("pageaddress", form.mAddress);
             intent.putExtra("formid", form.mForm.getUuid());
             intent.putExtra("formname", form.mForm.getName().replace(".pdf", ""));
@@ -738,6 +748,8 @@ public class ZBFormService extends Service {
         Log.i(TAG, "SERVICE stopdraw0");
         if (mStopRecordCoord) return;
         Log.i(TAG, "SERVICE stopdraw1");
+
+        mIGetHwDataCallBack = null;
         mStopRecordCoord = true;
         ZBformApplication.sBlePenManager.stopDraw();
         HwData coord = new HwData();
@@ -763,5 +775,9 @@ public class ZBFormService extends Service {
 
     public void setIsRecordDraw(boolean draw) {
         mIsRecordDraw = draw;
+    }
+
+    public void setGetHwDataCallBack(IGetHwDataCallBack callBack) {
+        mIGetHwDataCallBack = callBack;
     }
 }

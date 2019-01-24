@@ -265,6 +265,7 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
                 Log.i(TAG, "item=" + holder.formItem.getName());
                 Intent intent = new Intent(mContext, FormDrawActivity.class);
                 intent.putExtra("page",holder.formItem.getPage());
+                intent.putExtra("initaddress",holder.formItem.getRinit());
                 intent.putExtra("pageaddress",holder.formItem.getRinit());
                 intent.putExtra("formid",holder.formItem.getUuid());
                 intent.putExtra("formname",holder.formItem.getName().replace(".pdf",""));
