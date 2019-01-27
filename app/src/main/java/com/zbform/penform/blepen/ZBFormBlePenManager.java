@@ -327,9 +327,7 @@ public class ZBFormBlePenManager {
                             if (mStreamingController != null) {
                                 mStreamingController.penDown();
                             }
-//                            if (mIBlePenDrawCallBack != null) {
-//                                mIBlePenDrawCallBack.onPenDown();
-//                            }
+
                             for(IBlePenDrawCallBack callback: mIZBBlePenDrawCallbackList){
                                 if (callback != null) {
                                     callback.onPenDown();
@@ -347,9 +345,6 @@ public class ZBFormBlePenManager {
                                 }
                             }
 
-//                            if (mIBlePenDrawCallBack != null) {
-//                                mIBlePenDrawCallBack.onCoordDraw(pageAddress, nX, nY);
-//                            }
                             for(IBlePenDrawCallBack callback: mIZBBlePenDrawCallbackList){
                                 if (callback != null) {
                                     callback.onCoordDraw(pageAddress, nX, nY);
@@ -372,9 +367,7 @@ public class ZBFormBlePenManager {
                             if (mStreamingController != null) {
                                 mStreamingController.penUp();
                             }
-//                            if (mIBlePenDrawCallBack != null) {
-//                                mIBlePenDrawCallBack.onPenUp();
-//                            }
+
                             for(IBlePenDrawCallBack callback: mIZBBlePenDrawCallbackList){
                                 if (callback != null) {
                                     callback.onPenUp();
@@ -414,9 +407,7 @@ public class ZBFormBlePenManager {
                                     mStreamingController.addCoordinate(nX, nY, nForce, pageAddress);
                                 }
                             }
-//                            if (mIBlePenDrawCallBack != null) {
-//                                mIBlePenDrawCallBack.onOffLineCoordDraw(pageAddress, nX, nY);
-//                            }
+
                             for(IBlePenDrawCallBack callback: mIZBBlePenDrawCallbackList){
                                 if (callback != null) {
                                     callback.onOffLineCoordDraw(pageAddress, nX, nY);
@@ -453,23 +444,9 @@ public class ZBFormBlePenManager {
             public void onDisConnected(boolean isActiveDisConnected, BleDevice device) {
                 Log.d(TAG, "onDisConnected: isActiveDisConnected   " + isActiveDisConnected);
                 //笔端关机按钮时回调重连
-                if (isActiveDisConnected) {
-                    //  txt_connect_status.setText(getString(R.string.active_disconnected));
-//                    if (isResume) {
-//                        isConnectedNow = false;
-//                        BlePenStreamManager.getInstance().closePenStream();
-//                        BlePenManager.getInstance().disconnect(bleDevice);
-//                        if (!BlePenManager.getInstance().isConnected(bleDevice)) {
-//                            startScan();
-//                        }
-//                    }
-
-                } else {
-//                    txt_connect_status.setText(getString(R.string.disconnected));
                     BlePenStreamManager.getInstance().closePenStream();
                     BlePenManager.getInstance().disconnect(mBleDevice);
 
-                }
             }
 
             @Override

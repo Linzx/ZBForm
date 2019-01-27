@@ -237,6 +237,7 @@ public class FormDrawActivity extends BaseActivity {
                 Log.i(TAG, "onResourceReady W=" + resource.getWidth());
                 Log.i(TAG, "onResourceReady H=" + resource.getHeight());
 
+                Log.i(TAG, "draw activity resource hash code = "+resource.hashCode());
                 mZBFormBlePenManager.setDrawView(mImgView, resource);
                 if (mFormHeight >0 && mFormWidth >0) {
                     mZBFormBlePenManager.setPaperSize((float) mFormWidth, (float) mFormHeight);
