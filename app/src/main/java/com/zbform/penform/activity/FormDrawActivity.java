@@ -66,14 +66,11 @@ public class FormDrawActivity extends BaseActivity {
     //    private static final ColorDrawable TRANSPARENT_DRAWABLE = new ColorDrawable(android.R.color.transparent);
     private FormInfo mFormInfo;
     private int mCurrentPage = 1;
-//    private int mOldCurrentPage = mCurrentPage;
     private int mPage;
     private String mPageAddress;
     private String mFormID;
     private String mFormName;
     private int mDrawState = STATE_PREVIEW;
-    //保存当前显示的图
-//    private HashMap<Integer, Bitmap> mCacheImg = new HashMap<Integer, Bitmap>();
     private ImageView mImgView;
     private TextView mPageTitle;
     private Toolbar mToolbar;
@@ -129,6 +126,11 @@ public class FormDrawActivity extends BaseActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         Log.i(TAG, "onNewIntent");
+        String newAddress = intent.getStringExtra("pageaddress");
+        if (!TextUtils.isEmpty(newAddress) &&
+                newAddress.equals(mPageAddress)){
+            return;
+        }
         initFormData(intent);
 
         if (mToolbar != null) {
@@ -155,8 +157,6 @@ public class FormDrawActivity extends BaseActivity {
                 mDrawState = STATE_PREVIEW;
                 mCurrentPage = 1;
                 mCacheHwData.clear();
-//                mCacheImg.clear();
-//                clearCache();
                 //打开第一张
                 Log.i(TAG, "initFormData initAddress="+initAddress);
                 mValAddress = CommonUtils.findValidateAddress(
@@ -195,6 +195,7 @@ public class FormDrawActivity extends BaseActivity {
             Glide.with(this)
                     .load(getUrl())
                     .asBitmap()
+                    .skipMemoryCache(true)
                     .listener(new DrawImgRequestListener(this,action))
                     .transform(new FormDrawImgTransformation(this,action))
 //                    .diskCacheStrategy(DiskCacheStrategy.ALL)
@@ -237,7 +238,6 @@ public class FormDrawActivity extends BaseActivity {
                 Log.i(TAG, "onResourceReady W=" + resource.getWidth());
                 Log.i(TAG, "onResourceReady H=" + resource.getHeight());
 
-                Log.i(TAG, "draw activity resource hash code = "+resource.hashCode());
                 mZBFormBlePenManager.setDrawView(mImgView, resource);
                 if (mFormHeight >0 && mFormWidth >0) {
                     mZBFormBlePenManager.setPaperSize((float) mFormWidth, (float) mFormHeight);
@@ -305,36 +305,6 @@ public class FormDrawActivity extends BaseActivity {
         protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
             Log.i(TAG, "transform， outWidth = " + outWidth + "   outHeight = " + outHeight);
             Log.i(TAG, "bitmapp width = " + toTransform.getWidth() + "  height = " + toTransform.getHeight());
-            if (toTransform != null) {
-//                Log.i(TAG, "scalbitmap W=" + toTransform.getWidth());
-//                Log.i(TAG, "scalbitmap H=" + toTransform.getHeight());
-//
-//                mZBFormBlePenManager.setDrawView(mImgView, toTransform,
-//                        (float)mFormWidth, (float)mFormHeight);
-//
-//                if (mAction == LOAD_ACTION_NEW_RECORD) {
-//                    startNewRecord();
-//                } else if (mAction == LOAD_ACTION_PREVIEW) {
-//                    mFromTask = new FormTask();
-//                    mFormTaskListener.setTargetDraw(toTransform);
-//                    mFromTask.setOnFormTaskListener(mFormTaskListener);
-//                    mFromTask.execute(FormDrawActivity.this, mFormID);
-//                } else {
-//                    FormDrawActivity.this.runOnUiThread(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            dismissLoading();
-//                        }
-//                    });
-//                }
-//                if (mService != null) {
-//                    mService.setCurrentPageAddress(mPageAddress);
-//                }
-//
-//                mOldCurrentPage = mCurrentPage;
-            } else {
-                Log.i(TAG, "bitmap! null");
-            }
             return toTransform;
         }
 
@@ -541,36 +511,6 @@ public class FormDrawActivity extends BaseActivity {
         Log.i(TAG, "mPage=" + mPage);
         Log.i(TAG, "mCurrentPage1=" + mCurrentPage);
 
-//        Bitmap current = mZBFormBlePenManager.getDrawBitmap();
-//        if (current == null){
-//            Toast.makeText(FormDrawActivity.this,
-//                    FormDrawActivity.this.getResources().getString(R.string.toast_img_error),
-//                    Toast.LENGTH_SHORT).show();
-//            return;
-//        }
-
-//        //clone 缓存当前图片
-//        Bitmap clone = current.copy(current.getConfig(),true);
-//
-//        if (action == LOAD_ACTION_AUTO_OPEN) {
-//            if (mCacheImg.containsKey(mOldCurrentPage) &&
-//                    current == mCacheImg.get(mOldCurrentPage)) {
-//                Log.i(TAG, "recycle=" + mOldCurrentPage);
-//                recycleBitmap(current);
-//            }
-//
-//            mCacheImg.put(mOldCurrentPage, clone);
-//        } else {
-//            if (mCacheImg.containsKey(mCurrentPage) &&
-//                    current == mCacheImg.get(mCurrentPage)) {
-//                Log.i(TAG, "recycle=" + mCurrentPage);
-//                recycleBitmap(current);
-//            }
-//
-//            mCacheImg.put(mCurrentPage, clone);
-//        }
-        //clone
-
         if (action == LOAD_ACTION_PRE_IMG) {
             if (mCurrentPage > 1) {
                 mCurrentPage -= 1;
@@ -580,24 +520,12 @@ public class FormDrawActivity extends BaseActivity {
                 mCurrentPage += 1;
             }
         }
-//        Log.i(TAG, "mCurrentPage2=" + mCurrentPage);
-//        if (mCacheImg.containsKey(mCurrentPage)) {
-//            Log.i(TAG, "mCurrentPage3");
-//            Bitmap cache = mCacheImg.get(mCurrentPage);
-//            mImgView.setImageBitmap(cache);
-//
-//            mZBFormBlePenManager.setDrawView(mImgView, cache);
-//            if (mFormHeight >0 && mFormWidth >0) {
-//                mZBFormBlePenManager.setPaperSize((float) mFormWidth, (float) mFormHeight);
-//            }
-//        } else {
-            Log.i(TAG, "mCurrentPage4");
-            startLoadingForm(action);
-//        }
+
+        Log.i(TAG, "mCurrentPage4");
+        startLoadingForm(action);
         if (mService != null) {
             mService.setCurrentPage(mCurrentPage);
         }
-//        mOldCurrentPage = mCurrentPage;
         setUpPageTitle();
     }
 

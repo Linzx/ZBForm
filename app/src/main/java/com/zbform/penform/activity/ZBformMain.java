@@ -55,8 +55,39 @@ public class ZBformMain extends BaseActivity {
     private FragmentManager fragmentManager;
 
     private BaseFragment mCurrentFragmet;
+    ZBFormBlePenManager.IBlePenStateCallBack mBlePenStateCallBack = new ZBFormBlePenManager.IBlePenStateCallBack(){
 
-    ZBFormBlePenManager.IZBBleGattCallback bleGattCallback = new ZBFormBlePenManager.IZBBleGattCallback() {
+        @Override
+        public void onOpenPenStreamSuccess() {
+
+        }
+
+        @Override
+        public void onRemainBattery(int percent) {
+            Log.i(TAG, "main onRemainBattery");
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (mToolbar != null) {
+                        Menu menu = mToolbar.getMenu();
+                        setUpMenu(menu);
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void onMemoryFillLevel(int percent, int byteNum) {
+
+        }
+
+        @Override
+        public void onNewSession(String hardVersion, String softVersion, String syncNum) {
+
+        }
+    };
+
+    ZBFormBlePenManager.IZBBleGattCallback mBleGattCallback = new ZBFormBlePenManager.IZBBleGattCallback() {
         @Override
         public void onStartConnect() {
         }
@@ -64,28 +95,36 @@ public class ZBformMain extends BaseActivity {
         @Override
         public void onConnectFail(BleDevice bleDevice, BleException exception) {
             Log.i(TAG, "main onConnectFail");
-            if (mToolbar != null) {
-                Menu menu = mToolbar.getMenu();
-                setUpMenu(menu);
-            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (mToolbar != null) {
+                        Menu menu = mToolbar.getMenu();
+                        setUpMenu(menu);
+                    }
+                }
+            });
+
         }
 
         @Override
         public void onConnectSuccess(BleDevice bleDevice, BluetoothGatt gatt, int status) {
             Log.i(TAG, "main onConnectSuccess");
-            if (mToolbar != null) {
-                Menu menu = mToolbar.getMenu();
-                setUpMenu(menu);
-            }
+
         }
 
         @Override
         public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
             Log.i(TAG, "main onDisConnected");
-            if (mToolbar != null) {
-                Menu menu = mToolbar.getMenu();
-                setUpMenu(menu);
-            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (mToolbar != null) {
+                        Menu menu = mToolbar.getMenu();
+                        setUpMenu(menu);
+                    }
+                }
+            });
         }
     };
 
@@ -101,11 +140,12 @@ public class ZBformMain extends BaseActivity {
         getWindow().setBackgroundDrawableResource(R.color.background_material_light_1);
         fragmentManager = getSupportFragmentManager();
 
-        drawerLayout = (DrawerLayout) findViewById(R.id.fd);
-        mLvLeftMenu = (ListView) findViewById(R.id.id_lv_left_menu);
+        drawerLayout = findViewById(R.id.fd);
+        mLvLeftMenu = findViewById(R.id.id_lv_left_menu);
 
-        mTootBarTitle = (TextView) findViewById(R.id.toolbar_title);
-        ZBformApplication.sBlePenManager.setZBBleGattCallback(bleGattCallback);
+        mTootBarTitle = findViewById(R.id.toolbar_title);
+        ZBformApplication.sBlePenManager.setZBBleGattCallback(mBleGattCallback);
+        ZBformApplication.sBlePenManager.setBlePenStateCallBack(mBlePenStateCallBack);
         setToolBar();
         setUpDrawer();
         setTootBarTitle(getString(R.string.menu_item_formlist));
@@ -125,9 +165,23 @@ public class ZBformMain extends BaseActivity {
         MenuItem disConnect = menu.findItem(R.id.pen_disconnect);
 
         if (connect != null && disConnect != null) {
-            if (ZBformApplication.sBlePenManager.isConnectedBleDevice()) {
+            if (ZBformApplication.sBlePenManager.getIsConnectedNow()) {
                 Log.i(TAG, "CONNECT");
                 connect.setVisible(true);
+                View acView =  connect.getActionView();
+                if (acView != null){
+                    TextView battery = acView.findViewById(R.id.menu_battery);
+                    if (battery != null){
+                        battery.setText(ZBformApplication.sBlePenManager.getBleDevicePower()+ "%");
+                    }
+                    acView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Intent intent = new Intent(ZBformMain.this, PenManagerActivity.class);
+                            startActivity(intent);
+                        }
+                    });
+                }
                 disConnect.setVisible(false);
             } else {
                 Log.i(TAG, "DISCONNECT");
@@ -138,7 +192,7 @@ public class ZBformMain extends BaseActivity {
     }
 
     private void setToolBar() {
-        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        mToolbar = findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
         mActionBar = getSupportActionBar();
         mActionBar.setDisplayHomeAsUpEnabled(true);
@@ -238,7 +292,7 @@ public class ZBformMain extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
+        Log.i(TAG, "main onResume");
         if (mToolbar != null) {
             Menu menu = mToolbar.getMenu();
             setUpMenu(menu);
@@ -247,7 +301,8 @@ public class ZBformMain extends BaseActivity {
 
     @Override
     protected void onDestroy() {
-        ZBformApplication.sBlePenManager.removeZBBleGattCallback(bleGattCallback);
+        ZBformApplication.sBlePenManager.removeZBBleGattCallback(mBleGattCallback);
+        ZBformApplication.sBlePenManager.removeBlePenStateCallBack(mBlePenStateCallBack);
         stopService(mScanService);
         BlePenManager.getInstance().disconnectAllDevice();
 		super.onDestroy();

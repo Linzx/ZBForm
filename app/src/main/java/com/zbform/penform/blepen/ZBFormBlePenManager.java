@@ -77,9 +77,8 @@ public class ZBFormBlePenManager {
     private String mPageAddress = "0.0.0.0";
     private String mUrlData;
     private Handler mUIHander;
-    private IBlePenStateCallBack mIBlePenStateCallBack;
-    private IBlePenDrawCallBack mIBlePenDrawCallBack;
-    private ArrayList<IZBBleGattCallback> mIZBBleGattCallbackList;
+    private ArrayList<IZBBleGattCallback> mIZBBleGattCallbackList = new ArrayList<IZBBleGattCallback>();
+    private ArrayList<IBlePenStateCallBack> mIBlePenStateCallBackList = new ArrayList<IBlePenStateCallBack>();
     private List<IZBBleScanCallback> mIZBBleScanCallbackList = new ArrayList<>();
     private List<IBlePenDrawCallBack> mIZBBlePenDrawCallbackList = new ArrayList<>();
 
@@ -137,19 +136,27 @@ public class ZBFormBlePenManager {
 
     private ZBFormBlePenManager(Context context) {
         mContext = context;
-        mIZBBleGattCallbackList = new ArrayList<IZBBleGattCallback>();
+
 
         initListener();
         initBlePenStream();
     }
 
-    public void setBlePenStateCallBack(IBlePenStateCallBack callBack) {
-        mIBlePenStateCallBack = callBack;
+    public void setBlePenStateCallBack(IBlePenStateCallBack callback) {
+        if (!mIBlePenStateCallBackList.contains(callback)) {
+            Log.i(TAG, "Add ble pen draw call back, at set");
+
+            mIBlePenStateCallBackList.add(callback);
+        }
     }
 
-//    public void setIBlePenDrawCallBack(IBlePenDrawCallBack callBack) {
-//        mIBlePenDrawCallBack = callBack;
-//    }
+    public void removeBlePenStateCallBack(IBlePenStateCallBack callback) {
+        if (mIBlePenStateCallBackList.contains(callback)) {
+            Log.i(TAG, "remove ble gatt call back");
+
+            mIBlePenStateCallBackList.remove(callback);
+        }
+    }
 
     public void setBlePenDrawCallback(IBlePenDrawCallBack callback) {
         if (!mIZBBlePenDrawCallbackList.contains(callback)) {
@@ -283,8 +290,10 @@ public class ZBFormBlePenManager {
             @Override
             public void onOpenPenStreamSuccess() {
                 Log.d(TAG, "onOpenPenStreamSuccess: ");
-                if (mIBlePenStateCallBack != null) {
-                    mIBlePenStateCallBack.onOpenPenStreamSuccess();
+                for(IBlePenStateCallBack callback: mIBlePenStateCallBackList){
+                    if (callback != null) {
+                        callback.onOpenPenStreamSuccess();
+                    }
                 }
             }
 
@@ -298,10 +307,11 @@ public class ZBFormBlePenManager {
             public void onRemainBattery(final int percent) {
                 Log.d(TAG, "onRemainBattery: " + percent + "%");
                 mBleDevicePower = percent;
-                if (mIBlePenStateCallBack != null) {
-                    mIBlePenStateCallBack.onRemainBattery(percent);
+                for(IBlePenStateCallBack callback: mIBlePenStateCallBackList){
+                    if (callback != null) {
+                        callback.onRemainBattery(percent);
+                    }
                 }
-
             }
 
             @Override
@@ -311,8 +321,10 @@ public class ZBFormBlePenManager {
                 mBleDeviceUsedMemory = percent;
                 mBleDeviceUsedBytes = byteNum;
 
-                if (mIBlePenStateCallBack != null) {
-                    mIBlePenStateCallBack.onMemoryFillLevel(percent, byteNum);
+                for(IBlePenStateCallBack callback: mIBlePenStateCallBackList){
+                    if (callback != null) {
+                        callback.onMemoryFillLevel(percent, byteNum);
+                    }
                 }
 
             }
@@ -367,7 +379,6 @@ public class ZBFormBlePenManager {
                             if (mStreamingController != null) {
                                 mStreamingController.penUp();
                             }
-
                             for(IBlePenDrawCallBack callback: mIZBBlePenDrawCallbackList){
                                 if (callback != null) {
                                     callback.onPenUp();
@@ -407,7 +418,6 @@ public class ZBFormBlePenManager {
                                     mStreamingController.addCoordinate(nX, nY, nForce, pageAddress);
                                 }
                             }
-
                             for(IBlePenDrawCallBack callback: mIZBBlePenDrawCallbackList){
                                 if (callback != null) {
                                     callback.onOffLineCoordDraw(pageAddress, nX, nY);
@@ -472,8 +482,10 @@ public class ZBFormBlePenManager {
                 mBleDeviceSyncNum = syncNum;
 
                 Log.i(TAG, "hardVersion：" + hardVersion + "  softVersion:" + softVersion + "   syncNum:" + syncNum);
-                if (mIBlePenStateCallBack != null) {
-                    mIBlePenStateCallBack.onNewSession(hardVersion, softVersion, syncNum);
+                for(IBlePenStateCallBack callback: mIBlePenStateCallBackList){
+                    if (callback != null) {
+                        callback.onNewSession(hardVersion, softVersion, syncNum);
+                    }
                 }
             }
 
@@ -543,33 +555,33 @@ public class ZBFormBlePenManager {
 
             @Override
             public void onConnectFail(BleDevice bleDevice, BleException exception) {
+                isConnectedNow = false;
                 for (IZBBleGattCallback callback : mIZBBleGattCallbackList) {
                     if (callback != null) {
                         callback.onConnectFail(bleDevice, exception);
                     }
                 }
-                isConnectedNow = false;
             }
 
             @Override
             public void onConnectSuccess(BleDevice bleDevice, BluetoothGatt gatt, int status) {
+                isConnectedNow = true;
+                setBleDevice(bleDevice);
                 for (IZBBleGattCallback callback : mIZBBleGattCallbackList) {
                     if (callback != null) {
                         callback.onConnectSuccess(bleDevice, gatt, status);
                     }
                 }
-                isConnectedNow = true;
-                setBleDevice(bleDevice);
             }
 
             @Override
             public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
+                isConnectedNow = false;
                 for (IZBBleGattCallback callback : mIZBBleGattCallbackList) {
                     if (callback != null) {
                         callback.onDisConnected(isActiveDisConnected, bleDevice, gatt, status);
                     }
                 }
-                isConnectedNow = false;
             }
         };
 

@@ -204,67 +204,7 @@ public class ZBFormService extends Service {
             return result;
         }
 
-        /*
-         * address:1536.671.58.6
-         *         1536.A  .B .C
-         *         A 1536
-         *         B 0~72
-         *         C 0~107
-         */
-        private HashMap<String, Integer> findValidateAddress(String address, int pages) {
-            HashMap<String, Integer> valAddress = new HashMap<String, Integer>();
-            valAddress.put(address, 1);
-            if (TextUtils.isEmpty(address)) {
-                Log.i(TAG, "findValidateAddress null");
-                return valAddress;
-            }
-            Log.i(TAG, "findValidateAddress address=" + address);
-            String[] addressArray = address.split("\\.");
-            if (addressArray == null || addressArray.length < 4) {
-                if (address == null) {
-                    Log.i(TAG, "findValidateAddress null1");
-                } else {
-                    Log.i(TAG, "findValidateAddress invalid=" + addressArray.length);
-                }
-                return valAddress;
-            }
-
-            //key:page value:key
-
-            try {
-                int addressStatic = Integer.valueOf(addressArray[0]);
-                int addressA = Integer.valueOf(addressArray[1]);
-                int addressB = Integer.valueOf(addressArray[2]);
-                int addressC = Integer.valueOf(addressArray[3]);
-
-                for (int i = 1; i < pages; i++) {
-                    int nextA = addressA;
-                    int nextB = addressB;
-                    int nextC = addressC + i;
-                    if (nextC > 107) {
-                        nextB += 1;
-                        if (nextB > 72) {
-                            nextA += 1;
-                            nextB = 0;
-                        }
-                        nextC = i - 1;
-                    }
-                    String nextAddress = String.valueOf(addressStatic) + "." +
-                            String.valueOf(nextA) + "." +
-                            String.valueOf(nextB) + "." +
-                            String.valueOf(nextC);
-                    valAddress.put(nextAddress, i + 1);
-
-                    Log.i(TAG, "nextAddress=" + nextAddress);
-                }
-            } catch (Exception e) {
-                Log.i(TAG, "findValidateAddress e=" + e.getMessage());
-            }
-
-            return valAddress;
-        }
-
-        private void startPageFormActivity(TargetForm form) {
+        private void startPageFormActivity(TargetForm form){
             if (form == null) return;
             Intent intent = new Intent(mContext, FormDrawActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

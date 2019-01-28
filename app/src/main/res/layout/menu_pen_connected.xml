@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/menu_battery"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingLeft="6dp"
+    android:paddingRight="6dp"
+    android:gravity="center"
+    android:background="?android:attr/selectableItemBackgroundBorderless"
+    android:drawableLeft="@drawable/ic_menu_connected"
+    android:textColor="@color/white"
+    android:text="100%"
+    android:maxLines="1"
+    android:clickable="true" />

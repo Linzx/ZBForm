@@ -3,14 +3,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/pen_connect"
-        android:icon="@drawable/ic_menu_connected"
         android:orderInCategory="1"
-        android:title="@string/menu_item_connect"
-        app:showAsAction="ifRoom" />
+        android:title=""
+        app:actionLayout="@layout/menu_pen_connected"
+        app:showAsAction="always" />
     <item
         android:id="@+id/pen_disconnect"
         android:icon="@drawable/ic_menu_disconnect"
         android:orderInCategory="1"
         android:title="@string/menu_item_disconnect"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="always" />
 </menu>

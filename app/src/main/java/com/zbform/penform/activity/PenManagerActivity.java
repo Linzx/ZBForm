@@ -94,7 +94,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
         super.onDestroy();
         mBlePenManager.removeZBBleGattCallback(this);
         mBlePenManager.removeZBBleScanCallback(this);
-
+        mBlePenManager.removeBlePenStateCallBack(this);
     }
 
     @Override
