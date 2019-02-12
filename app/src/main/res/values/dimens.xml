@@ -5,7 +5,7 @@
     <dimen name="flexible_space_image_height">300dp</dimen>
     <dimen name="artist_image">230dp</dimen>
     <dimen name="drawer_icon_size">24dp</dimen>
-    <dimen name="fab_margin">16dp</dimen>
+    <dimen name="fab_margin">14dp</dimen>
     <dimen name="pen_info_margin_left">16dp</dimen>
     <dimen name="pen_info_title_size">18sp</dimen>
     <dimen name="pen_info_item_height">48dp</dimen>

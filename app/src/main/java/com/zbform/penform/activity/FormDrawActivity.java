@@ -12,16 +12,20 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PorterDuff;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,6 +40,7 @@ import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.dialog.LoadingDialog;
 import com.zbform.penform.json.FormInfo;
+import com.zbform.penform.json.FormItem;
 import com.zbform.penform.json.HwData;
 import com.zbform.penform.json.Point;
 import com.zbform.penform.net.ApiAddress;
@@ -59,6 +64,7 @@ public class FormDrawActivity extends BaseActivity {
 
     private static final int STATE_PREVIEW = 100;
     private static final int STATE_DRAW = 200;
+    private static final int STATE_ITEM_SHOW = 300;
 
     private long lastClickTime = 0L;
     private static final int FAST_CLICK_DELAY_TIME = 1000;
@@ -71,7 +77,10 @@ public class FormDrawActivity extends BaseActivity {
     private String mFormID;
     private String mFormName;
     private int mDrawState = STATE_PREVIEW;
+    private FrameLayout mRoot;
     private ImageView mImgView;
+    private ImageView mCusDrawItemView;
+    private ImageView mShowItem;
     private TextView mPageTitle;
     private Toolbar mToolbar;
     private ImageView mToolbarState;
@@ -84,8 +93,12 @@ public class FormDrawActivity extends BaseActivity {
     private Resources mResources;
     private double mFormHeight = 0;
     private double mFormWidth = 0;
+    private int mTargetWidth;
+    private int mTargetHeight;
     private ArrayList<HwData> mCacheHwData = new ArrayList<>();
     private HashMap<String, String> mValAddress;
+    private boolean mItemShow = false;
+    private DrawItemsTask mDrawItemsTask;
 
     ServiceConnection conn = new ServiceConnection() {
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -107,19 +120,24 @@ public class FormDrawActivity extends BaseActivity {
         setContentView(R.layout.formimg_activity);
         mZBFormBlePenManager = ZBFormBlePenManager.getInstance(FormDrawActivity.this);
         mResources = getResources();
+        mRoot = findViewById(R.id.ll_root);
         mImgView = (ImageView) findViewById(R.id.form_img);
+        mShowItem = findViewById(R.id.show_item);
+        mShowItem.setOnClickListener(mOnClickListener);
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         mToolbarState = findViewById(R.id.toolbar_state);
 
         mPageTitle = findViewById(R.id.page_title);
+
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fb_add_record);
+        fab.setOnClickListener(mOnClickListener);
+
         setToolBar();
 
         Intent intent = new Intent(this, ZBFormService.class);
         bindService(intent, conn, Service.BIND_AUTO_CREATE);
 
-        initFormData(getIntent());
-
-        startLoadingForm(LOAD_ACTION_PREVIEW);
+        initFormData(getIntent(),LOAD_ACTION_PREVIEW);
     }
 
     @Override
@@ -127,23 +145,26 @@ public class FormDrawActivity extends BaseActivity {
         super.onNewIntent(intent);
         Log.i(TAG, "onNewIntent");
         String newAddress = intent.getStringExtra("pageaddress");
+        Log.i(TAG, "onNewIntent newAddress="+newAddress);
+        Log.i(TAG, "onNewIntent mPageAddress="+mPageAddress);
         if (!TextUtils.isEmpty(newAddress) &&
                 newAddress.equals(mPageAddress)){
             return;
         }
-        initFormData(intent);
+        initFormData(intent, LOAD_ACTION_AUTO_OPEN);
 
         if (mToolbar != null) {
             Menu menu = mToolbar.getMenu();
             setUpMenu(menu);
         }
-        startLoadingForm(LOAD_ACTION_AUTO_OPEN);
     }
 
-    private void initFormData(Intent intent){
+    private void initFormData(Intent intent, int action){
         if (intent != null) {
             mPage = intent.getIntExtra("page", 1);
             mPageAddress = intent.getStringExtra("pageaddress");
+            mFormName = intent.getStringExtra("formname");
+            mCurrentPage = intent.getIntExtra("currentpage",1);
 
             String initAddress = intent.getStringExtra("initaddress");
             String newFormID= intent.getStringExtra("formid");
@@ -155,7 +176,7 @@ public class FormDrawActivity extends BaseActivity {
                     mService.stopDraw();
                 }
                 mDrawState = STATE_PREVIEW;
-                mCurrentPage = 1;
+//                mCurrentPage = 1;
                 mCacheHwData.clear();
                 //打开第一张
                 Log.i(TAG, "initFormData initAddress="+initAddress);
@@ -164,10 +185,11 @@ public class FormDrawActivity extends BaseActivity {
 
                 Log.i(TAG, "initFormData mValAddress size="+mValAddress.size());
                 setUpToolBarState(false);
-            }
 
-            mFormName = intent.getStringExtra("formname");
-            mCurrentPage = intent.getIntExtra("currentpage",1);
+                startNewForm(LOAD_ACTION_PREVIEW);
+            } else {
+                startLoadingFormImg(LOAD_ACTION_AUTO_OPEN);
+            }
             setUpPageTitle();
         }
     }
@@ -181,7 +203,21 @@ public class FormDrawActivity extends BaseActivity {
         }
     }
 
-    private void startLoadingForm(int action) {
+    private void startNewForm(int action){
+        showLoading(mResources.getString(R.string.loading));
+        mFromTask = new FormTask();
+        mFormTaskListener.setAction(action);
+        mFromTask.setOnFormTaskListener(mFormTaskListener);
+        mFromTask.execute(FormDrawActivity.this, mFormID);
+    }
+
+    private void startNewRecord(){
+        mNewRecordTask = new NewFormRecordTask();
+        mNewRecordTask.execute(FormDrawActivity.this, mFormID);
+        mNewRecordTask.setOnNewFormTaskListener(mNewRecordListener);
+    }
+
+    private void startLoadingFormImg(int action) {
         try {
             if (action == LOAD_ACTION_PRE_IMG) {
                 showLoading(mResources.getString(R.string.loading_pre));
@@ -189,7 +225,7 @@ public class FormDrawActivity extends BaseActivity {
                 showLoading(mResources.getString(R.string.loading_next));
             } else if (action == LOAD_ACTION_NEW_RECORD){
                 showLoading(mResources.getString(R.string.loading_new_record));
-            } else {
+            } else if (action == LOAD_ACTION_AUTO_OPEN){
                 showLoading(mResources.getString(R.string.loading));
             }
             Glide.with(this)
@@ -207,12 +243,6 @@ public class FormDrawActivity extends BaseActivity {
         } finally {
 
         }
-    }
-
-    private void startNewRecord(){
-        mFromTask = new FormTask();
-        mFromTask.setOnFormTaskListener(mFormTaskListener);
-        mFromTask.execute(FormDrawActivity.this, mFormID);
     }
 
     private class DrawImgRequestListener implements RequestListener<String,Bitmap> {
@@ -235,9 +265,11 @@ public class FormDrawActivity extends BaseActivity {
         @Override
         public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
             if (resource != null) {
-                Log.i(TAG, "onResourceReady W=" + resource.getWidth());
-                Log.i(TAG, "onResourceReady H=" + resource.getHeight());
 
+                mTargetWidth = resource.getWidth();
+                mTargetHeight = resource.getHeight();
+                Log.i(TAG, "onResourceReady W=" + mTargetWidth);
+                Log.i(TAG, "onResourceReady H=" + mTargetHeight);
                 mZBFormBlePenManager.setDrawView(mImgView, resource);
                 if (mFormHeight >0 && mFormWidth >0) {
                     mZBFormBlePenManager.setPaperSize((float) mFormWidth, (float) mFormHeight);
@@ -255,6 +287,7 @@ public class FormDrawActivity extends BaseActivity {
                     if (mDrawState == STATE_DRAW && mCacheHwData.size() >0) {
                         new DrawHwDataTask(resource).execute();
                     } else {
+                        Log.i(TAG, "dismiss!!!!");
                         FormDrawActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -272,6 +305,9 @@ public class FormDrawActivity extends BaseActivity {
                 }
                 if (mService != null) {
                     mService.setCurrentPageAddress(mPageAddress);
+                }
+                if (mItemShow) {
+                    showItemsReF();
                 }
             } else {
                 Log.i(TAG, "bitmap! null");
@@ -316,6 +352,10 @@ public class FormDrawActivity extends BaseActivity {
 
     private FormTaskListener mFormTaskListener = new FormTaskListener();
     public class FormTaskListener implements FormTask.OnFormTaskListener {
+        int mAction;
+        private void setAction(int action) {
+            mAction = action;
+        }
 
         @Override
         public void onStartGet() {
@@ -342,9 +382,8 @@ public class FormDrawActivity extends BaseActivity {
                 dismissLoading();
                 return;
             }
-            mNewRecordTask = new NewFormRecordTask();
-            mNewRecordTask.execute(FormDrawActivity.this, mFormID);
-            mNewRecordTask.setOnNewFormTaskListener(mNewRecordListener);
+
+            startLoadingFormImg(mAction);
         }
 
         @Override
@@ -487,6 +526,142 @@ public class FormDrawActivity extends BaseActivity {
         }
     }
 
+    private class DrawItemsTask {
+        Bitmap mDrawItemTarget;
+        Canvas mCanvas;
+        Paint mPaint;
+        float mScaleX = 0.1929f;
+        float mScaleY = 0.23457f;
+
+
+        public DrawItemsTask() {
+            mPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
+            mPaint.setStrokeWidth(2f);
+            mPaint.setColor(Color.BLUE);
+            mPaint.setStyle(Paint.Style.STROKE);
+        }
+
+        public void drawItems(){
+            try {
+                Log.i(TAG, "DrawItemsTask begin");
+                if (mFormInfo == null ||
+                        mFormInfo.results[0].items == null ||
+                        mFormInfo.results[0].items.length == 0) {
+                    return;
+                }
+
+                FormItem[] items = mFormInfo.results[0].items;
+
+                if (mDrawItemTarget == null) {
+                    mDrawItemTarget = Bitmap.createBitmap(mTargetWidth, mTargetHeight,
+                            Bitmap.Config.ARGB_8888);
+                    mCanvas = new Canvas(mDrawItemTarget);
+                } else {
+                    mCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                }
+
+                int width = mDrawItemTarget.getWidth();
+                int height = mDrawItemTarget.getHeight();
+                //计算scale
+                if (width > height) {
+                    if (mFormWidth > mFormHeight) {
+                        mScaleX = (float) width / (float) mFormWidth;
+                        mScaleY = (float) height / (float) mFormHeight;
+                    } else {
+                        mScaleX = (float) width / (float) mFormHeight;
+                        mScaleY = (float) height / (float) mFormWidth;
+                    }
+                } else {
+                    if (mFormWidth > mFormHeight) {
+                        mScaleY = (float) height / (float) mFormWidth;
+                        mScaleX = (float) width / (float) mFormHeight;
+                    } else {
+                        mScaleY = (float) height / (float) mFormHeight;
+                        mScaleX = (float) width / (float) mFormWidth;
+                    }
+                }
+
+                for (FormItem item : items) {
+                    if (item != null && mCurrentPage == item.getPage()) {
+                        Log.i(TAG, "DrawItemsTask item=" + item);
+                        double left = convertPageSize(item.getLocaX()) * mScaleX;
+                        double top = convertPageSize(item.getLocaY()) * mScaleY;
+                        double right = convertPageSize(item.getLocaX() + item.getLocaW()) * mScaleX;
+                        double bottom = convertPageSize(item.getLocaY() + item.getLocaH()) * mScaleY;
+
+                        Log.i(TAG, "DrawItemsTask left=" + left);
+                        Log.i(TAG, "DrawItemsTask top=" + top);
+                        Log.i(TAG, "DrawItemsTask right=" + right);
+                        Log.i(TAG, "DrawItemsTask bottom=" + bottom);
+                        mCanvas.drawRect((float) left, (float) top, (float) right, (float) bottom, mPaint);
+                    }
+                }
+
+                if (mCusDrawItemView == null) {
+                    mCusDrawItemView = new ImageView(FormDrawActivity.this);
+                    FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                            mImgView.getWidth(), mImgView.getHeight());
+                    params.gravity = Gravity.CENTER;
+                    mCusDrawItemView.setLayoutParams(params);
+                    mCusDrawItemView.setImageBitmap(mDrawItemTarget);
+                    mRoot.addView(mCusDrawItemView);
+                } else {
+                    mCusDrawItemView.setImageBitmap(mDrawItemTarget);
+                    mCusDrawItemView.invalidate();
+                }
+            } catch (Exception e) {
+                Log.i(TAG, "queue ex=" + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        public void clear() {
+            if (mDrawItemTarget != null && !mDrawItemTarget.isRecycled()) {
+                mDrawItemTarget.recycle();
+                mDrawItemTarget = null;
+            }
+        }
+    }
+
+    private View.OnClickListener mOnClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if (v.getId() == R.id.fb_add_record) {
+                if (mDrawState == STATE_DRAW) {
+                    mCurrentPage = 1;
+                    mCacheHwData.clear();
+                    startLoadingFormImg(LOAD_ACTION_NEW_RECORD);
+                } else {
+                    showLoading(mResources.getString(R.string.loading_new_record));
+                    startNewRecord();
+                }
+            } else {
+                Log.i("whd", "item click");
+                if (mItemShow) {
+                    mShowItem.setImageResource(R.drawable.ic_show_item);
+                    if (mCusDrawItemView != null) {
+                        mCusDrawItemView.setVisibility(View.GONE);
+                    }
+                    mItemShow = false;
+                } else {
+                    mShowItem.setImageResource(R.drawable.ic_show_item_selected);
+                    if (mCusDrawItemView != null) {
+                        mCusDrawItemView.setVisibility(View.VISIBLE);
+                    }
+                    showItemsReF();
+                    mItemShow = true;
+                }
+            }
+        }
+    };
+
+    private void showItemsReF(){
+        if (mDrawItemsTask == null) {
+            mDrawItemsTask = new DrawItemsTask();
+        }
+        mDrawItemsTask.drawItems();
+    }
+
     public double convertPageSize(double x) {
         return x * 10 * 8 / 0.3;
     }
@@ -522,7 +697,7 @@ public class FormDrawActivity extends BaseActivity {
         }
 
         Log.i(TAG, "mCurrentPage4");
-        startLoadingForm(action);
+        startLoadingFormImg(action);
         if (mService != null) {
             mService.setCurrentPage(mCurrentPage);
         }
@@ -589,15 +764,12 @@ public class FormDrawActivity extends BaseActivity {
             case android.R.id.home:
                 finish();
                 return true;
-            case R.id.add_record:
-                if (mDrawState == STATE_DRAW) {
-                    mCurrentPage = 1;
-                    mCacheHwData.clear();
-                    startLoadingForm(LOAD_ACTION_NEW_RECORD);
-                } else {
-                    showLoading(mResources.getString(R.string.loading_new_record));
-                    startNewRecord();
-                }
+            case R.id.menu_view_record:
+                Intent intent = new Intent(FormDrawActivity.this,
+                        RecordListActivity.class);
+                intent.putExtra("formId", mFormID);
+                startActivity(intent);
+                FormDrawActivity.this.finish();
                 return true;
             case R.id.img_pre:
                 switchPages(LOAD_ACTION_PRE_IMG);
@@ -616,6 +788,9 @@ public class FormDrawActivity extends BaseActivity {
         // Unbind from the service
         if (mService != null) {
             mService.stopDraw();
+        }
+        if (mDrawItemsTask != null){
+            mDrawItemsTask.clear();
         }
         dismissLoading();
         unbindService(conn);

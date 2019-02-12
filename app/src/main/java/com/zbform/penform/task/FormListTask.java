@@ -90,7 +90,7 @@ public class FormListTask implements IZBformNetBeanCallBack {
 					}
 				}
 			} else {
-				Log.i("whd", "user null");
+				Log.i("whd", "form list null");
 				if (mOnFormTaskListener != null) {
 					mOnFormTaskListener.onGetFail();
 				}

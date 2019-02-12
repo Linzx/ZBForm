@@ -43,7 +43,7 @@
         android:gravity="center"
         android:textAppearance="?android:attr/textAppearanceListItemSmall"
         android:autoLink="all"
-        android:text="查看记录"
+        android:text="@string/view_record_title"
         android:textColor="@color/colorPrimary"
         app:layout_constraintEnd_toEndOf="@+id/form_img"
         app:layout_constraintStart_toStartOf="@+id/form_img"

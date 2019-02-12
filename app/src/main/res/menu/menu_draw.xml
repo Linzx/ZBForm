@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-
     <item
-        android:id="@+id/add_record"
-        android:icon="@drawable/ic_menu_add"
+        android:id="@+id/menu_view_record"
+        android:icon="@drawable/ic_view_record"
         android:orderInCategory="1"
-        android:title="@string/menu_item_add_record"
+        android:title="@string/view_record_title"
         app:showAsAction="ifRoom" />
 
     <item
