@@ -24,6 +24,7 @@ import com.zbform.penform.R;
 import com.zbform.penform.json.RecordItem;
 import com.zbform.penform.json.RecordListInfo;
 import com.zbform.penform.task.RecordListTask;
+import com.zbform.penform.util.PreferencesUtility;
 
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
@@ -44,12 +45,14 @@ public class RecordListActivity extends BaseActivity implements RecordListTask.O
     private ActionBar mActionBar;
 
     private Context mContext;
+    private PreferencesUtility mPreferencesUtility;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.fragment_recordlist);
 
+        mPreferencesUtility = PreferencesUtility.getInstance(this);
         mContext = this;
         mFormId = getIntent().getStringExtra("formId");
 
@@ -152,6 +155,16 @@ public class RecordListActivity extends BaseActivity implements RecordListTask.O
             mAdapter.notifyDataSetChanged();
         }
         ptrClassicFrameLayout.refreshComplete();
+
+        if (mPreferencesUtility.getPreRecordLast() && mData.size() > 0) {
+            RecordItem recordItem = mData.get(0);
+            Intent intent = new Intent(mContext, RecordActivity.class);
+            intent.putExtra("formId", mFormId);
+            intent.putExtra("recordId", recordItem.getHwuuid());
+            intent.putExtra("page", recordItem.getHwpage());
+            intent.putExtra("recordCode", recordItem.getHwcode());
+            startActivity(intent);
+        }
     }
 
     @Override

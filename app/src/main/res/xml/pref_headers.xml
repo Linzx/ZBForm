@@ -11,4 +11,9 @@
         android:icon="@drawable/ic_pencircle"
         android:title="@string/pref_header_pen_manage" />
 
+    <header
+        android:fragment="com.zbform.penform.fragment.FormSettingFragment"
+        android:icon="@drawable/ic_form_setting"
+        android:title="@string/pref_header_form" />
+
 </preference-headers>

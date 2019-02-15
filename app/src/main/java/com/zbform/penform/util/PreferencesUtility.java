@@ -16,6 +16,9 @@ public final class PreferencesUtility {
     public static final String SHARED_LAST_APK_VERSION_KEY = "last_apk_version";
     private static final String PRE_INTRODUCE_SHOWED = "show_introduce";
 
+    public static final String PRE_FORM_DEF_NEW = "from_def_new";
+    public static final String PRE_RECORD_LAST = "record_last_open";
+
     public static final String BLEPEN_NAME = "ble_pen_name";
     public static final String BLEPEN_MAC = "ble_pen_mac";
 
@@ -72,6 +75,26 @@ public final class PreferencesUtility {
     public void setShowIntroduce(boolean show) {
         final SharedPreferences.Editor editor = mPreferences.edit();
         editor.putBoolean(PRE_INTRODUCE_SHOWED, show);
+        editor.apply();
+    }
+
+    public boolean getPreFormDefNew() {
+        return mPreferences.getBoolean(PRE_FORM_DEF_NEW,false);
+    }
+
+    public void setPreFormDefNew(boolean check) {
+        final SharedPreferences.Editor editor = mPreferences.edit();
+        editor.putBoolean(PRE_FORM_DEF_NEW, check);
+        editor.apply();
+    }
+
+    public boolean getPreRecordLast() {
+        return mPreferences.getBoolean(PRE_RECORD_LAST,false);
+    }
+
+    public void setPreRecordLast(boolean check) {
+        final SharedPreferences.Editor editor = mPreferences.edit();
+        editor.putBoolean(PRE_RECORD_LAST, check);
         editor.apply();
     }
 

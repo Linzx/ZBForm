@@ -9,6 +9,7 @@ import android.view.MenuItem;
 
 import com.zbform.penform.R;
 import com.zbform.penform.fragment.AccountFragment;
+import com.zbform.penform.fragment.FormSettingFragment;
 import com.zbform.penform.settings.AppCompatPreferenceActivity;
 
 import java.util.List;
@@ -28,7 +29,8 @@ public class SettingActivity extends AppCompatPreferenceActivity {
 
     protected boolean isValidFragment(String fragmentName) {
         return PreferenceFragment.class.getName().equals(fragmentName)
-                || AccountFragment.class.getName().equals(fragmentName);
+                || AccountFragment.class.getName().equals(fragmentName)
+                || FormSettingFragment.class.getName().equals(fragmentName);
     }
 
     @Override

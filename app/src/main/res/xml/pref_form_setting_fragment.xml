@@ -1,0 +1,14 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+    <SwitchPreference
+        android:persistent="false"
+        android:key="form_def_new_key"
+        android:summary="@string/setting_form_new"/>
+
+    <SwitchPreference
+        android:persistent="false"
+        android:key="record_last_open_key"
+        android:summary="@string/setting_record_last"/>
+
+</PreferenceScreen>
