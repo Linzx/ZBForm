@@ -30,7 +30,7 @@ import com.zbform.penform.R;
 import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.dialog.LoadingDialog;
-import com.zbform.penform.settings.DeviceAdapter;
+import com.zbform.penform.adapter.DeviceAdapter;
 import com.zbform.penform.util.PreferencesUtility;
 
 import java.util.List;
