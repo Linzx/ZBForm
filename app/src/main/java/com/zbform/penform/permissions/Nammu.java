@@ -37,7 +37,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Created by Michal Tajchert on 2015-06-04.
  */
 public class Nammu {
     private static final String TAG = Nammu.class.getSimpleName();

@@ -10,7 +10,6 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 
 /**
- * 作者：漆可 on 2016/9/1 10:29
  */
 public class AnimationHelper
 {
