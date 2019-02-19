@@ -162,7 +162,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         setSupportActionBar(toolbar);
         mActionBar = getSupportActionBar();
         mActionBar.setDisplayHomeAsUpEnabled(true);
-        mActionBar.setTitle(mRecordCode);
+        mActionBar.setTitle("");
     }
 
 
@@ -182,8 +182,13 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
         getMenuInflater().inflate(R.menu.menu_page, menu);
 
+        MenuItem recognize = menu.findItem(R.id.img_form_recognize);
+        MenuItem data = menu.findItem(R.id.img_form_data);
         MenuItem pre = menu.findItem(R.id.img_pre);
         MenuItem next = menu.findItem(R.id.img_next);
+
+        recognize.setVisible(true);
+        data.setVisible(true);
 
         if (pre != null && next != null) {
             if (mPage > 1) {
@@ -203,6 +208,11 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         switch (item.getItemId()) {
             case android.R.id.home:
                 finish();
+                return true;
+            case R.id.img_form_recognize:
+
+                return true;
+            case R.id.img_form_data:
                 return true;
             case R.id.img_pre:
                 switchPages(PRE_IMG);

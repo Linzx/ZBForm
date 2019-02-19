@@ -39,6 +39,8 @@
     <string name="menu_item_add_record">创建表单记录</string>
     <string name="menu_item_pre">上一页</string>
     <string name="menu_item_next">下一页</string>
+    <string name="menu_item_recognize">表单识别</string>
+    <string name="menu_item_data">表单数据</string>
     <string name="toast_already_first">已经是第一页!</string>
     <string name="toast_already_last">已经是最后一页!</string>
     <string name="toast_new_record">记录已创建，请开始书写!</string>

@@ -28,6 +28,10 @@ public class ApiAddress {
             "ws://demo.zbform.com:8080/zbform/ws/hwitem.ws" :
             "ws://www.zbform.com:8080/zbform/ws/hwitem.ws";
 
+    public static final String HWR_RECOGNIZE_BASE = DEBUG == true ?
+            "http://47.93.38.17:8080/" :
+            "http://47.93.38.17/";
+
     /// <summary>
     /// 笔迹上传websocket url
     /// </summary>
@@ -71,6 +75,24 @@ public class ApiAddress {
 
     public static String Hwitem_delete = BaseHttpUrl + "hwitem/delete";
 
+    /**
+     * 表单识别接口
+     * request: formid,recordid,items data
+     */
+    public static String HWR_RECOGNIZE = HWR_RECOGNIZE_BASE + "hwr/recognize";
+
+    public static String getHwrRecognizeUri(String formId, String recordId) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ApiAddress.HWR_RECOGNIZE);
+        sb.append("&formid=");
+        sb.append(Uri.encode(formId));
+        sb.append("&recordid=");
+        sb.append(Uri.encode(recordId));
+
+        Log.i("zxl", "get recognize url=" + sb.toString());
+        return sb.toString();
+    }
+
     public static String getLoginUri(String userid, String password) {
         String signcode = getSignCode(userid + SYSTEM_KEY);
 
@@ -89,14 +111,14 @@ public class ApiAddress {
         return sb.toString();
     }
 
-    public static String getTimeStamp(){
+    public static String getTimeStamp() {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd HH:mm:ss.SSS");// HH:mm:ss
         Date date = new Date(System.currentTimeMillis());
         return simpleDateFormat.format(date);
     }
 
     public static String getNewRecordUri(String userid, String userkey, String formid) {
-        String signCode = getSignCode(userid+userkey+SYSTEM_KEY);
+        String signCode = getSignCode(userid + userkey + SYSTEM_KEY);
 
         StringBuilder sb = new StringBuilder();
         sb.append(ApiAddress.Hw_Create);
@@ -114,7 +136,7 @@ public class ApiAddress {
     }
 
     public static String getFormImgUri(String userid, String userkey, String uuid, int page) {
-        String signCode = getSignCode(userid+userkey+SYSTEM_KEY);
+        String signCode = getSignCode(userid + userkey + SYSTEM_KEY);
 
         StringBuilder sb = new StringBuilder();
         sb.append(ApiAddress.Form_Get_Img);
@@ -132,7 +154,7 @@ public class ApiAddress {
     }
 
     public static String getFormListUri(String userid, String userkey) {
-        String signCode = getSignCode(userid+userkey+SYSTEM_KEY);
+        String signCode = getSignCode(userid + userkey + SYSTEM_KEY);
 
         StringBuilder sb = new StringBuilder();
         sb.append(ApiAddress.Form_List);
@@ -148,7 +170,7 @@ public class ApiAddress {
     }
 
     public static String getFormUri(String userid, String userkey, String formId) {
-        String signCode = getSignCode(userid+userkey+SYSTEM_KEY);
+        String signCode = getSignCode(userid + userkey + SYSTEM_KEY);
 
         StringBuilder sb = new StringBuilder();
         sb.append(ApiAddress.Form_Get);
@@ -166,7 +188,7 @@ public class ApiAddress {
     }
 
     public static String getRecordListUri(String userid, String userkey, String formId) {
-        String signCode = getSignCode(userid+userkey+SYSTEM_KEY);
+        String signCode = getSignCode(userid + userkey + SYSTEM_KEY);
 
         StringBuilder sb = new StringBuilder();
         sb.append(ApiAddress.Hw_List);
@@ -183,9 +205,8 @@ public class ApiAddress {
         return sb.toString();
     }
 
-    public static String getRecordUri(String userid, String userkey, String formId, String hwId)
-    {
-        String signCode = getSignCode(userid+userkey+SYSTEM_KEY);
+    public static String getRecordUri(String userid, String userkey, String formId, String hwId) {
+        String signCode = getSignCode(userid + userkey + SYSTEM_KEY);
 
         StringBuilder sb = new StringBuilder();
         sb.append(ApiAddress.Hw_Get);
@@ -204,7 +225,7 @@ public class ApiAddress {
         return sb.toString();
     }
 
-    public static String getSignCode(String keyword){
+    public static String getSignCode(String keyword) {
         try {
             return getSHA(getSHA(keyword));
         } catch (NoSuchAlgorithmException e) {
