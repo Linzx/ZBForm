@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/item_menu_header">
+
+    <TextView
+        android:id="@+id/header_item_name"
+        android:layout_width="@dimen/lv_menu_item_column1_width"
+        android:layout_height="?attr/listPreferredItemHeightSmall"
+        android:textSize="16sp"
+        android:textColor="@color/text_color"
+        android:gravity="center"
+        android:layout_alignParentLeft="true"
+        android:text="@string/lv_menu_header1"
+        android:background="@color/item_menu_header"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <View
+        android:id="@+id/header_item_divider1"
+        android:layout_width="1dp"
+        android:layout_height="?attr/listPreferredItemHeightSmall"
+        android:background="@color/listDividerColor"
+        app:layout_constraintStart_toEndOf="@id/header_item_name"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <TextView
+        android:id="@+id/header_item_content"
+        android:layout_width="wrap_content"
+        android:layout_height="?attr/listPreferredItemHeightSmall"
+        android:text="@string/lv_menu_header2"
+        android:gravity="center"
+        android:textColor="@color/text_color"
+        android:background="@color/item_menu_header"
+        app:layout_constraintStart_toEndOf="@id/header_item_divider1"
+        app:layout_constraintEnd_toStartOf="@id/header_item_divider2"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:textSize="16sp" />
+
+    <View
+        android:id="@+id/header_item_divider2"
+        android:layout_width="1dp"
+        android:layout_height="?attr/listPreferredItemHeightSmall"
+        android:background="@color/listDividerColor"
+        app:layout_constraintEnd_toStartOf="@id/header_modify"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <TextView
+        android:id="@+id/header_modify"
+        android:layout_width="@dimen/lv_menu_item_column3_width"
+        android:layout_height="?attr/listPreferredItemHeightSmall"
+        android:text="@string/lv_menu_header3"
+        android:gravity="center"
+        android:textColor="@color/text_color"
+        android:textSize="16sp"
+        android:background="@color/item_menu_header"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+</android.support.constraint.ConstraintLayout>

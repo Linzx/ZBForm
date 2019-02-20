@@ -51,6 +51,11 @@
     <string name="loading_pre">上一页...</string>
     <string name="loading_next">下一页...</string>
     <string name="page_title">第<xliff:g id="page">%d</xliff:g>页</string>
+    <string name="lv_menu_header1">字段名</string>
+    <string name="lv_menu_header2">表单项数据</string>
+    <string name="lv_menu_header3">操作</string>
+    <string name="lv_menu_modify">修正</string>
+    <string name="dialog_cancle">取消</string>
 
 
     <string name="menu_item_connect">数码笔已连接</string>

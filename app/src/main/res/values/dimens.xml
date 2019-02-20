@@ -10,4 +10,7 @@
     <dimen name="pen_info_title_size">18sp</dimen>
     <dimen name="pen_info_item_height">48dp</dimen>
     <dimen name="pen_info_content_size">14sp</dimen>
+
+    <dimen name="lv_menu_item_column1_width">110dp</dimen>
+    <dimen name="lv_menu_item_column3_width">50dp</dimen>
 </resources>

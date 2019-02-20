@@ -9,6 +9,7 @@
     <color name="accent_material_light">#0061b2</color><!-- login color-->
     <!-- for signui -->
 
+
     <color name="white_text">#fafafa</color>
     <color name="text_Grey">#c1c1c2</color>
     <color name="colorWhite">#ffffff</color>
@@ -27,6 +28,8 @@
     <color name="widget_background_color">#a0000000</color>
 
     <!-- Menu Item Color -->
+    <color name="item_dialog_edit">#f8f5f2</color>
+    <color name="item_menu_header">#eef4f4</color>
     <color name="menu_transparent">#00FFFFFF</color>
     <color name="menu_item_blue">#3487f4</color>
     <color name="menu_item_blue_dark">#2F79DB</color>
