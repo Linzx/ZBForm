@@ -2,10 +2,16 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/img_form_recognize"
-        android:icon="@drawable/ic_form_recognize"
+        android:id="@+id/img_pre"
+        android:icon="@drawable/verticalright"
         android:orderInCategory="1"
-        android:title="@string/menu_item_recognize"
+        android:title="@string/menu_item_pre"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/img_next"
+        android:icon="@drawable/verticalleft"
+        android:orderInCategory="1"
+        android:title="@string/menu_item_next"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/img_form_data"
@@ -13,19 +19,4 @@
         android:orderInCategory="1"
         android:title="@string/menu_item_data"
         app:showAsAction="ifRoom" />
-    <item
-        android:id="@+id/img_pre"
-        android:icon="@drawable/verticalright"
-        android:orderInCategory="1"
-        android:title="@string/menu_item_pre"
-        app:showAsAction="ifRoom" />
-
-    <item
-        android:id="@+id/img_next"
-        android:icon="@drawable/verticalleft"
-        android:orderInCategory="1"
-        android:title="@string/menu_item_next"
-        app:showAsAction="ifRoom" />
-
-
 </menu>

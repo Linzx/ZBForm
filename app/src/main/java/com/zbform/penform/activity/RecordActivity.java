@@ -14,9 +14,11 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -55,7 +57,8 @@ import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 
-public class RecordActivity extends BaseActivity implements RecordTask.OnTaskListener, ZBFormBlePenManager.IBlePenDrawCallBack {
+public class RecordActivity extends BaseActivity implements RecordTask.OnTaskListener,
+        ZBFormBlePenManager.IBlePenDrawCallBack,View.OnClickListener {
 
     public static final String TAG = RecordActivity.class.getSimpleName();
 
@@ -78,6 +81,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     private LoadingDialog mLoadingDialog;
     ActionBar mActionBar;
     ImageView mRecordImg;
+    ImageView mItemRecognize;
+    DrawerLayout mDrawerLayout;
     private ListView mListView;
     private MenuItemAdapter mAdapter;
 
@@ -118,6 +123,9 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         mContext = this;
         mRecordImg = findViewById(R.id.record_img);
         mListView = findViewById(R.id.id_lv_right_menu);
+        mItemRecognize = findViewById(R.id.item_recognize);
+        mItemRecognize.setOnClickListener(this);
+        mDrawerLayout = findViewById(R.id.fd_record);
         mAdapter = new MenuItemAdapter(mContext);
         LayoutInflater inflater = LayoutInflater.from(this);
         View header = inflater.inflate(R.layout.listitem_recorditem_header_layout, mListView, false);
@@ -189,17 +197,23 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
     }
 
+    private void toggleRightSliding(){
+        if(mDrawerLayout.isDrawerOpen(Gravity.END)){
+            mDrawerLayout.closeDrawer(Gravity.END);
+        }else{
+            mDrawerLayout.openDrawer(Gravity.END);
+        }
+    }
+
     @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
 
         getMenuInflater().inflate(R.menu.menu_page, menu);
 
-        MenuItem recognize = menu.findItem(R.id.img_form_recognize);
         MenuItem data = menu.findItem(R.id.img_form_data);
         MenuItem pre = menu.findItem(R.id.img_pre);
         MenuItem next = menu.findItem(R.id.img_next);
 
-        recognize.setVisible(true);
         data.setVisible(true);
 
         if (pre != null && next != null) {
@@ -221,10 +235,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             case android.R.id.home:
                 finish();
                 return true;
-            case R.id.img_form_recognize:
-
-                return true;
             case R.id.img_form_data:
+                toggleRightSliding();
                 return true;
             case R.id.img_pre:
                 switchPages(PRE_IMG);
@@ -385,6 +397,13 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     @Override
     public void onOffLineCoordDraw(String pageAddress, int nX, int nY) {
 
+    }
+
+    @Override
+    public void onClick(View v) {
+        if (v.getId() == R.id.item_recognize){
+
+        }
     }
 
     private class RecordImgRequestListener implements RequestListener<String, Bitmap> {
