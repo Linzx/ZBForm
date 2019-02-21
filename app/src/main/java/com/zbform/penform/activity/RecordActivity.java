@@ -38,11 +38,14 @@ import com.zbform.penform.json.FormInfo;
 import com.zbform.penform.json.FormItem;
 import com.zbform.penform.json.HwData;
 import com.zbform.penform.json.Point;
+import com.zbform.penform.json.RecognizeItem;
+import com.zbform.penform.json.RecognizeResultInfo;
 import com.zbform.penform.json.RecordDataItem;
 import com.zbform.penform.json.RecordInfo;
 import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.services.ZBFormService;
 import com.zbform.penform.task.FormTask;
+import com.zbform.penform.task.RecognizeTask;
 import com.zbform.penform.task.RecordTask;
 
 import java.util.ArrayList;
@@ -210,7 +213,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                 finish();
                 return true;
             case R.id.img_form_recognize:
-
+                recognizeStrokes();
                 return true;
             case R.id.img_form_data:
                 return true;
@@ -229,6 +232,32 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                 break;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void recognizeStrokes() {
+        List<RecognizeItem> itemList = new ArrayList<>();
+        for (RecordDataItem item : mCurrentItems) {
+            HwData hwData = new Gson().fromJson(item.getHwdata(), new TypeToken<HwData>() {
+            }.getType());
+
+            RecognizeItem it = new RecognizeItem();
+            it.setId(item.getItemcode());
+
+            for (FormItem formItem : mFormInfo.results[0].getItems()) {
+                if (formItem.getItem().equals(item.itemcode)) {
+                    it.setType(formItem.getType());
+                    break;
+                }
+            }
+
+            it.setStroke(new HwData[]{hwData});
+
+            itemList.add(it);
+        }
+
+        RecognizeTask recognizeTask = new RecognizeTask(mContext, mFormId, mRecordId, itemList.toArray(new RecognizeItem[itemList.size()]));
+        recognizeTask.execute();
+
     }
 
     @Override
@@ -482,28 +511,28 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             }
         }
 
-        private List<RecordDataItem> getCurrentItems() {
-            if (mPage == 1 && recordResults != null && recordResults.size() > 0) {
-                return Arrays.asList(recordResults.get(0).getItems());
-            }
-            List<RecordDataItem> itemList = new ArrayList<>();
-            if (recordResults.size() > 0) {
-                RecordDataItem[] items = recordResults.get(0).getItems();
-                for (RecordDataItem item : items) {
-
-                    HwData hwData = new Gson().fromJson(item.getHwdata(), new TypeToken<HwData>() {
-                    }.getType());
-                    Log.i(TAG, "hwdata pageaddress = " + hwData.getP() + "   mPageAddress=" + mPageAddress);
-                    if (hwData.getP().equals(mPageAddress)) {
-                        Log.i(TAG, "add item to list");
-                        itemList.add(item);
-                    }
-                }
-            }
-            return itemList;
-        }
     }
 
+    public List<RecordDataItem> getCurrentItems() {
+        if (mPage == 1 && recordResults != null && recordResults.size() > 0) {
+            return Arrays.asList(recordResults.get(0).getItems());
+        }
+        List<RecordDataItem> itemList = new ArrayList<>();
+        if (recordResults.size() > 0) {
+            RecordDataItem[] items = recordResults.get(0).getItems();
+            for (RecordDataItem item : items) {
+
+                HwData hwData = new Gson().fromJson(item.getHwdata(), new TypeToken<HwData>() {
+                }.getType());
+                Log.i(TAG, "hwdata pageaddress = " + hwData.getP() + "   mPageAddress=" + mPageAddress);
+                if (hwData.getP().equals(mPageAddress)) {
+                    Log.i(TAG, "add item to list");
+                    itemList.add(item);
+                }
+            }
+        }
+        return itemList;
+    }
 
     private class RecordImgTransformation extends BitmapTransformation {
 
@@ -553,6 +582,28 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         @Override
         public void onGetFail() {
             dismissLoading();
+        }
+
+        @Override
+        public void onCancelled() {
+
+        }
+    };
+
+    private RecognizeTask.OnRecognizeTaskListener mRecognizeTaskListener = new RecognizeTask.OnRecognizeTaskListener() {
+        @Override
+        public void onStartGet() {
+
+        }
+
+        @Override
+        public void onGetSuccess(RecognizeResultInfo info) {
+
+        }
+
+        @Override
+        public void onGetFail() {
+
         }
 
         @Override

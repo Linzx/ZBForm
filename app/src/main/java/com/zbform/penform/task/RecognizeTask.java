@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.lidroid.xutils.exception.HttpException;
 import com.lidroid.xutils.http.RequestParams;
@@ -49,13 +50,20 @@ public class RecognizeTask implements IZBformNetBeanCallBack {
     }
 
     public void execute() {
-        String recognizeUri = ApiAddress.getHwrRecognizeUri(mFormId, mRecordId);
+        String recognizeUri = ApiAddress.HWR_RECOGNIZE;
         ZBformNetBean recognizeTask = new ZBformNetBean(mContext, recognizeUri,
                 HttpRequest.HttpMethod.POST);
         recognizeTask.setNetTaskCallBack(this);
 
         RequestParams params = new RequestParams();
-        Gson gson = new Gson();
+        params.addHeader("Content-Type", "application/json;Charset=UTF-8");
+
+        params.addBodyParameter("formid", mFormId);
+        params.addBodyParameter("recordid", mRecordId);
+
+        Gson gson = new GsonBuilder()
+                .excludeFieldsWithoutExposeAnnotation()
+                .create();
         String json = gson.toJson(mItems);
         Log.i(TAG, "post items =" + json);
         params.addBodyParameter("items", json);
@@ -69,6 +77,8 @@ public class RecognizeTask implements IZBformNetBeanCallBack {
 
     @Override
     public void onStart() {
+        Log.i(TAG, "onStart");
+
         if (mOnRecognizeTaskListener != null) {
             mOnRecognizeTaskListener.onStartGet();
         }
@@ -76,6 +86,8 @@ public class RecognizeTask implements IZBformNetBeanCallBack {
 
     @Override
     public void onCancelled() {
+        Log.i(TAG, "onCancelled");
+
         if (mOnRecognizeTaskListener != null) {
             mOnRecognizeTaskListener.onCancelled();
         }
@@ -89,9 +101,11 @@ public class RecognizeTask implements IZBformNetBeanCallBack {
 
     @Override
     public void onSuccess(ResponseInfo<String> responseInfo) {
+        Log.i(TAG, "onSuccess");
+
         try {
             String resultGson = responseInfo.result;
-            Log.i(TAG, "result form Gson!!=" + resultGson);
+            Log.i(TAG, "result form Gson = " + resultGson);
             Gson gson = new Gson();
             RecognizeResultInfo result = gson.fromJson(resultGson, new TypeToken<RecognizeResultInfo>() {
             }.getType());
@@ -120,6 +134,9 @@ public class RecognizeTask implements IZBformNetBeanCallBack {
 
     @Override
     public void onFailure(HttpException error, String msg) {
+        Log.i(TAG, "onFailure" + "error: "+ error.toString());
+        Log.i(TAG, "msg: " + msg);
+
         if (mOnRecognizeTaskListener != null) {
             mOnRecognizeTaskListener.onGetFail();
         }

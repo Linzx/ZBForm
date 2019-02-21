@@ -84,7 +84,7 @@ public class ApiAddress {
     public static String getHwrRecognizeUri(String formId, String recordId) {
         StringBuilder sb = new StringBuilder();
         sb.append(ApiAddress.HWR_RECOGNIZE);
-        sb.append("&formid=");
+        sb.append("?formid=");
         sb.append(Uri.encode(formId));
         sb.append("&recordid=");
         sb.append(Uri.encode(recordId));

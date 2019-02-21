@@ -1,8 +1,13 @@
 package com.zbform.penform.json;
 
+import com.google.gson.annotations.Expose;
+
 public class RecognizeItem {
+    @Expose(serialize = true, deserialize = true)
     String id;
+    @Expose(serialize = true, deserialize = true)
     String type;
+    @Expose(serialize = true, deserialize = true)
     HwData[] stroke;
 
     public String getId() {

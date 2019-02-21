@@ -3,7 +3,7 @@ package com.zbform.penform.json;
 public class RecognizeResultInfo {
     int errcode;
     String msg;
-    ResultData[] data;
+    ResultData data;
 
     public int getErrcode() {
         return errcode;
@@ -21,11 +21,11 @@ public class RecognizeResultInfo {
         this.msg = msg;
     }
 
-    public ResultData[] getData() {
+    public ResultData getData() {
         return data;
     }
 
-    public void setData(ResultData[] data) {
+    public void setData(ResultData data) {
         this.data = data;
     }
 }
