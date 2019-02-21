@@ -1,6 +1,7 @@
 package com.zbform.penform.activity;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
@@ -11,19 +12,25 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation;
 import com.bumptech.glide.request.RequestListener;
@@ -50,11 +57,11 @@ import com.zbform.penform.task.RecordTask;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 
-public class RecordActivity extends BaseActivity implements RecordTask.OnTaskListener, ZBFormBlePenManager.IBlePenDrawCallBack {
+public class RecordActivity extends BaseActivity implements RecordTask.OnTaskListener,
+        ZBFormBlePenManager.IBlePenDrawCallBack,View.OnClickListener {
 
     public static final String TAG = RecordActivity.class.getSimpleName();
 
@@ -77,6 +84,10 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     private LoadingDialog mLoadingDialog;
     ActionBar mActionBar;
     ImageView mRecordImg;
+    ImageView mItemRecognize;
+    DrawerLayout mDrawerLayout;
+    private ListView mListView;
+    private MenuItemAdapter mAdapter;
 
     Path mPath = new Path();
     float mScaleX = 0.1929f;
@@ -114,6 +125,15 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
         mContext = this;
         mRecordImg = findViewById(R.id.record_img);
+        mListView = findViewById(R.id.id_lv_right_menu);
+        mItemRecognize = findViewById(R.id.item_recognize);
+        mItemRecognize.setOnClickListener(this);
+        mDrawerLayout = findViewById(R.id.fd_record);
+        mAdapter = new MenuItemAdapter(mContext);
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View header = inflater.inflate(R.layout.listitem_recorditem_header_layout, mListView, false);
+        mListView.addHeaderView(header);
+
         mFormId = getIntent().getStringExtra("formId");
         mRecordId = getIntent().getStringExtra("recordId");
         mPage = getIntent().getIntExtra("page", 0);
@@ -180,17 +200,23 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
     }
 
+    private void toggleRightSliding(){
+        if(mDrawerLayout.isDrawerOpen(Gravity.END)){
+            mDrawerLayout.closeDrawer(Gravity.END);
+        }else{
+            mDrawerLayout.openDrawer(Gravity.END);
+        }
+    }
+
     @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
 
         getMenuInflater().inflate(R.menu.menu_page, menu);
 
-        MenuItem recognize = menu.findItem(R.id.img_form_recognize);
         MenuItem data = menu.findItem(R.id.img_form_data);
         MenuItem pre = menu.findItem(R.id.img_pre);
         MenuItem next = menu.findItem(R.id.img_next);
 
-        recognize.setVisible(true);
         data.setVisible(true);
 
         if (pre != null && next != null) {
@@ -216,6 +242,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                 recognizeStrokes();
                 return true;
             case R.id.img_form_data:
+                toggleRightSliding();
                 return true;
             case R.id.img_pre:
                 switchPages(PRE_IMG);
@@ -316,6 +343,11 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             mService.setCurrentPage(mCurrentPage);
             mService.setCurrentPageAddress(mPageAddress);
         }
+        if (mAdapter != null && mFormInfo != null && mFormInfo.results[0].items.length >0) {
+            mAdapter.setItem(Arrays.asList(mFormInfo.results[0].items));
+            mAdapter.notifyDataSetChanged();
+        }
+
     }
 
     private void showLoading() {
@@ -397,6 +429,13 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     @Override
     public void onOffLineCoordDraw(String pageAddress, int nX, int nY) {
 
+    }
+
+    @Override
+    public void onClick(View v) {
+        if (v.getId() == R.id.item_recognize){
+
+        }
     }
 
     private class RecordImgRequestListener implements RequestListener<String, Bitmap> {
@@ -577,6 +616,11 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             mService.setDrawFormInfo(mFormInfo, mRecordId);
             mService.setIsRecordDraw(true);
             mTask.getRecord();
+
+            if (mFormInfo.results[0].items != null && mFormInfo.results[0].items.length >0) {
+                mAdapter.setItem(Arrays.asList(mFormInfo.results[0].items));
+                mListView.setAdapter(mAdapter);
+            }
         }
 
         @Override
@@ -675,5 +719,78 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         b = (all / 108) % bMax;
         a = all / (108 * bMax);
         return addressArray[0] + "." + String.valueOf(a) + "." + String.valueOf(b) + "." + String.valueOf(c);
+    }
+
+    public class MenuItemAdapter extends ArrayAdapter<FormItem> implements View.OnClickListener{
+        private LayoutInflater mInflater;
+        private Context mContext;
+        private List<FormItem> mItems = new ArrayList<>();
+
+        public MenuItemAdapter(Context context) {
+            super(context, R.layout.listitem_recorditem_layout);
+            mInflater = LayoutInflater.from(context);
+            mContext = context;
+        }
+
+        @Override
+        public int getCount() {
+            return mItems.size();
+        }
+
+        @Override
+        public FormItem getItem(int position) {
+            return mItems.get(position);
+        }
+
+        public void setItem(List<FormItem> items) {
+            mItems.clear();
+            for(FormItem item : items){
+                if(item!= null &&item.getPage() == mCurrentPage) {
+                    mItems.add(item);
+                }
+            }
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            FormItem item = mItems.get(position);
+            if (convertView == null) {
+                convertView = mInflater.inflate(R.layout.listitem_recorditem_layout, parent,
+                        false);
+            }
+
+            TextView itemName = convertView.findViewById(R.id.item_name);
+            itemName.setText(item.getFieldName());
+
+            TextView modify = convertView.findViewById(R.id.modify);
+            modify.setOnClickListener(this);
+            modify.setTag(item);
+
+            return convertView;
+        }
+
+        @Override
+        public void onClick(View v) {
+            if (v.getId() == R.id.modify) {
+
+                Log.i("whd", "modify click");
+                View dialogView = mInflater.inflate(R.layout.dialog_item_update, null);
+                AlertDialog dialog = new AlertDialog.Builder(mContext)
+                        .setView(dialogView)
+                        .setNegativeButton(R.string.dialog_cancle, null)
+                        .setPositiveButton(R.string.lv_menu_modify, null)
+                        .create();
+                dialog.setCanceledOnTouchOutside(false);
+                TextView name = dialogView.findViewById(R.id.dialog_item_name);
+                FormItem item = (FormItem) v.getTag();
+                name.setText(item.getFieldName());
+                dialog.show();
+            }
+        }
     }
 }
