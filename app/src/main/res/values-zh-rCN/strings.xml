@@ -2,4 +2,5 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
     <string name="no_recognize_stroke">该表单没有需要识别的内容！</string>
+    <string name="modify_item_value_success">成功修改表单项数据！</string>
 </resources>

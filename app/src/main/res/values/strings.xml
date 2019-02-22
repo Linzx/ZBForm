@@ -121,4 +121,6 @@
     <string name="pen_connect_fail">连接失败，请尝试重新连接！</string>
     <string name="scan_connect_pen_success">已成功连接数码笔</string>
     <string name="no_recognize_stroke">该表单没有需要识别的内容！</string>
+    <string name="modify_item_value_success">成功修改表单项数据！</string>
+    <string name="modify_item_value_fail">修改表单数据失败！</string>
 </resources>

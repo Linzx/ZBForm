@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
@@ -13,7 +14,9 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
@@ -25,6 +28,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -44,6 +48,7 @@ import com.zbform.penform.dialog.LoadingDialog;
 import com.zbform.penform.json.FormInfo;
 import com.zbform.penform.json.FormItem;
 import com.zbform.penform.json.HwData;
+import com.zbform.penform.json.ModifyPostParams;
 import com.zbform.penform.json.Point;
 import com.zbform.penform.json.RecognizeItem;
 import com.zbform.penform.json.RecognizeResultInfo;
@@ -54,6 +59,7 @@ import com.zbform.penform.json.ResultData;
 import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.services.ZBFormService;
 import com.zbform.penform.task.FormTask;
+import com.zbform.penform.task.ModifyItemValueTask;
 import com.zbform.penform.task.RecognizeTask;
 import com.zbform.penform.task.RecordTask;
 
@@ -72,6 +78,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     private static final int PRE_IMG = 1;
     private static final int NEXT_IMG = 2;
     private static final int AUTO_IMG = 3;
+
+    private static final int MODIFY_VALUE_MSG = 1000;
 
     private int mCurrentPage = 1;
 
@@ -93,6 +101,20 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     DrawerLayout mDrawerLayout;
     private ListView mListView;
     private MenuItemAdapter mAdapter;
+
+
+    private Handler mHandler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch(msg.what){
+                case MODIFY_VALUE_MSG:
+                    ModifyPostParams postParams = (ModifyPostParams)msg.obj;
+                    modifyValue(postParams);
+                    break;
+            }
+        }
+    };
 
     Path mPath = new Path();
     float mScaleX = 0.1929f;
@@ -417,7 +439,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     }
 
     private void recognizeStrokes() {
-        if(mCachedRecognizedResultMap.containsKey(mCurrentPage) && !mUserDraw){
+        if (mCachedRecognizedResultMap.containsKey(mCurrentPage) && !mUserDraw) {
             Log.i(TAG, "Open drawer display directly.");
             // 已经缓存识别后的数据，并且用户没有重新书写新的笔迹，直接展示数据
             mDrawerLayout.openDrawer(Gravity.END);
@@ -500,7 +522,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                     }
                     int num = 0;
                     if (itemCodeMap.containsKey(id)) {
-                        num = itemCodeMap.get(id) +1;
+                        num = itemCodeMap.get(id) + 1;
                     } else {
                         num = 1;
                     }
@@ -582,7 +604,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             }
             int num = 0;
             if (itemCodeMap.containsKey(id)) {
-                num = itemCodeMap.get(id) +1;
+                num = itemCodeMap.get(id) + 1;
             } else {
                 num = 1;
             }
@@ -895,7 +917,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         return addressArray[0] + "." + String.valueOf(a) + "." + String.valueOf(b) + "." + String.valueOf(c);
     }
 
-    public class MenuItemAdapter extends ArrayAdapter<FormItem> implements View.OnClickListener {
+    public class MenuItemAdapter extends ArrayAdapter<FormItem> {
         private LayoutInflater mInflater;
         private Context mContext;
         private List<FormItem> mItems = new ArrayList<>();
@@ -947,38 +969,112 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             itemName.setText(item.getFieldName());
 
             TextView itemValue = convertView.findViewById(R.id.item_content);
-            String itemCode = item.getItem();
+            final String itemCode = item.getItem();
+            String itemValueString = "";
             for (Result r : mResults) {
                 if (r.getId().equals(itemCode)) {
-                    itemValue.setText(r.getValue());
+                    itemValueString = r.getValue();
+                    itemValue.setText(itemValueString);
+                    break;
                 }
             }
+            final String contentString = itemValueString;
 
             TextView modify = convertView.findViewById(R.id.modify);
-            modify.setOnClickListener(this);
+            modify.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Log.i("whd", "modify click");
+                    final View dialogView = mInflater.inflate(R.layout.dialog_item_update, null);
+                    AlertDialog dialog = new AlertDialog.Builder(mContext)
+                            .setView(dialogView)
+                            .setNegativeButton(R.string.dialog_cancle, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.dismiss();
+                                }
+                            })
+                            .setPositiveButton(R.string.lv_menu_modify, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    EditText contentView = dialogView.findViewById(R.id.dialog_content);
+                                    Message msg = mHandler.obtainMessage(MODIFY_VALUE_MSG, new ModifyPostParams(mFormId,mRecordId,itemCode,contentView.getText().toString()));
+
+                                    mHandler.sendMessage(msg);
+                                    dialog.dismiss();
+                                }
+                            })
+                            .setCancelable(true)
+                            .create();
+
+                    TextView name = dialogView.findViewById(R.id.dialog_item_name);
+                    EditText content = dialogView.findViewById(R.id.dialog_content);
+
+                    FormItem item = (FormItem) v.getTag();
+                    name.setText(item.getFieldName());
+
+                    content.setText(contentString);
+                    dialog.show();
+                }
+            });
             modify.setTag(item);
 
             return convertView;
         }
+    }
+
+    private void modifyValue(ModifyPostParams postParams) {
+        Log.i(TAG,"formid = "+mFormId+"   record id = "+mRecordId);
+        Log.i(TAG,"itemCode = "+postParams.getItemCode()+"   itemData = "+postParams.getItemData());
+
+        ModifyItemValueTask modifyItemValueTask = new ModifyItemValueTask(mContext, mFormId, mRecordId, postParams.getItemCode(), postParams.getItemData());
+        modifyItemValueTask.setOnFormTaskListener(mOnModifyTaskListener);
+        modifyItemValueTask.execute();
+    }
+
+    ModifyItemValueTask.OnModifyTaskListener mOnModifyTaskListener = new ModifyItemValueTask.OnModifyTaskListener() {
+        @Override
+        public void onStartGet() {
+
+        }
 
         @Override
-        public void onClick(View v) {
-            if (v.getId() == R.id.modify) {
-
-                Log.i("whd", "modify click");
-                View dialogView = mInflater.inflate(R.layout.dialog_item_update, null);
-                AlertDialog dialog = new AlertDialog.Builder(mContext)
-                        .setView(dialogView)
-                        .setNegativeButton(R.string.dialog_cancle, null)
-                        .setPositiveButton(R.string.lv_menu_modify, null)
-                        .create();
-                dialog.setCanceledOnTouchOutside(false);
-                TextView name = dialogView.findViewById(R.id.dialog_item_name);
-                FormItem item = (FormItem) v.getTag();
-                name.setText(item.getFieldName());
-                dialog.show();
+        public void onGetSuccess(ModifyPostParams info) {
+            boolean isFound = false;
+            for(int i=0; i< mResultData.getResult().length; i++){
+                Result r= mResultData.getResult()[i];
+                if(r.getId().equals(info.getItemCode())){
+                    r.setValue(info.getItemData());
+                    mResultData.getResult()[i] = r;
+                    isFound =true;
+                    break;
+                }
             }
+            ArrayList<Result> resultList = new ArrayList<>(Arrays.asList(mResultData.getResult()));
+
+            // 如果修改的数据之前没有笔迹， 需要从新添加到识别结果中，更新界面。
+            // 注意： 这里没有更新 mResultData
+            if(!isFound){
+                Result r= new Result();
+                r.setId(info.getItemCode());
+                r.setValue(info.getItemData());
+                resultList.add(r);
+            }
+            mAdapter.setResults(resultList);
+            mAdapter.notifyDataSetChanged();
+            Toast.makeText(mContext, R.string.modify_item_value_success, Toast.LENGTH_LONG).show();
         }
-    }
+
+        @Override
+        public void onGetFail() {
+            Toast.makeText(mContext, R.string.modify_item_value_fail, Toast.LENGTH_LONG).show();
+        }
+
+        @Override
+        public void onCancelled() {
+
+        }
+    };
+
 
 }

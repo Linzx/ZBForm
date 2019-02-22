@@ -10,12 +10,9 @@ import com.lidroid.xutils.exception.HttpException;
 import com.lidroid.xutils.http.RequestParams;
 import com.lidroid.xutils.http.ResponseInfo;
 import com.lidroid.xutils.http.client.HttpRequest;
-import com.zbform.penform.ZBformApplication;
-import com.zbform.penform.json.FormInfo;
 import com.zbform.penform.json.RecognizeItem;
 import com.zbform.penform.json.RecognizeResultInfo;
 import com.zbform.penform.net.ApiAddress;
-import com.zbform.penform.net.ErrorCode;
 import com.zbform.penform.net.IZBformNetBeanCallBack;
 import com.zbform.penform.net.ZBformNetBean;
 

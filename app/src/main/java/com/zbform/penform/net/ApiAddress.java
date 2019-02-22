@@ -75,6 +75,9 @@ public class ApiAddress {
 
     public static String Hwitem_delete = BaseHttpUrl + "hwitem/delete";
 
+    public static String MODIFY_ITEMVALUE_URL = DEBUG == true ?
+            "http://demo.zbform.com/zbform/post/recorddata/correct" :
+            "http://www.zbform.com/zbform/post/recorddata/correct";
     /**
      * 表单识别接口
      * request: formid,recordid,items data
