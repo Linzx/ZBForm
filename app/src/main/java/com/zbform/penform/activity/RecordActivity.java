@@ -49,6 +49,8 @@ import com.zbform.penform.json.RecognizeItem;
 import com.zbform.penform.json.RecognizeResultInfo;
 import com.zbform.penform.json.RecordDataItem;
 import com.zbform.penform.json.RecordInfo;
+import com.zbform.penform.json.Result;
+import com.zbform.penform.json.ResultData;
 import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.services.ZBFormService;
 import com.zbform.penform.task.FormTask;
@@ -57,6 +59,7 @@ import com.zbform.penform.task.RecordTask;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -73,6 +76,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
     private List<RecordInfo.Results> recordResults = new ArrayList<>();
     private List<RecordDataItem> mCurrentItems = new ArrayList<>();
+    private ResultData mResultData;
     private RecordTask mTask;
     private String mFormId;
     private String mRecordId;
@@ -238,9 +242,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             case android.R.id.home:
                 finish();
                 return true;
-            case R.id.img_form_recognize:
-                recognizeStrokes();
-                return true;
             case R.id.img_form_data:
                 toggleRightSliding();
                 return true;
@@ -259,32 +260,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                 break;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    private void recognizeStrokes() {
-        List<RecognizeItem> itemList = new ArrayList<>();
-        for (RecordDataItem item : mCurrentItems) {
-            HwData hwData = new Gson().fromJson(item.getHwdata(), new TypeToken<HwData>() {
-            }.getType());
-
-            RecognizeItem it = new RecognizeItem();
-            it.setId(item.getItemcode());
-
-            for (FormItem formItem : mFormInfo.results[0].getItems()) {
-                if (formItem.getItem().equals(item.itemcode)) {
-                    it.setType(formItem.getType());
-                    break;
-                }
-            }
-
-            it.setStroke(new HwData[]{hwData});
-
-            itemList.add(it);
-        }
-
-        RecognizeTask recognizeTask = new RecognizeTask(mContext, mFormId, mRecordId, itemList.toArray(new RecognizeItem[itemList.size()]));
-        recognizeTask.execute();
-
     }
 
     @Override
@@ -434,9 +409,81 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.item_recognize){
-
+            recognizeStrokes();
         }
     }
+
+    private void recognizeStrokes() {
+        // 1. 下载的record 里原有的笔迹数据识别
+        //    服务器下载的笔迹数据格式是多个RecordDataItem，但可能属于相同的item，这些笔迹需要放在一起识别
+        // 2. 用户用笔实时写的笔迹数据识别
+        //    用户实时写的笔迹数据是存放在mCachedDataMap, 是一个pageNumber到 HwData List的map
+        //    这些 HwData是对应于一个笔画，需要将他们归类到相同的item里一起提交给服务器进行识别
+        // 最终提交的数据是按照item作为笔迹集合进行识别
+
+        // 1. 先处理服务器下载的笔迹数据
+        // 所有的items 集合
+        List<RecognizeItem> itemList = new ArrayList<>();
+
+        // 以 item code 为key， 将不同的 recognize item 集中在一起
+        Hashtable<String, RecognizeItem> recognizeItemsMap = new Hashtable<>();
+
+        // 先查询当前 page 的从服务器下载所有items
+        for (RecordDataItem item : mCurrentItems) {
+
+            String itemCode = item.getItemcode();
+            String type = null;
+            HwData hwData = new Gson().fromJson(item.getHwdata(), new TypeToken<HwData>() {
+            }.getType());
+
+            // 从 form 里 items 列表中找到对应item的 type
+            for (FormItem formItem : mFormInfo.results[0].getItems()) {
+                if (formItem.getItem().equals(item.itemcode)) {
+                    type = formItem.getType();
+                    break;
+                }
+            }
+
+            Log.i(TAG, "Recognize: itemcode = "+itemCode + "  type = "+type);
+            if (recognizeItemsMap.containsKey(itemCode)) {
+                Log.i(TAG, "recognizeItemsMap contains item "+itemCode);
+                RecognizeItem inItem = recognizeItemsMap.get(itemCode);
+
+                if (type != null && type.equals(inItem.getType())) {
+                    inItem.strokeList.add(hwData);
+                    inItem.setStroke(inItem.strokeList.toArray(new HwData[inItem.strokeList.size()]));
+                }
+            } else {
+                Log.i(TAG, "recognizeItemsMap not contains item "+itemCode);
+
+                RecognizeItem it = new RecognizeItem();
+                if(type != null) {
+                    it.setType(type);
+                }
+                it.setId(itemCode);
+                it.strokeList.add(hwData);
+                it.setStroke(it.strokeList.toArray(new HwData[it.strokeList.size()]));
+                Log.i(TAG,"stroke size: "+it.getStroke().length);
+                recognizeItemsMap.put(itemCode, it);
+            }
+        }
+
+        // 2. 处理用户实时写的笔迹
+        if (mCachedDataMap.containsKey(mCurrentPage)) {
+            List<HwData> hwDataList = mCachedDataMap.get(mCurrentPage);
+        }
+
+        Enumeration<RecognizeItem> itemEnumeration = recognizeItemsMap.elements();
+        while(itemEnumeration.hasMoreElements()){
+            itemList.add(itemEnumeration.nextElement());
+        }
+
+        RecognizeTask recognizeTask = new RecognizeTask(mContext, mFormId, mRecordId, itemList.toArray(new RecognizeItem[itemList.size()]));
+        recognizeTask.setOnFormTaskListener(mRecognizeTaskListener);
+        recognizeTask.execute();
+
+    }
+
 
     private class RecordImgRequestListener implements RequestListener<String, Bitmap> {
         public RecordImgRequestListener() {
@@ -642,7 +689,20 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
         @Override
         public void onGetSuccess(RecognizeResultInfo info) {
+            mResultData = info.getData();
+            Log.i(TAG, "Recognize result: \n"+ mResultData.getFormid()+"\n"+mResultData.getRecordid());
+            Log.i(TAG, "Data: \n");
+            for(Result r: mResultData.getResult()){
+                Log.i(TAG, "id: "+r.getId());
+                Log.i(TAG, "value: "+r.getValue());
+            }
 
+            // 设置 item listview 中的各个item值
+            if(mResultData.getResult().length > 0) {
+                mAdapter.setResults(Arrays.asList(mResultData.getResult()));
+                mAdapter.notifyDataSetChanged();
+                toggleRightSliding();
+            }
         }
 
         @Override
@@ -725,6 +785,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         private LayoutInflater mInflater;
         private Context mContext;
         private List<FormItem> mItems = new ArrayList<>();
+        private List<Result> mResults = new ArrayList<>();
 
         public MenuItemAdapter(Context context) {
             super(context, R.layout.listitem_recorditem_layout);
@@ -751,6 +812,10 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             }
         }
 
+        public void setResults(List<Result> results) {
+            mResults = results;
+        }
+
         @Override
         public long getItemId(int position) {
             return position;
@@ -766,6 +831,14 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
             TextView itemName = convertView.findViewById(R.id.item_name);
             itemName.setText(item.getFieldName());
+
+            TextView itemValue = convertView.findViewById(R.id.item_content);
+            String itemCode = item.getItem();
+            for(Result r: mResults){
+                if(r.getId().equals(itemCode)){
+                    itemValue.setText(r.getValue());
+                }
+            }
 
             TextView modify = convertView.findViewById(R.id.modify);
             modify.setOnClickListener(this);
@@ -792,5 +865,24 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                 dialog.show();
             }
         }
+    }
+
+    private String findFormItemId(int x, int y) {
+        String id = "";
+        for (int i = 0; i < mFormInfo.results[0].items.length; i++) {
+            FormItem item = mFormInfo.results[0].items[i];
+
+            double xoff = (double)x * 0.3 / 8d / 10d;
+            double yoff = (double)y * 0.3 / 8d / 10d;
+
+            if (xoff >= item.getLocaX() &&
+                    yoff >= item.getLocaY() &&
+                    xoff <= (item.getLocaX() + item.getLocaW()) &&
+                    yoff <= (item.getLocaY() + item.getLocaH())) {
+                id = item.getItem();
+                break;
+            }
+        }
+        return id;
     }
 }

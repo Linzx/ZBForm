@@ -10,7 +10,7 @@
         android:layout_marginLeft="16dp"
         android:layout_marginTop="32dp"
         android:layout_marginRight="16dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="32dp"
         android:orientation="vertical"
         android:paddingBottom="16dp">
 
@@ -81,7 +81,7 @@
             android:layout_width="wrap_content"
             android:layout_height="64dp"
             android:layout_gravity="right"
-            android:layout_marginTop="32dp"
+            android:layout_marginBottom="32dp"
             android:clickable="true"
             android:gravity="center"
             android:text="@string/pen_nav_next"
