@@ -60,11 +60,12 @@ import com.zbform.penform.task.RecordTask;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 
 public class RecordActivity extends BaseActivity implements RecordTask.OnTaskListener,
-        ZBFormBlePenManager.IBlePenDrawCallBack,View.OnClickListener {
+        ZBFormBlePenManager.IBlePenDrawCallBack, View.OnClickListener {
 
     public static final String TAG = RecordActivity.class.getSimpleName();
 
@@ -98,6 +99,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     float mScaleY = 0.23457f;
 
     private Hashtable<Integer, List<HwData>> mCachedDataMap = new Hashtable<>();
+    private Hashtable<Integer, List<Result>> mCachedRecognizedResultMap = new Hashtable<>();
+    private boolean mUserDraw = false;
     private HwData mHwData = new HwData();
     private Path mCurrentCachedPath = new Path();
 
@@ -204,10 +207,10 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
     }
 
-    private void toggleRightSliding(){
-        if(mDrawerLayout.isDrawerOpen(Gravity.END)){
+    private void toggleRightSliding() {
+        if (mDrawerLayout.isDrawerOpen(Gravity.END)) {
             mDrawerLayout.closeDrawer(Gravity.END);
-        }else{
+        } else {
             mDrawerLayout.openDrawer(Gravity.END);
         }
     }
@@ -318,11 +321,11 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             mService.setCurrentPage(mCurrentPage);
             mService.setCurrentPageAddress(mPageAddress);
         }
-        if (mAdapter != null && mFormInfo != null && mFormInfo.results[0].items.length >0) {
+        if (mAdapter != null && mFormInfo != null && mFormInfo.results[0].items.length > 0) {
             mAdapter.setItem(Arrays.asList(mFormInfo.results[0].items));
             mAdapter.notifyDataSetChanged();
         }
-
+        mUserDraw = false;
     }
 
     private void showLoading() {
@@ -376,7 +379,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
             dataList.add(mHwData);
             mCachedDataMap.put(mCurrentPage, dataList);
-
+            mUserDraw = true;
         }
     }
 
@@ -408,12 +411,19 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
     @Override
     public void onClick(View v) {
-        if (v.getId() == R.id.item_recognize){
+        if (v.getId() == R.id.item_recognize) {
             recognizeStrokes();
         }
     }
 
     private void recognizeStrokes() {
+        if(mCachedRecognizedResultMap.containsKey(mCurrentPage) && !mUserDraw){
+            Log.i(TAG, "Open drawer display directly.");
+            // 已经缓存识别后的数据，并且用户没有重新书写新的笔迹，直接展示数据
+            mDrawerLayout.openDrawer(Gravity.END);
+            return;
+        }
+
         // 1. 下载的record 里原有的笔迹数据识别
         //    服务器下载的笔迹数据格式是多个RecordDataItem，但可能属于相同的item，这些笔迹需要放在一起识别
         // 2. 用户用笔实时写的笔迹数据识别
@@ -421,12 +431,17 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         //    这些 HwData是对应于一个笔画，需要将他们归类到相同的item里一起提交给服务器进行识别
         // 最终提交的数据是按照item作为笔迹集合进行识别
 
+        //这个过程可能比较长，需要一个loading的对话框
+        showLoading();
+
         // 1. 先处理服务器下载的笔迹数据
         // 所有的items 集合
         List<RecognizeItem> itemList = new ArrayList<>();
 
         // 以 item code 为key， 将不同的 recognize item 集中在一起
         Hashtable<String, RecognizeItem> recognizeItemsMap = new Hashtable<>();
+
+        Log.i(TAG, "====Start collect stroke download from server.====");
 
         // 先查询当前 page 的从服务器下载所有items
         for (RecordDataItem item : mCurrentItems) {
@@ -444,46 +459,143 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                 }
             }
 
-            Log.i(TAG, "Recognize: itemcode = "+itemCode + "  type = "+type);
-            if (recognizeItemsMap.containsKey(itemCode)) {
-                Log.i(TAG, "recognizeItemsMap contains item "+itemCode);
-                RecognizeItem inItem = recognizeItemsMap.get(itemCode);
-
-                if (type != null && type.equals(inItem.getType())) {
-                    inItem.strokeList.add(hwData);
-                    inItem.setStroke(inItem.strokeList.toArray(new HwData[inItem.strokeList.size()]));
-                }
-            } else {
-                Log.i(TAG, "recognizeItemsMap not contains item "+itemCode);
-
-                RecognizeItem it = new RecognizeItem();
-                if(type != null) {
-                    it.setType(type);
-                }
-                it.setId(itemCode);
-                it.strokeList.add(hwData);
-                it.setStroke(it.strokeList.toArray(new HwData[it.strokeList.size()]));
-                Log.i(TAG,"stroke size: "+it.getStroke().length);
-                recognizeItemsMap.put(itemCode, it);
-            }
+            Log.i(TAG, "Recognize: itemcode = " + itemCode + "  type = " + type);
+            putData2ItemsMap(itemCode, type, hwData, recognizeItemsMap);
         }
 
         // 2. 处理用户实时写的笔迹
+        Log.i(TAG, "====Start collect new stroke draw by user.====");
         if (mCachedDataMap.containsKey(mCurrentPage)) {
             List<HwData> hwDataList = mCachedDataMap.get(mCurrentPage);
+
+            // 先要确定hwdata 笔迹属于哪个item
+            for (HwData d : hwDataList) {
+
+                String typeNew = "";
+
+                Point[] points = d.getD();
+                // 有可能存在笔迹中的部分坐标在其他item里，所以需要寻找某个item 中包含该笔迹最多坐标数目
+                HashMap<String, Integer> itemCodeMap = new HashMap<>();
+                int maxNum = 0;
+                String maxNumCode = "";
+                for (Point p : points) {
+                    int x = p.getX();
+                    int y = p.getY();
+                    String id = "";
+                    String typeInForm = "";
+                    for (int i = 0; i < mFormInfo.results[0].items.length; i++) {
+                        FormItem item = mFormInfo.results[0].items[i];
+
+                        double xoff = (double) x * 0.3 / 8d / 10d;
+                        double yoff = (double) y * 0.3 / 8d / 10d;
+
+                        if (xoff >= item.getLocaX() &&
+                                yoff >= item.getLocaY() &&
+                                xoff <= (item.getLocaX() + item.getLocaW()) &&
+                                yoff <= (item.getLocaY() + item.getLocaH())) {
+                            id = item.getItem();
+                            typeInForm = item.getType();
+                            break;
+                        }
+                    }
+                    int num = 0;
+                    if (itemCodeMap.containsKey(id)) {
+                        num = itemCodeMap.get(id) +1;
+                    } else {
+                        num = 1;
+                    }
+                    itemCodeMap.put(id, num);
+
+                    if (maxNum < num) {
+                        maxNum = num;
+                        maxNumCode = id;
+                        typeNew = typeInForm;
+                    }
+                }
+
+                // 获取了hwdata 所属item后，放入待识别items map里
+                putData2ItemsMap(maxNumCode, typeNew, d, recognizeItemsMap);
+            }
         }
 
         Enumeration<RecognizeItem> itemEnumeration = recognizeItemsMap.elements();
-        while(itemEnumeration.hasMoreElements()){
+        while (itemEnumeration.hasMoreElements()) {
             itemList.add(itemEnumeration.nextElement());
         }
 
-        RecognizeTask recognizeTask = new RecognizeTask(mContext, mFormId, mRecordId, itemList.toArray(new RecognizeItem[itemList.size()]));
-        recognizeTask.setOnFormTaskListener(mRecognizeTaskListener);
-        recognizeTask.execute();
+        if (itemList.size() > 0) {
+            RecognizeTask recognizeTask = new RecognizeTask(mContext, mFormId, mRecordId, itemList.toArray(new RecognizeItem[itemList.size()]));
+            recognizeTask.setOnFormTaskListener(mRecognizeTaskListener);
+            recognizeTask.execute();
+        } else {
+            dismissLoading();
+            Toast.makeText(mContext, R.string.no_recognize_stroke, Toast.LENGTH_LONG).show();
+        }
 
     }
 
+
+    private void putData2ItemsMap(String itemCode, String type, HwData hwData, Hashtable<String, RecognizeItem> recognizeItemsMap) {
+        if (recognizeItemsMap.containsKey(itemCode)) {
+            Log.i(TAG, "recognizeItemsMap contains item " + itemCode);
+            RecognizeItem inItem = recognizeItemsMap.get(itemCode);
+
+            if (type != null && type.equals(inItem.getType())) {
+                inItem.strokeList.add(hwData);
+                inItem.setStroke(inItem.strokeList.toArray(new HwData[inItem.strokeList.size()]));
+            }
+        } else {
+            Log.i(TAG, "recognizeItemsMap not contains item " + itemCode);
+            RecognizeItem it = new RecognizeItem();
+            if (type != null) {
+                it.setType(type);
+            }
+            it.setId(itemCode);
+            it.strokeList.add(hwData);
+            it.setStroke(it.strokeList.toArray(new HwData[it.strokeList.size()]));
+            recognizeItemsMap.put(itemCode, it);
+        }
+    }
+
+    private String findFormItemId(Point[] points) {
+        // 有可能存在笔迹中的部分坐标在其他item里，所以需要寻找某个item 中包含该笔迹最多坐标数目
+        HashMap<String, Integer> itemCodeMap = new HashMap<>();
+        int maxNum = 0;
+        String maxNumCode = "";
+        for (Point p : points) {
+            int x = p.getX();
+            int y = p.getY();
+            String id = "";
+            for (int i = 0; i < mFormInfo.results[0].items.length; i++) {
+                FormItem item = mFormInfo.results[0].items[i];
+
+                double xoff = (double) x * 0.3 / 8d / 10d;
+                double yoff = (double) y * 0.3 / 8d / 10d;
+
+                if (xoff >= item.getLocaX() &&
+                        yoff >= item.getLocaY() &&
+                        xoff <= (item.getLocaX() + item.getLocaW()) &&
+                        yoff <= (item.getLocaY() + item.getLocaH())) {
+                    id = item.getItem();
+                    break;
+                }
+            }
+            int num = 0;
+            if (itemCodeMap.containsKey(id)) {
+                num = itemCodeMap.get(id) +1;
+            } else {
+                num = 1;
+            }
+            itemCodeMap.put(id, num);
+
+            if (maxNum < num) {
+                maxNum = num;
+                maxNumCode = id;
+            }
+        }
+
+        return maxNumCode;
+    }
 
     private class RecordImgRequestListener implements RequestListener<String, Bitmap> {
         public RecordImgRequestListener() {
@@ -664,7 +776,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             mService.setIsRecordDraw(true);
             mTask.getRecord();
 
-            if (mFormInfo.results[0].items != null && mFormInfo.results[0].items.length >0) {
+            if (mFormInfo.results[0].items != null && mFormInfo.results[0].items.length > 0) {
                 mAdapter.setItem(Arrays.asList(mFormInfo.results[0].items));
                 mListView.setAdapter(mAdapter);
             }
@@ -690,29 +802,31 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         @Override
         public void onGetSuccess(RecognizeResultInfo info) {
             mResultData = info.getData();
-            Log.i(TAG, "Recognize result: \n"+ mResultData.getFormid()+"\n"+mResultData.getRecordid());
-            Log.i(TAG, "Data: \n");
-            for(Result r: mResultData.getResult()){
-                Log.i(TAG, "id: "+r.getId());
-                Log.i(TAG, "value: "+r.getValue());
-            }
 
-            // 设置 item listview 中的各个item值
-            if(mResultData.getResult().length > 0) {
+            // 设置并展示 item listview 中的各个item值
+            if (mResultData.getResult().length > 0) {
                 mAdapter.setResults(Arrays.asList(mResultData.getResult()));
                 mAdapter.notifyDataSetChanged();
-                toggleRightSliding();
             }
+
+            // 用作缓存
+            mCachedRecognizedResultMap.put(mCurrentPage, Arrays.asList(mResultData.getResult()));
+            // 每次识别动作后，重置用户是否 draw 的标志
+            mUserDraw = false;
+
+            dismissLoading();
+            // 展示数据
+            mDrawerLayout.openDrawer(Gravity.END);
         }
 
         @Override
         public void onGetFail() {
-
+            dismissLoading();
         }
 
         @Override
         public void onCancelled() {
-
+            dismissLoading();
         }
     };
 
@@ -781,7 +895,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         return addressArray[0] + "." + String.valueOf(a) + "." + String.valueOf(b) + "." + String.valueOf(c);
     }
 
-    public class MenuItemAdapter extends ArrayAdapter<FormItem> implements View.OnClickListener{
+    public class MenuItemAdapter extends ArrayAdapter<FormItem> implements View.OnClickListener {
         private LayoutInflater mInflater;
         private Context mContext;
         private List<FormItem> mItems = new ArrayList<>();
@@ -805,8 +919,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
         public void setItem(List<FormItem> items) {
             mItems.clear();
-            for(FormItem item : items){
-                if(item!= null &&item.getPage() == mCurrentPage) {
+            for (FormItem item : items) {
+                if (item != null && item.getPage() == mCurrentPage) {
                     mItems.add(item);
                 }
             }
@@ -834,8 +948,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
             TextView itemValue = convertView.findViewById(R.id.item_content);
             String itemCode = item.getItem();
-            for(Result r: mResults){
-                if(r.getId().equals(itemCode)){
+            for (Result r : mResults) {
+                if (r.getId().equals(itemCode)) {
                     itemValue.setText(r.getValue());
                 }
             }
@@ -867,22 +981,4 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         }
     }
 
-    private String findFormItemId(int x, int y) {
-        String id = "";
-        for (int i = 0; i < mFormInfo.results[0].items.length; i++) {
-            FormItem item = mFormInfo.results[0].items[i];
-
-            double xoff = (double)x * 0.3 / 8d / 10d;
-            double yoff = (double)y * 0.3 / 8d / 10d;
-
-            if (xoff >= item.getLocaX() &&
-                    yoff >= item.getLocaY() &&
-                    xoff <= (item.getLocaX() + item.getLocaW()) &&
-                    yoff <= (item.getLocaY() + item.getLocaH())) {
-                id = item.getItem();
-                break;
-            }
-        }
-        return id;
-    }
 }

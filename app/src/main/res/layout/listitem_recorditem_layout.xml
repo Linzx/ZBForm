@@ -13,6 +13,7 @@
         android:textColor="@color/blue_trans"
         android:gravity="center_vertical"
         android:layout_alignParentLeft="true"
+        android:paddingLeft="16dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
