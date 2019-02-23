@@ -142,7 +142,9 @@ public class BleConnectService extends Service implements ZBFormBlePenManager.IZ
         mBlePenManager.setZBBleGattCallback(this);
         mBlePenManager.setZBBleScanCallback(this);
 
-        mScanHandler.post(mScanRunnable);
+        if(!mLastPenMac.equals(PEN_DEFAULT_VALUE) && !mLastPenName.equals(PEN_DEFAULT_VALUE)) {
+            mScanHandler.post(mScanRunnable);
+        }
     }
 
     @Override

@@ -257,6 +257,7 @@ public class ZBFormBlePenManager {
 
     public void scan(){
         if(getScanState() != BleScanState.STATE_IDLE){
+            Log.i(TAG, "scan(), state not idle, cancel scan");
             cancelScan();
         }
         BlePenManager.getInstance().scan(mBleScanCallback);
