@@ -1,50 +1,42 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/activity_pen_nav1"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
-    <LinearLayout
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/pen_nav_start_info"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="16dp"
-        android:layout_marginRight="16dp"
+        android:layout_marginTop="20dp"
+        android:gravity="left"
+        android:paddingLeft="16dp"
+        android:text="@string/pen_nav_start_info"
+        android:textColor="#000000"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/pen_nav_first_img"
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:layout_gravity="center_horizontal"
         android:layout_marginTop="32dp"
-        android:layout_marginBottom="16dp"
-        android:paddingBottom="16dp"
-        android:orientation="vertical">
+        android:src="@drawable/ic_pencircle"
+        app:layout_constraintTop_toBottomOf="@+id/pen_nav_start_info" />
 
-        <TextView
-            android:id="@+id/pen_nav_start_info"
-            android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:layout_gravity="center_horizontal"
-            android:paddingLeft="16dp"
-            android:gravity="left"
-            android:textColor="#000000"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:text="@string/pen_nav_start_info" />
-
-        <ImageView
-            android:id="@+id/pen_nav_first_img"
-            android:layout_width="250dp"
-            android:layout_height="250dp"
-            android:layout_marginTop="32dp"
-            android:layout_marginBottom="32dp"
-            android:layout_gravity="center_horizontal"
-            android:src="@drawable/ic_pencircle" />
-
-
-        <TextView
-            android:id="@+id/pen_nav_start_connect"
-            android:layout_width="wrap_content"
-            android:layout_height="64dp"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:text="@string/pen_nav_start_to_connect"
-            android:textColor="@color/colorPrimary"
-            android:textSize="32sp"
-            android:clickable="true"
-            />
-    </LinearLayout>
-</LinearLayout>
+    <TextView
+        android:id="@+id/pen_nav_start_connect"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="32dp"
+        android:clickable="true"
+        android:gravity="center"
+        android:text="@string/pen_nav_start_to_connect"
+        android:textColor="@color/colorPrimary"
+        android:textSize="32sp"
+        app:layout_constraintTop_toBottomOf="@+id/pen_nav_first_img"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+</android.support.constraint.ConstraintLayout>

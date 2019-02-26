@@ -1,0 +1,117 @@
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/activity_pen_nav3"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/pen_nav_connect_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="left"
+        android:paddingLeft="16dp"
+        android:text="@string/pen_nav_connect_info"
+        android:textColor="#000000"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/pen_nav_connect_info_indicate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="20dp"
+        android:gravity="left"
+        android:paddingLeft="16dp"
+        android:text="@string/pen_nav_connect_info_indicate"
+        android:textColor="#888888"
+        android:textSize="14sp"
+        app:layout_constraintTop_toBottomOf="@id/pen_nav_connect_info" />
+
+    <TextView
+        android:id="@+id/pen_nav_connect_info_more"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:gravity="left"
+        android:paddingLeft="16dp"
+        android:text="@string/pen_nav_connect_info_more"
+        android:textColor="#888888"
+        android:textSize="14sp"
+        app:layout_constraintTop_toBottomOf="@id/pen_nav_connect_info_indicate" />
+
+    <TextView
+        android:id="@+id/pen_nav_connect_info_more2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:gravity="left"
+        android:paddingLeft="16dp"
+        android:text="@string/pen_nav_connect_info_more2"
+        android:textColor="#888888"
+        android:textSize="14sp"
+        app:layout_constraintTop_toBottomOf="@id/pen_nav_connect_info_more" />
+
+
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/scan"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/pen_nav_connect_info_more2">
+
+        <TextView
+            android:id="@+id/pen_nav_scan_result_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="25dp"
+            android:gravity="left"
+            android:paddingLeft="16dp"
+            android:text="@string/pen_nav_scan_result_title"
+            android:textColor="#000000"
+            android:textSize="14sp"
+            android:visibility="gone"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ListView
+            android:id="@+id/list_device"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:layout_marginTop="15dp"
+            android:dividerHeight="1dp"
+            android:paddingStart="5dp"
+            android:paddingEnd="5dp"
+            android:scrollbars="none"
+            app:layout_constraintTop_toBottomOf="@id/pen_nav_scan_result_title" />
+
+        <ProgressBar
+            android:id="@+id/loading_progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="10dp"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/pen_nav_scan"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/list_device" />
+
+        <TextView
+            android:id="@+id/pen_nav_scan"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="32dp"
+            android:clickable="true"
+            android:gravity="center"
+            android:text="@string/start_scan"
+            android:textColor="@color/colorPrimary"
+            android:textSize="36sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/list_device" />
+    </android.support.constraint.ConstraintLayout>
+</android.support.constraint.ConstraintLayout>
