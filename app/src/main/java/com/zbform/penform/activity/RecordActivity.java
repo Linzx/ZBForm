@@ -50,23 +50,23 @@ import com.zbform.penform.json.FormItem;
 import com.zbform.penform.json.HwData;
 import com.zbform.penform.json.ModifyPostParams;
 import com.zbform.penform.json.Point;
-import com.zbform.penform.json.RecognizeItem;
-import com.zbform.penform.json.RecognizeResultInfo;
 import com.zbform.penform.json.RecordDataItem;
 import com.zbform.penform.json.RecordInfo;
-import com.zbform.penform.json.Result;
-import com.zbform.penform.json.ResultData;
+import com.zbform.penform.json.ZBFormGetRecognizedDataInfo;
+import com.zbform.penform.json.ZBFormRecgonizeResultInfo;
+import com.zbform.penform.json.ZBFormRecognizedData;
+import com.zbform.penform.json.ZBFormRecognizedItem;
+import com.zbform.penform.json.ZBFormRecognizedResult;
 import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.services.ZBFormService;
 import com.zbform.penform.task.FormTask;
 import com.zbform.penform.task.ModifyItemValueTask;
-import com.zbform.penform.task.RecognizeTask;
 import com.zbform.penform.task.RecordTask;
+import com.zbform.penform.task.ZBFormGetRecognizedDataTask;
+import com.zbform.penform.task.ZBFormRecognizeTask;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -85,7 +85,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
     private List<RecordInfo.Results> recordResults = new ArrayList<>();
     private List<RecordDataItem> mCurrentItems = new ArrayList<>();
-    private ResultData mResultData;
+    private List<ZBFormRecognizedResult> mZBFormRecognizedResults = new ArrayList<>();
     private RecordTask mTask;
     private String mFormId;
     private String mRecordId;
@@ -93,6 +93,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     private String mPageAddress;
     private String mBasePageAddress = null;
     private int mPage;
+
+    private boolean isRecognized = false;
 
     private LoadingDialog mLoadingDialog;
     ActionBar mActionBar;
@@ -120,8 +122,12 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     float mScaleX = 0.1929f;
     float mScaleY = 0.23457f;
 
+    // 缓存用户新增笔迹数据
     private Hashtable<Integer, List<HwData>> mCachedDataMap = new Hashtable<>();
-    private Hashtable<Integer, List<Result>> mCachedRecognizedResultMap = new Hashtable<>();
+
+    // 缓存识别后的表单记录数据
+    private Hashtable<Integer, List<ZBFormRecognizedResult>> mCachedZBFormRecognizedResultMap = new Hashtable<>();
+
     private boolean mUserDraw = false;
     private HwData mHwData = new HwData();
     private Path mCurrentCachedPath = new Path();
@@ -296,7 +302,10 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     public void onTaskSuccess(List<RecordInfo.Results> results) {
         recordResults = results;
         Log.i(TAG, "onTaskSuccess()");
-
+        String state = results.get(0).getRecordRecognizeState();
+        if("Y".equals(state)){
+            isRecognized = true;
+        }
         // 获取Form 表单的图片，准备合成
         getFormImg(getUrl());
     }
@@ -434,189 +443,28 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.item_recognize) {
-            recognizeStrokes();
+            recognizeZBFormRecordStrokes();
         }
     }
 
-    private void recognizeStrokes() {
-        if (mCachedRecognizedResultMap.containsKey(mCurrentPage) && !mUserDraw) {
-            Log.i(TAG, "Open drawer display directly.");
-            // 已经缓存识别后的数据，并且用户没有重新书写新的笔迹，直接展示数据
-            mDrawerLayout.openDrawer(Gravity.END);
-            return;
-        }
-
-        // 1. 下载的record 里原有的笔迹数据识别
-        //    服务器下载的笔迹数据格式是多个RecordDataItem，但可能属于相同的item，这些笔迹需要放在一起识别
-        // 2. 用户用笔实时写的笔迹数据识别
-        //    用户实时写的笔迹数据是存放在mCachedDataMap, 是一个pageNumber到 HwData List的map
-        //    这些 HwData是对应于一个笔画，需要将他们归类到相同的item里一起提交给服务器进行识别
-        // 最终提交的数据是按照item作为笔迹集合进行识别
-
-        //这个过程可能比较长，需要一个loading的对话框
-        showLoading();
-
-        // 1. 先处理服务器下载的笔迹数据
-        // 所有的items 集合
-        List<RecognizeItem> itemList = new ArrayList<>();
-
-        // 以 item code 为key， 将不同的 recognize item 集中在一起
-        Hashtable<String, RecognizeItem> recognizeItemsMap = new Hashtable<>();
-
-        Log.i(TAG, "====Start collect stroke download from server.====");
-
-        // 先查询当前 page 的从服务器下载所有items
-        for (RecordDataItem item : mCurrentItems) {
-
-            String itemCode = item.getItemcode();
-            String type = null;
-            HwData hwData = new Gson().fromJson(item.getHwdata(), new TypeToken<HwData>() {
-            }.getType());
-
-            // 从 form 里 items 列表中找到对应item的 type
-            for (FormItem formItem : mFormInfo.results[0].getItems()) {
-                if (formItem.getItem().equals(item.itemcode)) {
-                    type = formItem.getType();
-                    break;
-                }
-            }
-
-            Log.i(TAG, "Recognize: itemcode = " + itemCode + "  type = " + type);
-            putData2ItemsMap(itemCode, type, hwData, recognizeItemsMap);
-        }
-
-        // 2. 处理用户实时写的笔迹
-        Log.i(TAG, "====Start collect new stroke draw by user.====");
-        if (mCachedDataMap.containsKey(mCurrentPage)) {
-            List<HwData> hwDataList = mCachedDataMap.get(mCurrentPage);
-
-            // 先要确定hwdata 笔迹属于哪个item
-            for (HwData d : hwDataList) {
-
-                String typeNew = "";
-
-                Point[] points = d.getD();
-                // 有可能存在笔迹中的部分坐标在其他item里，所以需要寻找某个item 中包含该笔迹最多坐标数目
-                HashMap<String, Integer> itemCodeMap = new HashMap<>();
-                int maxNum = 0;
-                String maxNumCode = "";
-                for (Point p : points) {
-                    int x = p.getX();
-                    int y = p.getY();
-                    String id = "";
-                    String typeInForm = "";
-                    for (int i = 0; i < mFormInfo.results[0].items.length; i++) {
-                        FormItem item = mFormInfo.results[0].items[i];
-
-                        double xoff = (double) x * 0.3 / 8d / 10d;
-                        double yoff = (double) y * 0.3 / 8d / 10d;
-
-                        if (xoff >= item.getLocaX() &&
-                                yoff >= item.getLocaY() &&
-                                xoff <= (item.getLocaX() + item.getLocaW()) &&
-                                yoff <= (item.getLocaY() + item.getLocaH())) {
-                            id = item.getItem();
-                            typeInForm = item.getType();
-                            break;
-                        }
-                    }
-                    int num = 0;
-                    if (itemCodeMap.containsKey(id)) {
-                        num = itemCodeMap.get(id) + 1;
-                    } else {
-                        num = 1;
-                    }
-                    itemCodeMap.put(id, num);
-
-                    if (maxNum < num) {
-                        maxNum = num;
-                        maxNumCode = id;
-                        typeNew = typeInForm;
-                    }
-                }
-
-                // 获取了hwdata 所属item后，放入待识别items map里
-                putData2ItemsMap(maxNumCode, typeNew, d, recognizeItemsMap);
-            }
-        }
-
-        Enumeration<RecognizeItem> itemEnumeration = recognizeItemsMap.elements();
-        while (itemEnumeration.hasMoreElements()) {
-            itemList.add(itemEnumeration.nextElement());
-        }
-
-        if (itemList.size() > 0) {
-            RecognizeTask recognizeTask = new RecognizeTask(mContext, mFormId, mRecordId, itemList.toArray(new RecognizeItem[itemList.size()]));
-            recognizeTask.setOnFormTaskListener(mRecognizeTaskListener);
-            recognizeTask.execute();
-        } else {
-            dismissLoading();
-            Toast.makeText(mContext, R.string.no_recognize_stroke, Toast.LENGTH_LONG).show();
-        }
-
-    }
-
-
-    private void putData2ItemsMap(String itemCode, String type, HwData hwData, Hashtable<String, RecognizeItem> recognizeItemsMap) {
-        if (recognizeItemsMap.containsKey(itemCode)) {
-            Log.i(TAG, "recognizeItemsMap contains item " + itemCode);
-            RecognizeItem inItem = recognizeItemsMap.get(itemCode);
-
-            if (type != null && type.equals(inItem.getType())) {
-                inItem.strokeList.add(hwData);
-                inItem.setStroke(inItem.strokeList.toArray(new HwData[inItem.strokeList.size()]));
-            }
-        } else {
-            Log.i(TAG, "recognizeItemsMap not contains item " + itemCode);
-            RecognizeItem it = new RecognizeItem();
-            if (type != null) {
-                it.setType(type);
-            }
-            it.setId(itemCode);
-            it.strokeList.add(hwData);
-            it.setStroke(it.strokeList.toArray(new HwData[it.strokeList.size()]));
-            recognizeItemsMap.put(itemCode, it);
-        }
-    }
-
-    private String findFormItemId(Point[] points) {
-        // 有可能存在笔迹中的部分坐标在其他item里，所以需要寻找某个item 中包含该笔迹最多坐标数目
-        HashMap<String, Integer> itemCodeMap = new HashMap<>();
-        int maxNum = 0;
-        String maxNumCode = "";
-        for (Point p : points) {
-            int x = p.getX();
-            int y = p.getY();
-            String id = "";
-            for (int i = 0; i < mFormInfo.results[0].items.length; i++) {
-                FormItem item = mFormInfo.results[0].items[i];
-
-                double xoff = (double) x * 0.3 / 8d / 10d;
-                double yoff = (double) y * 0.3 / 8d / 10d;
-
-                if (xoff >= item.getLocaX() &&
-                        yoff >= item.getLocaY() &&
-                        xoff <= (item.getLocaX() + item.getLocaW()) &&
-                        yoff <= (item.getLocaY() + item.getLocaH())) {
-                    id = item.getItem();
-                    break;
-                }
-            }
-            int num = 0;
-            if (itemCodeMap.containsKey(id)) {
-                num = itemCodeMap.get(id) + 1;
+    private void recognizeZBFormRecordStrokes(){
+        if(isRecognized && !mUserDraw){
+            // 已经识别过，并且用户没有新增笔迹，则直接显示已获取数据
+            if(mCachedZBFormRecognizedResultMap.containsKey(mCurrentPage)){
+                // 已经获取过识别结果，直接使用cached数据
+                mAdapter.setZBFormResults(mCachedZBFormRecognizedResultMap.get(mCurrentPage));
+                mAdapter.notifyDataSetChanged();
+                mDrawerLayout.openDrawer(Gravity.END);
             } else {
-                num = 1;
+                // 还未获取过识别结果，开始获取
+                showLoading();
+                getZBFormRecognizedData();
             }
-            itemCodeMap.put(id, num);
-
-            if (maxNum < num) {
-                maxNum = num;
-                maxNumCode = id;
-            }
+        } else {
+            // 还未识别过，或者有新的数据，从新识别获取
+            showLoading();
+            recognizeAndGetData();
         }
-
-        return maxNumCode;
     }
 
     private class RecordImgRequestListener implements RequestListener<String, Bitmap> {
@@ -815,30 +663,27 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         }
     };
 
-    private RecognizeTask.OnRecognizeTaskListener mRecognizeTaskListener = new RecognizeTask.OnRecognizeTaskListener() {
+    public void getZBFormRecognizedData(){
+        ZBFormGetRecognizedDataTask getRecognizedDataTask = new ZBFormGetRecognizedDataTask(mContext,mRecordId);
+        getRecognizedDataTask.setOnZBFormGetRecognizedDataTaskListener(mGetZBFormRecognizedDataListener);
+        getRecognizedDataTask.execute();
+    }
+
+    private ZBFormGetRecognizedDataTask.OnZBFormGetRecognizedDataTaskListener mGetZBFormRecognizedDataListener = new ZBFormGetRecognizedDataTask.OnZBFormGetRecognizedDataTaskListener() {
         @Override
         public void onStartGet() {
 
         }
 
         @Override
-        public void onGetSuccess(RecognizeResultInfo info) {
-            mResultData = info.getData();
-
-            // 设置并展示 item listview 中的各个item值
-            if (mResultData.getResult().length > 0) {
-                mAdapter.setResults(Arrays.asList(mResultData.getResult()));
-                mAdapter.notifyDataSetChanged();
-            }
-
-            // 用作缓存
-            mCachedRecognizedResultMap.put(mCurrentPage, Arrays.asList(mResultData.getResult()));
-            // 每次识别动作后，重置用户是否 draw 的标志
-            mUserDraw = false;
-
-            dismissLoading();
-            // 展示数据
+        public void onGetSuccess(ZBFormGetRecognizedDataInfo info) {
+            mZBFormRecognizedResults.clear();
+            mZBFormRecognizedResults.addAll(Arrays.asList(info.getItems()));
+            mAdapter.setZBFormResults(mZBFormRecognizedResults);
+            mAdapter.notifyDataSetChanged();
+            mCachedZBFormRecognizedResultMap.put(mCurrentPage, mZBFormRecognizedResults);
             mDrawerLayout.openDrawer(Gravity.END);
+            dismissLoading();
         }
 
         @Override
@@ -852,6 +697,61 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         }
     };
 
+    public void recognizeAndGetData(){
+        ZBFormRecognizeTask zbFormRecognizeTask = new ZBFormRecognizeTask(mContext, mRecordId);
+        zbFormRecognizeTask.setOnRecognizeTaskListener(mOnZBFormRecognizeTaskListener);
+        zbFormRecognizeTask.execute();
+    }
+
+    private ZBFormRecognizeTask.OnZBFormRecognizeTaskListener mOnZBFormRecognizeTaskListener = new ZBFormRecognizeTask.OnZBFormRecognizeTaskListener() {
+        @Override
+        public void onStartGet() {
+
+        }
+
+        @Override
+        public void onGetSuccess(ZBFormRecgonizeResultInfo info) {
+            mZBFormRecognizedResults.clear();
+            convertZBFormRecognizedData(info, mZBFormRecognizedResults);
+
+            mAdapter.setZBFormResults(mZBFormRecognizedResults);
+            mAdapter.notifyDataSetChanged();
+            mCachedZBFormRecognizedResultMap.put(mCurrentPage, mZBFormRecognizedResults);
+            dismissLoading();
+            mDrawerLayout.openDrawer(Gravity.END);
+            mUserDraw = false;
+            isRecognized = true;
+        }
+
+        @Override
+        public void onGetFail() {
+            dismissLoading();
+
+        }
+
+        @Override
+        public void onCancelled() {
+            dismissLoading();
+
+        }
+    };
+
+    public void convertZBFormRecognizedData(ZBFormRecgonizeResultInfo info, List<ZBFormRecognizedResult> results){
+        String resultItemsString = info.getItems();
+        Log.i(TAG, "convertZBFormRecognizedData: items: "+resultItemsString);
+        Gson gson = new Gson();
+        List<ZBFormRecognizedItem> resultList = gson.fromJson(resultItemsString, new TypeToken<List<ZBFormRecognizedItem>>() {}.getType());
+        for(ZBFormRecognizedItem item: resultList){
+            ZBFormRecognizedResult r = new ZBFormRecognizedResult();
+            r.setItemCode(item.getCode());
+            Log.i(TAG, "convertZBFormRecognizedData: RecognizedData: "+item.getRecognizedData());
+
+            ZBFormRecognizedData data = gson.fromJson(item.getRecognizedData(), new TypeToken<ZBFormRecognizedData>(){}.getType());
+
+            r.setValue(data.getValue());
+            results.add(r);
+        }
+    }
     public double convertPageSize(double x) {
         return x * 10 * 8 / 0.3;
     }
@@ -921,7 +821,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         private LayoutInflater mInflater;
         private Context mContext;
         private List<FormItem> mItems = new ArrayList<>();
-        private List<Result> mResults = new ArrayList<>();
+        private List<ZBFormRecognizedResult> mZBFormResults = new ArrayList<>();
 
         public MenuItemAdapter(Context context) {
             super(context, R.layout.listitem_recorditem_layout);
@@ -948,8 +848,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             }
         }
 
-        public void setResults(List<Result> results) {
-            mResults = results;
+        public void setZBFormResults(List<ZBFormRecognizedResult> results){
+            mZBFormResults = results;
         }
 
         @Override
@@ -971,8 +871,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             TextView itemValue = convertView.findViewById(R.id.item_content);
             final String itemCode = item.getItem();
             String itemValueString = "";
-            for (Result r : mResults) {
-                if (r.getId().equals(itemCode)) {
+            for (ZBFormRecognizedResult r : mZBFormResults) {
+                if (r.getItemCode().equals(itemCode)) {
                     itemValueString = r.getValue();
                     itemValue.setText(itemValueString);
                     break;
@@ -1041,27 +941,28 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         @Override
         public void onGetSuccess(ModifyPostParams info) {
             boolean isFound = false;
-            for(int i=0; i< mResultData.getResult().length; i++){
-                Result r= mResultData.getResult()[i];
-                if(r.getId().equals(info.getItemCode())){
+            for(int i=0; i< mZBFormRecognizedResults.size(); i++){
+                ZBFormRecognizedResult r= mZBFormRecognizedResults.get(i);
+                if(r.getItemCode().equals(info.getItemCode())){
                     r.setValue(info.getItemData());
-                    mResultData.getResult()[i] = r;
+                    mZBFormRecognizedResults.remove(i);
+                    mZBFormRecognizedResults.add(r);
                     isFound =true;
                     break;
                 }
             }
-            ArrayList<Result> resultList = new ArrayList<>(Arrays.asList(mResultData.getResult()));
 
             // 如果修改的数据之前没有笔迹， 需要从新添加到识别结果中，更新界面。
-            // 注意： 这里没有更新 mResultData
             if(!isFound){
-                Result r= new Result();
-                r.setId(info.getItemCode());
+                ZBFormRecognizedResult r= new ZBFormRecognizedResult();
+                r.setItemCode(info.getItemCode());
                 r.setValue(info.getItemData());
-                resultList.add(r);
+                mZBFormRecognizedResults.add(r);
             }
-            mAdapter.setResults(resultList);
+            mAdapter.setZBFormResults(mZBFormRecognizedResults);
             mAdapter.notifyDataSetChanged();
+
+            mCachedZBFormRecognizedResultMap.put(mCurrentPage, mZBFormRecognizedResults);
             Toast.makeText(mContext, R.string.modify_item_value_success, Toast.LENGTH_LONG).show();
         }
 

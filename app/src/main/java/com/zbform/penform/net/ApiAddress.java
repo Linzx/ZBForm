@@ -32,6 +32,10 @@ public class ApiAddress {
             "http://47.93.38.17:8080/" :
             "http://47.93.38.17/";
 
+    public static final String ZBFORM_RECOGNIZE_BASE = DEBUG ==true ?
+            "http://demo.zbform.com/zbform/get/record/" :
+            "http://www.zbform.com/zbform/get/record/";
+
     /// <summary>
     /// 笔迹上传websocket url
     /// </summary>
@@ -78,21 +82,33 @@ public class ApiAddress {
     public static String MODIFY_ITEMVALUE_URL = DEBUG == true ?
             "http://demo.zbform.com/zbform/post/recorddata/correct" :
             "http://www.zbform.com/zbform/post/recorddata/correct";
+
+    public static String ZBFORM_RECOGNIZE_URL = ZBFORM_RECOGNIZE_BASE + "recognize";
+    public static String ZBFORM_GET_RECOGNIZE_DATA_URL = ZBFORM_RECOGNIZE_BASE + "recognizedData";
+
     /**
      * 表单识别接口
      * request: formid,recordid,items data
      */
     public static String HWR_RECOGNIZE = HWR_RECOGNIZE_BASE + "hwr/recognize";
 
-    public static String getHwrRecognizeUri(String formId, String recordId) {
+    public static String getZbformRecognizeUri(String recordId) {
         StringBuilder sb = new StringBuilder();
-        sb.append(ApiAddress.HWR_RECOGNIZE);
-        sb.append("?formid=");
-        sb.append(Uri.encode(formId));
-        sb.append("&recordid=");
+        sb.append(ApiAddress.ZBFORM_RECOGNIZE_URL);
+        sb.append("?uuid=");
         sb.append(Uri.encode(recordId));
 
         Log.i("zxl", "get recognize url=" + sb.toString());
+        return sb.toString();
+    }
+
+    public static String getZbformRecognizeDataUri(String recordId) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ApiAddress.ZBFORM_GET_RECOGNIZE_DATA_URL);
+        sb.append("?uuid=");
+        sb.append(Uri.encode(recordId));
+
+        Log.i("zxl", "get recognized data url=" + sb.toString());
         return sb.toString();
     }
 
