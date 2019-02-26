@@ -55,10 +55,10 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     private BleDevice mBleDevice;
     private TextView mStartOpen;
     private TextView mStartConnect;
-    private LinearLayout mPenNav1Layout;
-    private LinearLayout mPenNav2Layout;
+    private View mPenNav1Layout;
+    private View mPenNav2Layout;
     private LinearLayout mPenInfoLayout;
-    private LinearLayout mScanLayout;
+    private View mScanLayout;
     private TextView mPenName;
     private TextView mPenMac;
     private TextView mPenPower;

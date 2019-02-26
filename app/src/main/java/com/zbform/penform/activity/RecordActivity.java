@@ -969,6 +969,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             itemName.setText(item.getFieldName());
 
             TextView itemValue = convertView.findViewById(R.id.item_content);
+            itemValue.setText("");
             final String itemCode = item.getItem();
             String itemValueString = "";
             for (Result r : mResults) {
