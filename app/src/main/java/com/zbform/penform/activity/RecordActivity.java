@@ -915,6 +915,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                     name.setText(item.getFieldName());
 
                     content.setText(contentString);
+                    content.setSelection(contentString.length());
                     dialog.show();
                 }
             });
