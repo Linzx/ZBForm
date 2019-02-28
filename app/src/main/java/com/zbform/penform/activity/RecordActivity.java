@@ -305,6 +305,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         String state = results.get(0).getRecordRecognizeState();
         if("Y".equals(state)){
             isRecognized = true;
+            getZBFormRecognizedData(false);
         }
         // 获取Form 表单的图片，准备合成
         getFormImg(getUrl());
@@ -458,7 +459,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             } else {
                 // 还未获取过识别结果，开始获取
                 showLoading();
-                getZBFormRecognizedData();
+                getZBFormRecognizedData(true);
             }
         } else {
             // 还未识别过，或者有新的数据，从新识别获取
@@ -663,13 +664,22 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         }
     };
 
-    public void getZBFormRecognizedData(){
+    public void getZBFormRecognizedData(boolean open){
         ZBFormGetRecognizedDataTask getRecognizedDataTask = new ZBFormGetRecognizedDataTask(mContext,mRecordId);
+        mGetZBFormRecognizedDataListener.setOpenDrawer(open);
         getRecognizedDataTask.setOnZBFormGetRecognizedDataTaskListener(mGetZBFormRecognizedDataListener);
         getRecognizedDataTask.execute();
     }
 
-    private ZBFormGetRecognizedDataTask.OnZBFormGetRecognizedDataTaskListener mGetZBFormRecognizedDataListener = new ZBFormGetRecognizedDataTask.OnZBFormGetRecognizedDataTaskListener() {
+
+    private ZBFormGetRecognizedDataTaskListener mGetZBFormRecognizedDataListener = new ZBFormGetRecognizedDataTaskListener();
+    private class ZBFormGetRecognizedDataTaskListener implements ZBFormGetRecognizedDataTask.OnZBFormGetRecognizedDataTaskListener {
+        public boolean mOpenDrawer = true;
+
+        public void setOpenDrawer(boolean open) {
+            mOpenDrawer = open;
+        }
+
         @Override
         public void onStartGet() {
 
@@ -682,7 +692,9 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             mAdapter.setZBFormResults(mZBFormRecognizedResults);
             mAdapter.notifyDataSetChanged();
             mCachedZBFormRecognizedResultMap.put(mCurrentPage, mZBFormRecognizedResults);
-            mDrawerLayout.openDrawer(Gravity.END);
+            if (mOpenDrawer) {
+                mDrawerLayout.openDrawer(Gravity.END);
+            }
             dismissLoading();
         }
 
@@ -695,7 +707,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         public void onCancelled() {
             dismissLoading();
         }
-    };
+    }
 
     public void recognizeAndGetData(){
         ZBFormRecognizeTask zbFormRecognizeTask = new ZBFormRecognizeTask(mContext, mRecordId);
