@@ -99,7 +99,7 @@ public final class PreferencesUtility {
     }
 
     public boolean getShowIntroduce() {
-        return mPreferences.getBoolean(PRE_INTRODUCE_SHOWED,false);
+        return mPreferences.getBoolean(PRE_INTRODUCE_SHOWED,true);
     }
 
     public void setPreferenceValue(String key, String value){
