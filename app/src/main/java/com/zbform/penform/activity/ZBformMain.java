@@ -87,7 +87,7 @@ public class ZBformMain extends BaseActivity {
         }
     };
 
-    ZBFormBlePenManager.IZBBleGattCallback mBleGattCallback = new ZBFormBlePenManager.IZBBleGattCallback() {
+    ZBFormBlePenManager.IZBBleConnectCallback mBleGattCallback = new ZBFormBlePenManager.IZBBleConnectCallback() {
         @Override
         public void onStartConnect() {
         }
@@ -144,7 +144,7 @@ public class ZBformMain extends BaseActivity {
         mLvLeftMenu = findViewById(R.id.id_lv_left_menu);
 
         mTootBarTitle = findViewById(R.id.toolbar_title);
-        ZBformApplication.sBlePenManager.setZBBleGattCallback(mBleGattCallback);
+        ZBformApplication.sBlePenManager.setZBBleConnectCallback(mBleGattCallback);
         ZBformApplication.sBlePenManager.setBlePenStateCallBack(mBlePenStateCallBack);
         setToolBar();
         setUpDrawer();
@@ -301,7 +301,7 @@ public class ZBformMain extends BaseActivity {
 
     @Override
     protected void onDestroy() {
-        ZBformApplication.sBlePenManager.removeZBBleGattCallback(mBleGattCallback);
+        ZBformApplication.sBlePenManager.removeZBBleConnectCallback(mBleGattCallback);
         ZBformApplication.sBlePenManager.removeBlePenStateCallBack(mBlePenStateCallBack);
         stopService(mScanService);
         BlePenManager.getInstance().disconnectAllDevice();

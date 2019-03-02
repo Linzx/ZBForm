@@ -23,6 +23,7 @@ import com.tstudy.blepenlib.callback.BleScanCallback;
 import com.tstudy.blepenlib.data.BleDevice;
 import com.tstudy.blepenlib.data.BleScanState;
 import com.tstudy.blepenlib.exception.BleException;
+import com.zbform.penform.util.PreferencesUtility;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -77,7 +78,7 @@ public class ZBFormBlePenManager {
     private String mPageAddress = "0.0.0.0";
     private String mUrlData;
     private Handler mUIHander;
-    private ArrayList<IZBBleGattCallback> mIZBBleGattCallbackList = new ArrayList<IZBBleGattCallback>();
+    private ArrayList<IZBBleConnectCallback> mIZBBleConnectCallbackList = new ArrayList<IZBBleConnectCallback>();
     private ArrayList<IBlePenStateCallBack> mIBlePenStateCallBackList = new ArrayList<IBlePenStateCallBack>();
     private List<IZBBleScanCallback> mIZBBleScanCallbackList = new ArrayList<>();
     private List<IBlePenDrawCallBack> mIZBBlePenDrawCallbackList = new ArrayList<>();
@@ -114,7 +115,7 @@ public class ZBFormBlePenManager {
         void onOffLineCoordDraw(final String pageAddress, final int nX, final int nY);
     }
 
-    public interface IZBBleGattCallback {
+    public interface IZBBleConnectCallback {
         void onStartConnect();
 
         void onConnectFail(BleDevice bleDevice, BleException exception);
@@ -173,19 +174,19 @@ public class ZBFormBlePenManager {
             mIZBBlePenDrawCallbackList.remove(callback);
         }
     }
-    public void setZBBleGattCallback(IZBBleGattCallback callback) {
-        if (!mIZBBleGattCallbackList.contains(callback)) {
+    public void setZBBleConnectCallback(IZBBleConnectCallback callback) {
+        if (!mIZBBleConnectCallbackList.contains(callback)) {
             Log.i(TAG, "Add ble gatt call back, at set");
 
-            mIZBBleGattCallbackList.add(callback);
+            mIZBBleConnectCallbackList.add(callback);
         }
     }
 
-    public void removeZBBleGattCallback(IZBBleGattCallback callback) {
-        if (mIZBBleGattCallbackList.contains(callback)) {
+    public void removeZBBleConnectCallback(IZBBleConnectCallback callback) {
+        if (mIZBBleConnectCallbackList.contains(callback)) {
             Log.i(TAG, "remove ble gatt call back");
 
-            mIZBBleGattCallbackList.remove(callback);
+            mIZBBleConnectCallbackList.remove(callback);
         }
     }
 
@@ -247,10 +248,10 @@ public class ZBFormBlePenManager {
 //        BlePenStreamManager.getInstance().setHoverMode();
     }
 
-    public void connect(final BleDevice bleDevice, IZBBleGattCallback callback) {
-        if (callback != null && !mIZBBleGattCallbackList.contains(callback)) {
+    public void connect(final BleDevice bleDevice, IZBBleConnectCallback callback) {
+        if (callback != null && !mIZBBleConnectCallbackList.contains(callback)) {
             Log.i(TAG, "Add ble gatt call back");
-            mIZBBleGattCallbackList.add(callback);
+            mIZBBleConnectCallbackList.add(callback);
         }
         BlePenManager.getInstance().connect(bleDevice, mBleGattCallback);
     }
@@ -547,7 +548,7 @@ public class ZBFormBlePenManager {
         mBleGattCallback = new BleGattCallback() {
             @Override
             public void onStartConnect() {
-                for (IZBBleGattCallback callback : mIZBBleGattCallbackList) {
+                for (IZBBleConnectCallback callback : mIZBBleConnectCallbackList) {
                     if (callback != null) {
                         callback.onStartConnect();
                     }
@@ -557,7 +558,7 @@ public class ZBFormBlePenManager {
             @Override
             public void onConnectFail(BleDevice bleDevice, BleException exception) {
                 isConnectedNow = false;
-                for (IZBBleGattCallback callback : mIZBBleGattCallbackList) {
+                for (IZBBleConnectCallback callback : mIZBBleConnectCallbackList) {
                     if (callback != null) {
                         callback.onConnectFail(bleDevice, exception);
                     }
@@ -568,7 +569,10 @@ public class ZBFormBlePenManager {
             public void onConnectSuccess(BleDevice bleDevice, BluetoothGatt gatt, int status) {
                 isConnectedNow = true;
                 setBleDevice(bleDevice);
-                for (IZBBleGattCallback callback : mIZBBleGattCallbackList) {
+                PreferencesUtility.getInstance(mContext).setPreferenceValue(PreferencesUtility.BLEPEN_MAC, bleDevice.getMac());
+                PreferencesUtility.getInstance(mContext).setPreferenceValue(PreferencesUtility.BLEPEN_NAME, bleDevice.getName());
+
+                for (IZBBleConnectCallback callback : mIZBBleConnectCallbackList) {
                     if (callback != null) {
                         callback.onConnectSuccess(bleDevice, gatt, status);
                     }
@@ -578,7 +582,7 @@ public class ZBFormBlePenManager {
             @Override
             public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
                 isConnectedNow = false;
-                for (IZBBleGattCallback callback : mIZBBleGattCallbackList) {
+                for (IZBBleConnectCallback callback : mIZBBleConnectCallbackList) {
                     if (callback != null) {
                         callback.onDisConnected(isActiveDisConnected, bleDevice, gatt, status);
                     }

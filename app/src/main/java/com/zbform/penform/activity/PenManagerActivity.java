@@ -2,13 +2,17 @@ package com.zbform.penform.activity;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -31,12 +35,12 @@ import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.dialog.LoadingDialog;
 import com.zbform.penform.adapter.DeviceAdapter;
-import com.zbform.penform.util.PreferencesUtility;
+import com.zbform.penform.services.BleConnectService;
 
 import java.util.List;
 
 public class PenManagerActivity extends BaseActivity implements View.OnClickListener,
-        ZBFormBlePenManager.IBlePenStateCallBack, ZBFormBlePenManager.IZBBleGattCallback, ZBFormBlePenManager.IZBBleScanCallback {
+        ZBFormBlePenManager.IBlePenStateCallBack, ZBFormBlePenManager.IZBBleConnectCallback, ZBFormBlePenManager.IZBBleScanCallback {
 
 
     public static final String TAG = PenManagerActivity.class.getSimpleName();
@@ -64,20 +68,39 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     private TextView mPenPower;
     private TextView mPenVersion;
     private ActionBar mActionBar;
+    private BleConnectService mService;
 
     public boolean mIsConnectButtonPressed = false;
 
     private ZBFormBlePenManager mBlePenManager = ZBformApplication.sBlePenManager;
 
+    ServiceConnection conn = new ServiceConnection() {
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d(TAG, "onServiceConnected");
+            BleConnectService.LocalBinder binder = (BleConnectService.LocalBinder) service;
+            mService = binder.getService();
+            if (mService != null){
+                //打开了手动连接界面，停止自动连接
+                mService.stopAutoScan();
+            }
+        }
+
+        public void onServiceDisconnected(ComponentName name) {
+            mService = null;
+        }
+    };
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.fragment_penmanager);
 
+        Intent intent = new Intent(this,BleConnectService.class);
+        bindService(intent, conn, Service.BIND_AUTO_CREATE);
+
         mContext = this;
         initView();
         mBlePenManager.setBlePenStateCallBack(this);
-        mBlePenManager.setZBBleGattCallback(this);
+        mBlePenManager.setZBBleConnectCallback(this);
         mBlePenManager.setZBBleScanCallback(this);
         boolean initSuccess = mBlePenManager.isBleInitSuccess();
         if (initSuccess) {
@@ -91,10 +114,15 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
-        mBlePenManager.removeZBBleGattCallback(this);
+        if (mService != null) {
+            mService.startAutoScan();
+        }
+        unbindService(conn);
+        mBlePenManager.removeZBBleConnectCallback(this);
         mBlePenManager.removeZBBleScanCallback(this);
         mBlePenManager.removeBlePenStateCallBack(this);
+
+        super.onDestroy();
     }
 
     @Override
@@ -284,9 +312,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     public void onConnectSuccess(BleDevice bleDevice, BluetoothGatt gatt, int status) {
         mBleDevice = bleDevice;
         Log.i(TAG, "onConnectSuccess");
-//        mBlePenManager.setBleDevice(mBleDevice);
-        PreferencesUtility.getInstance(mContext).setPreferenceValue(PreferencesUtility.BLEPEN_MAC, bleDevice.getMac());
-        PreferencesUtility.getInstance(mContext).setPreferenceValue(PreferencesUtility.BLEPEN_NAME, bleDevice.getName());
+
         mIsConnectButtonPressed = false;
         dismissLoading();
         mDeviceAdapter.addDevice(0, bleDevice);

@@ -20,7 +20,7 @@ import com.zbform.penform.util.PreferencesUtility;
 
 import java.util.List;
 
-public class BleConnectService extends Service implements ZBFormBlePenManager.IZBBleScanCallback, ZBFormBlePenManager.IZBBleGattCallback {
+public class BleConnectService extends Service implements ZBFormBlePenManager.IZBBleScanCallback, ZBFormBlePenManager.IZBBleConnectCallback {
 
     public static final String TAG = BleConnectService.class.getSimpleName();
 
@@ -33,7 +33,6 @@ public class BleConnectService extends Service implements ZBFormBlePenManager.IZ
     private String mLastPenName = "null";
     private String mLastPenMac = "null";
 
-    private boolean isFoundDevice = false;
     private boolean isConnectSuccess = false;
 
     private Context mContext;
@@ -41,21 +40,48 @@ public class BleConnectService extends Service implements ZBFormBlePenManager.IZ
     private static final String PEN_DEFAULT_VALUE = "null";
     private static final int SCAN_DURATION = 10 * 1000;
 
+    private boolean mScanStoped = false;
+
 
     private Handler mScanHandler = new Handler();
     private Runnable mScanRunnable = new Runnable() {
         @Override
         public void run() {
+            Log.i(TAG,"isConnectSuccess="+isConnectSuccess);
+            Log.i(TAG,"getIsConnectedNow="+ZBformApplication.sBlePenManager.getIsConnectedNow());
             if (!isConnectSuccess && !ZBformApplication.sBlePenManager.getIsConnectedNow()) {
                 if (mBlePenManager.getScanState() == BleScanState.STATE_IDLE) {
                     Log.i(TAG, "Scan Runnable, idle state, start scan");
                     mBlePenManager.scan();
                 }
-
-                mScanHandler.postDelayed(mScanRunnable, SCAN_DURATION);
             }
         }
     };
+
+    public void stopAutoScan() {
+        Log.i(TAG, "stopAutoScan");
+        mScanHandler.removeCallbacksAndMessages(null);
+        mBlePenManager.removeZBBleConnectCallback(this);
+        mBlePenManager.removeZBBleScanCallback(this);
+        if (mBlePenManager.getScanState() != BleScanState.STATE_IDLE) {
+            Log.i(TAG, "stopAutoScan1");
+            mScanStoped = true;
+            mBlePenManager.cancelScan();
+        }
+    }
+
+    public void startAutoScan() {
+        mBlePenManager.setZBBleConnectCallback(this);
+        mBlePenManager.setZBBleScanCallback(this);
+        if (!mLastPenMac.equals(PEN_DEFAULT_VALUE) &&
+                !mLastPenName.equals(PEN_DEFAULT_VALUE) &&
+                !ZBformApplication.sBlePenManager.getIsConnectedNow()) {
+            Log.i(TAG, "startAutoScan");
+            mScanStoped = false;
+
+            mScanHandler.post(mScanRunnable);
+        }
+    }
 
     @Override
     public void onStartConnect() {
@@ -74,10 +100,12 @@ public class BleConnectService extends Service implements ZBFormBlePenManager.IZ
         Log.i(TAG, "onConnectSuccess");
         Toast.makeText(mContext, getString(R.string.scan_connect_pen_success) + ": " + bleDevice.getName(), Toast.LENGTH_LONG).show();
         isConnectSuccess = true;
+        //连接了不再继续扫描
+        if (mBlePenManager.getScanState() != BleScanState.STATE_IDLE) {
+            mBlePenManager.cancelScan();
+        }
         mScanHandler.removeCallbacks(mScanRunnable);
 
-        mPreference.setPreferenceValue(PreferencesUtility.BLEPEN_MAC, bleDevice.getMac());
-        mPreference.setPreferenceValue(PreferencesUtility.BLEPEN_NAME, bleDevice.getName());
     }
 
     @Override
@@ -91,7 +119,6 @@ public class BleConnectService extends Service implements ZBFormBlePenManager.IZ
     @Override
     public void onScanStarted(boolean success) {
         Log.i(TAG, "onScanStarted");
-        isFoundDevice = false;
         mLastPenName = mPreference.getPreferenceValue(PreferencesUtility.BLEPEN_NAME, PEN_DEFAULT_VALUE);
         mLastPenMac = mPreference.getPreferenceValue(PreferencesUtility.BLEPEN_MAC, PEN_DEFAULT_VALUE);
     }
@@ -103,15 +130,24 @@ public class BleConnectService extends Service implements ZBFormBlePenManager.IZ
     @Override
     public void onScanning(BleDevice bleDevice) {
         Log.i(TAG, "onScanning");
-        if (bleDevice.getMac().equals(mLastPenMac) && bleDevice.getName().equals(mLastPenName)) {
-            isFoundDevice = true;
+        if (bleDevice.getMac().equals(mLastPenMac) &&
+                bleDevice.getName().equals(mLastPenName) &&
+                !mScanStoped) {
             mBlePenManager.connect(bleDevice);
         }
     }
 
     @Override
     public void onScanFinished(List<BleDevice> scanResultList) {
-        Log.i(TAG, "onScanFinished");
+        Log.i(TAG, "onScanFinished ");
+        //一次scan结束如果还没有连接，继续scan
+        if (!mLastPenMac.equals(PEN_DEFAULT_VALUE) &&
+                !mLastPenName.equals(PEN_DEFAULT_VALUE) &&
+                !isConnectSuccess &&
+                !ZBformApplication.sBlePenManager.getIsConnectedNow()) {
+            Log.i(TAG, "onScanFinished loop");
+            mScanHandler.post(mScanRunnable);
+        }
     }
 
     public class LocalBinder extends Binder {
@@ -139,12 +175,7 @@ public class BleConnectService extends Service implements ZBFormBlePenManager.IZ
         mLastPenName = mPreference.getPreferenceValue(PreferencesUtility.BLEPEN_NAME, PEN_DEFAULT_VALUE);
         mLastPenMac = mPreference.getPreferenceValue(PreferencesUtility.BLEPEN_MAC, PEN_DEFAULT_VALUE);
 
-        mBlePenManager.setZBBleGattCallback(this);
-        mBlePenManager.setZBBleScanCallback(this);
-
-        if(!mLastPenMac.equals(PEN_DEFAULT_VALUE) && !mLastPenName.equals(PEN_DEFAULT_VALUE)) {
-            mScanHandler.post(mScanRunnable);
-        }
+        startAutoScan();
     }
 
     @Override
@@ -155,12 +186,11 @@ public class BleConnectService extends Service implements ZBFormBlePenManager.IZ
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
         Log.i(TAG, "onDestroy");
-
-        mBlePenManager.removeZBBleGattCallback(this);
+        mBlePenManager.removeZBBleConnectCallback(this);
         mBlePenManager.removeZBBleScanCallback(this);
 
         mScanHandler.removeCallbacks(mScanRunnable);
+        super.onDestroy();
     }
 }
