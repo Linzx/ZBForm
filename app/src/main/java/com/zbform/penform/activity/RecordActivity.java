@@ -20,6 +20,7 @@ import android.os.Message;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -977,6 +978,9 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             mAdapter.notifyDataSetChanged();
 
             mCachedZBFormRecognizedResultMap.put(mCurrentPage, mZBFormRecognizedResults);
+            if(TextUtils.isEmpty(info.getItemData())){
+                isRecognized = false;
+            }
             Toast.makeText(mContext, R.string.modify_item_value_success, Toast.LENGTH_LONG).show();
         }
 
