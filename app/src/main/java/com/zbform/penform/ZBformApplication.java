@@ -11,9 +11,11 @@ import com.lidroid.xutils.DbUtils;
 import com.tstudy.blepenlib.BlePenManager;
 import com.tstudy.blepenlib.BlePenStreamManager;
 import com.zbform.penform.blepen.MyLicense;
+import com.zbform.penform.blepen.MyLicenseDemo;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.handler.UnceHandler;
 import com.zbform.penform.json.UserInfo;
+import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.permissions.Nammu;
 import com.zbform.penform.services.BleConnectService;
 
@@ -65,7 +67,12 @@ public class ZBformApplication extends Application {
 
     private void initZBFormBlePenManager() {
         sBlePenManager = ZBFormBlePenManager.getInstance(context);
-        boolean initSuccess = BlePenManager.getInstance().init(this, MyLicense.getBytes());
+        boolean initSuccess;
+        if (ApiAddress.DEBUG){
+            initSuccess = BlePenManager.getInstance().init(this, MyLicenseDemo.getBytes());
+        } else {
+            initSuccess = BlePenManager.getInstance().init(this, MyLicense.getBytes());
+        }
         Log.i(TAG, "ble init success = " + initSuccess);
         sBlePenManager.setBleInitSuccess(initSuccess);
     }

@@ -14,7 +14,7 @@ import java.util.Date;
 public class ApiAddress {
     public final static String TAG = "apiaddress";
 
-    private static boolean DEBUG = true;
+    public static boolean DEBUG = true;
     public static final String SYSTEM_KEY = "7A1285_788a0f";
 
     public static final String DownLoadPdfUrlBase = DEBUG == true ?

@@ -75,7 +75,8 @@ public class ZBFormService extends Service {
 
     private UpLoadQueryHandler mUpLoadQueryHandler;
     private LinkedBlockingQueue<HwData> mCoordQueue = new LinkedBlockingQueue<HwData>();
-    private LinkedBlockingQueue<ZBFormInnerItem> mUpLoadQueue = new LinkedBlockingQueue<ZBFormInnerItem>();
+//    private LinkedBlockingQueue<ZBFormInnerItem> mUpLoadQueue = new LinkedBlockingQueue<ZBFormInnerItem>();
+    private HashMap<String, String> mValAddress = new HashMap<>();
 
     private IGetHwDataCallBack mIGetHwDataCallBack;
 
@@ -241,7 +242,7 @@ public class ZBFormService extends Service {
             while (true) {
                 try {
                     if (mStopRecordCoord && mCoordQueue.isEmpty()) {
-                        mCurrentPage = 1;
+//                        mCurrentPage = 1;
                         mDrawFormInfo = null;
                         mRecordId = "";
                         Log.i(TAG, "stop!!!!!");
@@ -251,6 +252,12 @@ public class ZBFormService extends Service {
                     if (stroke.getC() == -1000) {
                         continue;
                     }
+
+                    int strokePage = 1;
+                    try {
+                        strokePage = Integer.valueOf(mValAddress.get(stroke.getP()));
+                    }catch(Exception e){}
+
                     for (Point point : stroke.dList) {
                         ZBStrokeEntity strokeEntity = new ZBStrokeEntity();
                         strokeEntity.setUserid(ZBformApplication.getmLoginUserId());
@@ -261,10 +268,10 @@ public class ZBFormService extends Service {
                         }
                         strokeEntity.setRecordid(mRecordId);
 
-                        String itemId = findFormRecordId(point.getX(), point.getY());
+                        String itemId = findFormRecordId(strokePage, point.getX(), point.getY());
                         //笔迹不在item内，记录为page * -1
                         if (TextUtils.isEmpty(itemId)) {
-                            itemId = String.valueOf(-1 * mCurrentPage);
+                            itemId = String.valueOf(-1 * strokePage);
                             Log.i(TAG, "findFormRecordId null");
                         }
                         Log.i(TAG, "findFormRecordId id =" + itemId);
@@ -302,7 +309,7 @@ public class ZBFormService extends Service {
         }
 
         /// 计算坐标点是哪个formitem
-        private String findFormRecordId(int x, int y) {
+        private String findFormRecordId(int page, int x, int y) {
 
             String id = "";
             for (int i = 0; i < mDrawFormInfo.results[0].items.length; i++) {
@@ -310,49 +317,46 @@ public class ZBFormService extends Service {
 
                 double xoff = x * 0.3 / 8 / 10;
                 double yoff = y * 0.3 / 8 / 10;
-//                Log.i(TAG, "xoff=" + xoff);
-//                Log.i(TAG, "yoff" + yoff);
-//                Log.i(TAG, "item.getLocaX()=" + item.getLocaX());
-//                Log.i(TAG, "item.getLocaY()=" + item.getLocaY());
-//                Log.i(TAG, "LocaX()+LocaW=" + (item.getLocaX() + item.getLocaW()));
-//                Log.i(TAG, "LocaY()+LocaH()=" + (item.getLocaY() + item.getLocaH()));
+//                Log.i("TAG", "xoff=" + xoff);
+//                Log.i("TAG", "yoff" + yoff);
+//                Log.i("TAG", "item.getLocaX()=" + item.getLocaX());
+//                Log.i("TAG", "item.getLocaY()=" + item.getLocaY());
+//                Log.i("TAG", "LocaX()+LocaW=" + (item.getLocaX() + item.getLocaW()));
+//                Log.i("TAG", "LocaY()+LocaH()=" + (item.getLocaY() + item.getLocaH()));
 
-                if (xoff >= item.getLocaX() &&
+                if (item.getPage() == page &&
+                        xoff >= item.getLocaX() &&
                         yoff >= item.getLocaY() &&
                         xoff <= (item.getLocaX() + item.getLocaW()) &&
                         yoff <= (item.getLocaY() + item.getLocaH())) {
                     id = item.getItem();
-//                    Log.i(TAG, "form item id: " + id);
+                    Log.i("TAG", "form item id: " + id);
                     break;
                 }
-
             }
+//            Log.i("TAG", "RETURN FIND ID="+id);
             return id;
         }
     }
 
-    //    private class UpLoadQueueTask extends Thread{
-    private class UpLoadQueueTask extends AsyncTask<Void, Void, Void> {
-        @Override
-        protected Void doInBackground(Void... params) {
+//    private class UpLoadQueueTask extends AsyncTask<Void, Void, Void> {
 //        @Override
-//        public void run(){
-            while (true) {
-                try {
-                    Log.i(TAG, "UpLoadQueueTask LOOP");
-                    ZBFormInnerItem item = mUpLoadQueue.take();
-                    Log.i(TAG, "UpLoadQueueTask TAKE DONE");
-
-                    new UpLoadStrokeNet(item).execute();
-
-                } catch (InterruptedException e) {
-                    Log.i(TAG, "queue ex=" + e.getMessage());
-                    e.printStackTrace();
-//                    return false;
-                }
-            }
-        }
-    }
+//        protected Void doInBackground(Void... params) {
+//            while (true) {
+//                try {
+//                    Log.i(TAG, "UpLoadQueueTask LOOP");
+//                    ZBFormInnerItem item = mUpLoadQueue.take();
+//                    Log.i(TAG, "UpLoadQueueTask TAKE DONE");
+//
+//                    new UpLoadStrokeNet(item).execute();
+//
+//                } catch (InterruptedException e) {
+//                    Log.i(TAG, "queue ex=" + e.getMessage());
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//    }
 
     public class UpLoadStrokeDBQuery extends AsyncTask<Void, Void, Void> {
         private ArrayList<ZBFormInnerItem> mInnerItems;
@@ -666,6 +670,9 @@ public class ZBFormService extends Service {
     public void setDrawFormInfo(FormInfo info, String recordId) {
         mDrawFormInfo = info;
         mRecordId = recordId;
+        mValAddress = CommonUtils.findValidateAddress(true,
+                mDrawFormInfo.results[0].getRinit(),
+                mDrawFormInfo.results[0].getPage());
     }
 
     public void startDraw() {

@@ -29,6 +29,10 @@ public class LoadingDialog extends Dialog {
         this(context,R.style.LoadingDialog,message,false);
     }
 
+    public LoadingDialog(@NonNull Context context, String message, boolean cancelable) {
+        this(context, R.style.LoadingDialog, message, cancelable);
+    }
+
     public LoadingDialog(@NonNull Context context, int themeResId, String message, boolean cancelable) {
         super(context, themeResId);
         mMessage = message;
