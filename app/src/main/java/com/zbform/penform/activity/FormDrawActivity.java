@@ -16,15 +16,20 @@ import android.graphics.PorterDuff;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager.OnPageChangeListener;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -49,9 +54,14 @@ import com.zbform.penform.task.FormTask;
 import com.zbform.penform.task.NewFormRecordTask;
 import com.zbform.penform.util.CommonUtils;
 import com.zbform.penform.util.PreferencesUtility;
+import com.zbform.penform.view.CustViewPager;
+import com.zbform.penform.view.PageItemView;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+
+
+
 
 public class FormDrawActivity extends BaseActivity {
     private static final String TAG = "FormDrawActivity";
@@ -68,7 +78,6 @@ public class FormDrawActivity extends BaseActivity {
     private long lastClickTime = 0L;
     private static final int FAST_CLICK_DELAY_TIME = 1000;
 
-    //    private static final ColorDrawable TRANSPARENT_DRAWABLE = new ColorDrawable(android.R.color.transparent);
     private FormInfo mFormInfo;
     private int mCurrentPage = 1;
     private int mPage;
@@ -78,12 +87,12 @@ public class FormDrawActivity extends BaseActivity {
     private int mDrawState = STATE_PREVIEW;
     private ActionBar mActionBar;
     private FrameLayout mRoot;
-    private ImageView mImgView;
     private ImageView mCusDrawItemView;
     private ImageView mShowItem;
     private TextView mPageTitle;
     private Toolbar mToolbar;
     private ImageView mToolbarState;
+    private CustViewPager mFormViewPager;
     private LoadingDialog mLoadingDialog;
     private FormTask mFromTask;
     private NewFormRecordTask mNewRecordTask;
@@ -101,10 +110,12 @@ public class FormDrawActivity extends BaseActivity {
     private PreferencesUtility mPreferencesUtility;
     private ImageLoader mImageLoader;
     private FormOpenLoader mFormOpenLoader;
-    private SwitchPageLoader mSwitchPageLoader;
-    private RecordNewLoader mRecordNewLoader;
-    private PenOpenLoader mPenOpenLoader;
-
+//    private SwitchPageLoader mSwitchPageLoader;
+    private RecordNewImageLoader mRecordNewLoader;
+//    private PenOpenLoader mPenOpenLoader;
+    private FormPagerAdapter mPageAdapter;
+    private boolean mForceRefresh = false;
+    private ArrayList<FormPageHolder> mFormPageHolderList = new ArrayList<>();
 
     ServiceConnection conn = new ServiceConnection() {
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -135,13 +146,18 @@ public class FormDrawActivity extends BaseActivity {
         mPreferencesUtility = PreferencesUtility.getInstance(this);
         mResources = getResources();
         mRoot = findViewById(R.id.ll_root);
-        mImgView = (ImageView) findViewById(R.id.form_img);
+//        mImgView = (ImageView) findViewById(R.id.form_img);
         mShowItem = findViewById(R.id.show_item);
         mShowItem.setOnClickListener(mOnClickListener);
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         mToolbarState = findViewById(R.id.toolbar_state);
 
         mPageTitle = findViewById(R.id.page_title);
+        mFormViewPager = findViewById(R.id.form_pager);
+
+        mFormViewPager.addOnPageChangeListener(mOnPageChangeListener);
+
+        mPageAdapter = new FormPagerAdapter(this);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fb_add_record);
         fab.setOnClickListener(mOnClickListener);
@@ -179,7 +195,7 @@ public class FormDrawActivity extends BaseActivity {
             mPageAddress = intent.getStringExtra("pageaddress");
             mFormName = intent.getStringExtra("formname");
             mCurrentPage = intent.getIntExtra("currentpage", 1);
-            setUpPageTitle();
+            setUpPageTitle(1);
 
             String initAddress = intent.getStringExtra("initaddress");
             String newFormID = intent.getStringExtra("formid");
@@ -199,7 +215,9 @@ public class FormDrawActivity extends BaseActivity {
                 mValAddress = CommonUtils.findValidateAddress(
                         false, initAddress, mPage);
                 Log.i(TAG, "initFormData mValAddress size=" + mValAddress.size());
-
+                initViewPagerData();
+                mPageAdapter.setData(mFormPageHolderList);
+                mFormViewPager.setAdapter(mPageAdapter);
 
                 if (mFormOpenLoader == null) {
                     mFormOpenLoader = new FormOpenLoader(action);
@@ -208,33 +226,179 @@ public class FormDrawActivity extends BaseActivity {
                 }
                 mFormOpenLoader.startLoader();
             } else {
-                if (mPenOpenLoader == null){
-                    mPenOpenLoader = new PenOpenLoader(LOAD_ACTION_PEN_OPEN);
-                }
-                mPenOpenLoader.startLoader();
+                indexViewPager();
             }
         }
     }
 
-    public interface ILoaderCallBack {
-        void onLoadStart();
+    private void indexViewPager(){
+        for (FormPageHolder holder : mFormPageHolderList){
+            if (holder.mPageAddress.equals(mPageAddress)){
 
-        void onLoadSuccess();
+                mFormViewPager.setCurrentItem(holder.mHolderPosition, false);
+                break;
+            }
+        }
+    }
 
-        void onLoadFail();
+    private void initViewPagerData() {
+        mFormPageHolderList.clear();
+        for (int i = 1; i <= mPage; i++) {
+            FormPageHolder holder = new FormPageHolder();
+            holder.mImgUrl =
+                    ApiAddress.getFormImgUri(ZBformApplication.getmLoginUserId(),
+                            ZBformApplication.getmLoginUserId(), mFormID, i);
+
+            holder.mHolderPosition = i - 1;
+            holder.mPageAddress = mValAddress.get(String.valueOf(i));
+            mFormPageHolderList.add(holder);
+        }
+    }
+
+    private void drawForm(FormPageHolder formPageHolder) {
+        if (formPageHolder.formBitmap != null &&
+                formPageHolder.contentView != null) {
+            mTargetWidth = formPageHolder.formBitmap.getWidth();
+            mTargetHeight = formPageHolder.formBitmap.getHeight();
+            Log.i(TAG, "onResourceReady W=" + mTargetWidth);
+            Log.i(TAG, "onResourceReady H=" + mTargetHeight);
+            mZBFormBlePenManager.setDrawView(formPageHolder.contentView.getImageView(),
+                    formPageHolder.formBitmap);
+            if (mFormHeight > 0 && mFormWidth > 0) {
+                mZBFormBlePenManager.setPaperSize((float) mFormWidth, (float) mFormHeight);
+            }
+            if (mValAddress != null) {
+                String index = String.valueOf(formPageHolder.mHolderPosition + 1);
+                mPageAddress = mValAddress.get(index);
+                Log.i(TAG, "switch page=" + mPageAddress);
+            }
+            if (mDrawState == STATE_DRAW && mCacheHwData.size() > 0) {
+                new DrawHwDataTask(formPageHolder.formBitmap).execute();
+            }
+
+            if (mService != null) {
+                mService.setCurrentPageAddress(mPageAddress);
+            }
+            if (mItemShow) {
+                showItemsReF(formPageHolder);
+            }
+        } else {
+            Log.i(TAG, "holder resource null");
+        }
+    }
+
+    private class FormPageHolder {
+        PageItemView contentView;
+        Bitmap formBitmap;
+
+        int mHolderPosition;
+        String mImgUrl;
+        String mPageAddress;
+    }
+
+    private OnPageChangeListener mOnPageChangeListener = new OnPageChangeListener() {
+        @Override
+        public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+            Log.i("whd","scrolled");
+        }
+
+        @Override
+        public void onPageSelected(int position) {
+            Log.i(TAG, "onPageSelected=" + position);
+            setUpPageTitle(position + 1);
+            FormPageHolder pageHolder = mFormPageHolderList.get(position);
+            if (pageHolder != null) {
+                drawForm(pageHolder);
+            }
+        }
+
+        @Override
+        public void onPageScrollStateChanged(int state) {
+            Log.i("whd","onPageScrollStateChanged");
+        }
+    };
+
+    private class FormPagerAdapter extends PagerAdapter {
+        ArrayList<FormPageHolder> mList;
+        Context mContext;
+        LayoutInflater mInflater;
+
+        FormPagerAdapter(Context context) {
+            mContext = context;
+            mInflater = LayoutInflater.from(mContext);
+        }
+
+        public void setData(ArrayList<FormPageHolder> list) {
+            mList = list;
+        }
+
+        @Override
+        public int getCount() {
+            return mList.size();
+        }
+
+        @Override
+        public View instantiateItem(ViewGroup container, int position) {
+            Log.i(TAG, "instantiateItem=" + position);
+            PageItemView contentView = new PageItemView(container.getContext());
+
+            FormPageHolder pageHolder = mList.get(position);
+            pageHolder.contentView = contentView;
+            new ImageLoader(pageHolder).startLoader();
+
+            container.addView(contentView, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            return contentView;
+        }
+
+        @Override
+        public void destroyItem(ViewGroup container, int position, Object object) {
+            PageItemView rootView = (PageItemView) object;
+            if (rootView == null)
+                return;
+
+            Log.i(TAG, "destroyItem=" + position);
+            if (position < mList.size()) {
+                FormPageHolder pageHolder = mList.get(position);
+                if (pageHolder != null) {
+                    pageHolder.contentView = null;
+                    pageHolder.formBitmap = null;
+                }
+            }
+            Glide.clear(rootView.getImageView());
+            container.removeView((View) object);
+        }
+
+        @Override
+        public boolean isViewFromObject(View view, Object object) {
+            return view == object;
+        }
+
+        @Override
+        public int getItemPosition(@NonNull Object object) {
+            if (mForceRefresh) {
+                return POSITION_NONE;
+            } else {
+                return super.getItemPosition(object);
+            }
+        }
+    }
+
+    public interface IImageLoaderCallBack {
+        void onImgLoadStart();
+
+        void onImgLoadSuccess();
+
+        void onImgLoadFail();
     }
 
     public class ImageLoader {
-        int mAction;
-
-        ILoaderCallBack mCallback;
-
         private class DrawImgRequestListener implements RequestListener<String, Bitmap> {
             @Override
             public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
                 Log.i(TAG, "DrawImgRequestListener onException=" + e.getMessage());
                 if (mCallback != null) {
-                    mCallback.onLoadFail();
+                    mCallback.onImgLoadFail();
                 }
                 return false;
             }
@@ -243,40 +407,16 @@ public class FormDrawActivity extends BaseActivity {
             public boolean onResourceReady(Bitmap resource, String model,
                                            Target<Bitmap> target, boolean isFromMemoryCache,
                                            boolean isFirstResource) {
+                Log.i(TAG, "onResourceReady=" + mFormViewPager.getCurrentItem());
                 if (resource != null) {
-                    mTargetWidth = resource.getWidth();
-                    mTargetHeight = resource.getHeight();
-                    Log.i(TAG, "onResourceReady W=" + mTargetWidth);
-                    Log.i(TAG, "onResourceReady H=" + mTargetHeight);
-                    mZBFormBlePenManager.setDrawView(mImgView, resource);
-                    if (mFormHeight > 0 && mFormWidth > 0) {
-                        mZBFormBlePenManager.setPaperSize((float) mFormWidth, (float) mFormHeight);
-                    }
-                    if (mAction == LOAD_ACTION_PRE_IMG
-                            || mAction == LOAD_ACTION_NEXT_IMG
-                            || mAction == LOAD_ACTION_PEN_OPEN) {
-                        if (mValAddress != null && mAction != LOAD_ACTION_PEN_OPEN) {
-                            mPageAddress = mValAddress.get(String.valueOf(mCurrentPage));
-                            Log.i(TAG, "switch page=" + mPageAddress);
-                        }
-                        if (mDrawState == STATE_DRAW && mCacheHwData.size() > 0) {
-                            new DrawHwDataTask(resource).execute();
-                        }
-                    }
-
-                    if (mService != null) {
-                        mService.setCurrentPageAddress(mPageAddress);
-                    }
-                    if (mItemShow) {
-                        showItemsReF();
+                    mFormPageHolder.formBitmap = resource;
+                    if (mFormPageHolder.mHolderPosition == mFormViewPager.getCurrentItem()) {
+                        drawForm(mFormPageHolder);
                     }
                 } else {
-                    Log.i(TAG, "onResourceReady resource null");
+                    mFormPageHolder.formBitmap = null;
                 }
-
-                if (mCallback != null) {
-                    mCallback.onLoadSuccess();
-                }
+                mItemView.dismissLoading();
                 return false;
             }
         }
@@ -300,29 +440,42 @@ public class FormDrawActivity extends BaseActivity {
             }
         }
 
-        public ImageLoader(int action, ILoaderCallBack callback) {
+        int mAction;
+
+        IImageLoaderCallBack mCallback;
+
+        PageItemView mItemView;
+        FormPageHolder mFormPageHolder;
+
+        public ImageLoader(FormPageHolder page) {
+            mItemView = page.contentView;
+            mFormPageHolder = page;
+        }
+
+        public ImageLoader(int action, IImageLoaderCallBack callback) {
             mAction = action;
             mCallback = callback;
         }
+
 
         private void setAction(int action) {
             mAction = action;
         }
 
-        private void setCallback(ILoaderCallBack callback) {
+        private void setCallback(IImageLoaderCallBack callback) {
             mCallback = callback;
         }
 
         public void startLoader() {
             try {
                 Glide.with(FormDrawActivity.this)
-                        .load(getUrl())
+                        .load(mFormPageHolder.mImgUrl)
                         .asBitmap()
                         .skipMemoryCache(true)
                         .listener(new DrawImgRequestListener())
                         .transform(new FormDrawImgTransformation(FormDrawActivity.this))
 //                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .into(mImgView);
+                        .into(mItemView.getImageView());
             } catch (Exception e) {
                 Log.i(TAG, "bitmap ex=" + e.getMessage());
                 e.printStackTrace();
@@ -332,55 +485,7 @@ public class FormDrawActivity extends BaseActivity {
         }
     }
 
-    public class PenOpenLoader implements ILoaderCallBack {
-        int mAction;
-
-        public PenOpenLoader(int action) {
-            mAction = action;
-        }
-
-        private void setAction(int action) {
-            mAction = action;
-        }
-
-        public void startLoader() {
-            onLoadStart();
-            if (mImageLoader == null) {
-                mImageLoader = new ImageLoader(mAction, this);
-            } else {
-                mImageLoader.setAction(mAction);
-                mImageLoader.setCallback(this);
-            }
-            mImageLoader.startLoader();
-        }
-
-        @Override
-        public void onLoadStart() {
-            showLoading(mResources.getString(R.string.loading));
-        }
-
-        @Override
-        public void onLoadSuccess() {
-            FormDrawActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    dismissLoading();
-                }
-            });
-        }
-
-        @Override
-        public void onLoadFail() {
-            FormDrawActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    dismissLoading();
-                }
-            });
-        }
-    }
-
-    public class FormOpenLoader implements FormTask.OnFormTaskListener, ILoaderCallBack {
+    public class FormOpenLoader implements FormTask.OnFormTaskListener{
 
         int mAction;
 
@@ -400,7 +505,7 @@ public class FormDrawActivity extends BaseActivity {
 
         @Override
         public void onStartGet() {
-            onLoadStart();
+            showLoading(mResources.getString(R.string.loading));
         }
 
         @Override
@@ -419,19 +524,21 @@ public class FormDrawActivity extends BaseActivity {
 
             if (TextUtils.isEmpty(mFormID) || mFormInfo == null) {
                 Toast.makeText(FormDrawActivity.this,
-                        FormDrawActivity.this.getResources().getString(R.string.toast_new_record_fail),
+                        FormDrawActivity.this.getResources().getString(R.string.toast_img_error),
                         Toast.LENGTH_SHORT).show();
                 dismissLoading();
                 return;
             }
 
-            if (mImageLoader == null) {
-                mImageLoader = new ImageLoader(mAction, this);
-            } else {
-                mImageLoader.setAction(mAction);
-                mImageLoader.setCallback(this);
+            dismissLoading();
+            if (mPreferencesUtility.getPreFormDefNew()) {
+                if (mRecordNewLoader == null) {
+                    mRecordNewLoader = new RecordNewImageLoader(LOAD_ACTION_NEW_RECORD);
+                } else {
+                    mRecordNewLoader.setAction(LOAD_ACTION_NEW_RECORD);
+                }
+                mRecordNewLoader.startLoader();
             }
-            mImageLoader.startLoader();
         }
 
         @Override
@@ -445,46 +552,13 @@ public class FormDrawActivity extends BaseActivity {
             Log.i(TAG, "onCancelled dis");
             dismissLoading();
         }
-
-        @Override
-        public void onLoadStart() {
-            showLoading(mResources.getString(R.string.loading));
-        }
-
-        @Override
-        public void onLoadSuccess() {
-            FormDrawActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    dismissLoading();
-                }
-            });
-            if (mPreferencesUtility.getPreFormDefNew()) {
-                if (mRecordNewLoader == null) {
-                    mRecordNewLoader = new RecordNewLoader(LOAD_ACTION_NEW_RECORD);
-                } else {
-                    mRecordNewLoader.setAction(LOAD_ACTION_NEW_RECORD);
-                }
-                mRecordNewLoader.startLoader();
-            }
-        }
-
-        @Override
-        public void onLoadFail() {
-            FormDrawActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    dismissLoading();
-                }
-            });
-        }
     }
 
-    public class RecordNewLoader implements NewFormRecordTask.OnNewRecordTaskListener,ILoaderCallBack {
+    public class RecordNewImageLoader implements NewFormRecordTask.OnNewRecordTaskListener{
         int mAction;
         String mUUID;
 
-        public RecordNewLoader(int action) {
+        public RecordNewImageLoader(int action) {
             mAction = action;
         }
 
@@ -500,26 +574,27 @@ public class FormDrawActivity extends BaseActivity {
 
         @Override
         public void onStartNew() {
-            onLoadStart();
+            showLoading(mResources.getString(R.string.loading_new_record));
         }
 
         @Override
         public void onNewSuccess(String uuid) {
             mUUID = uuid;
-            if (mDrawState == STATE_DRAW) {
-                mCurrentPage = 1;
-                mCacheHwData.clear();
-                if (mImageLoader == null) {
-                    mImageLoader = new ImageLoader(mAction, this);
-                } else {
-                    mImageLoader.setAction(mAction);
-                    mImageLoader.setCallback(this);
-                }
-                mImageLoader.startLoader();
-            } else {
-                onLoadSuccess();
-            }
 
+            mForceRefresh = false;
+            if (mService != null) {
+                mService.setDrawFormInfo(mFormInfo, mUUID);
+                mService.setGetHwDataCallBack(mGetHwDataCallBack);
+                mService.startDraw();
+                setUpToolBarState(true);
+                mDrawState = STATE_DRAW;
+                Log.i(TAG, "startDraw");
+            }
+            dismissLoading();
+
+            Toast.makeText(FormDrawActivity.this,
+                    FormDrawActivity.this.getResources().getString(R.string.toast_new_record),
+                    Toast.LENGTH_SHORT).show();
         }
 
         @Override
@@ -536,125 +611,6 @@ public class FormDrawActivity extends BaseActivity {
                     FormDrawActivity.this.getResources().getString(R.string.toast_new_record_fail),
                     Toast.LENGTH_SHORT).show();
             dismissLoading();
-        }
-
-        @Override
-        public void onLoadStart() {
-            showLoading(mResources.getString(R.string.loading_new_record));
-        }
-
-        @Override
-        public void onLoadSuccess() {
-            if (mService != null) {
-                mService.setDrawFormInfo(mFormInfo, mUUID);
-                mService.setGetHwDataCallBack(mGetHwDataCallBack);
-                mService.startDraw();
-                setUpToolBarState(true);
-                mDrawState = STATE_DRAW;
-                Log.i(TAG, "startDraw");
-            }
-            FormDrawActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    dismissLoading();
-                }
-            });
-
-            Toast.makeText(FormDrawActivity.this,
-                    FormDrawActivity.this.getResources().getString(R.string.toast_new_record),
-                    Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        public void onLoadFail() {
-            FormDrawActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    dismissLoading();
-                }
-            });
-            Toast.makeText(FormDrawActivity.this,
-                    FormDrawActivity.this.getResources().getString(R.string.toast_new_record_fail),
-                    Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    public class SwitchPageLoader implements ILoaderCallBack{
-        int mAction;
-        Context mContext;
-        public SwitchPageLoader(Context context, int action) {
-            mContext = context;
-            mAction = action;
-        }
-
-        private void setAction(int action) {
-            mAction = action;
-        }
-
-        public void startLoader() {
-            if (mAction == LOAD_ACTION_PRE_IMG && mCurrentPage == 1) {
-                Toast.makeText(mContext, mContext.getResources().getString(R.string.toast_already_first), Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (mAction == LOAD_ACTION_NEXT_IMG && mCurrentPage == mPage) {
-                Toast.makeText(mContext, mContext.getResources().getString(R.string.toast_already_last), Toast.LENGTH_SHORT).show();
-                return;
-            }
-            Log.i(TAG, "mPage=" + mPage);
-            Log.i(TAG, "mCurrentPage1=" + mCurrentPage);
-
-            if (mAction == LOAD_ACTION_PRE_IMG) {
-                if (mCurrentPage > 1) {
-                    mCurrentPage -= 1;
-                }
-            } else if (mAction == LOAD_ACTION_NEXT_IMG) {
-                if (mCurrentPage < mPage) {
-                    mCurrentPage += 1;
-                }
-            }
-
-            onLoadStart();
-
-            if (mImageLoader == null){
-                mImageLoader = new ImageLoader(mAction,this);
-            } else {
-                mImageLoader.setCallback(this);
-                mImageLoader.setAction(mAction);
-            }
-            mImageLoader.startLoader();
-            if (mService != null) {
-                mService.setCurrentPage(mCurrentPage);
-            }
-            setUpPageTitle();
-        }
-
-        @Override
-        public void onLoadStart() {
-            if (mAction == LOAD_ACTION_PRE_IMG) {
-                showLoading(mResources.getString(R.string.loading_pre));
-            } else if (mAction == LOAD_ACTION_NEXT_IMG) {
-                showLoading(mResources.getString(R.string.loading_next));
-            }
-        }
-
-        @Override
-        public void onLoadSuccess() {
-            FormDrawActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    dismissLoading();
-                }
-            });
-        }
-
-        @Override
-        public void onLoadFail() {
-            FormDrawActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    dismissLoading();
-                }
-            });
         }
     }
 
@@ -727,7 +683,6 @@ public class FormDrawActivity extends BaseActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            mImgView.setImageBitmap(mDrawTarget);
             mPath.reset();
             dismissLoading();
         }
@@ -748,6 +703,7 @@ public class FormDrawActivity extends BaseActivity {
     }
 
     private class DrawItemsTask {
+        FormPageHolder mFormPageHolder;
         Bitmap mDrawItemTarget;
         Canvas mCanvas;
         Paint mPaint;
@@ -755,7 +711,8 @@ public class FormDrawActivity extends BaseActivity {
         float mScaleY = 0.23457f;
 
 
-        public DrawItemsTask() {
+        public DrawItemsTask(FormPageHolder holder) {
+            mFormPageHolder = holder;
             mPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
             mPaint.setStrokeWidth(2f);
             mPaint.setColor(Color.BLUE);
@@ -802,26 +759,27 @@ public class FormDrawActivity extends BaseActivity {
                     }
                 }
 
+                int index = mFormViewPager.getCurrentItem() +1;
                 for (FormItem item : items) {
-                    if (item != null && mCurrentPage == item.getPage()) {
-                        Log.i(TAG, "DrawItemsTask item=" + item);
+                    if (item != null && index == item.getPage()) {
                         double left = convertPageSize(item.getLocaX()) * mScaleX;
                         double top = convertPageSize(item.getLocaY()) * mScaleY;
                         double right = convertPageSize(item.getLocaX() + item.getLocaW()) * mScaleX;
                         double bottom = convertPageSize(item.getLocaY() + item.getLocaH()) * mScaleY;
 
-                        Log.i(TAG, "DrawItemsTask left=" + left);
-                        Log.i(TAG, "DrawItemsTask top=" + top);
-                        Log.i(TAG, "DrawItemsTask right=" + right);
-                        Log.i(TAG, "DrawItemsTask bottom=" + bottom);
+//                        Log.i(TAG, "DrawItemsTask left=" + left);
+//                        Log.i(TAG, "DrawItemsTask top=" + top);
+//                        Log.i(TAG, "DrawItemsTask right=" + right);
+//                        Log.i(TAG, "DrawItemsTask bottom=" + bottom);
                         mCanvas.drawRect((float) left, (float) top, (float) right, (float) bottom, mPaint);
                     }
                 }
 
-                if (mCusDrawItemView == null) {
+                if (mCusDrawItemView == null && mFormPageHolder.contentView != null) {
                     mCusDrawItemView = new ImageView(FormDrawActivity.this);
                     FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                            mImgView.getWidth(), mImgView.getHeight());
+                            mFormPageHolder.contentView.getImageView().getWidth(),
+                            mFormPageHolder.contentView.getImageView().getHeight());
                     params.gravity = Gravity.CENTER;
                     mCusDrawItemView.setLayoutParams(params);
                     mCusDrawItemView.setImageBitmap(mDrawItemTarget);
@@ -848,14 +806,30 @@ public class FormDrawActivity extends BaseActivity {
         @Override
         public void onClick(View v) {
             if (v.getId() == R.id.fb_add_record) {
-                if (mRecordNewLoader == null) {
-                    mRecordNewLoader = new RecordNewLoader(LOAD_ACTION_NEW_RECORD);
+                FormPageHolder holder = getCurrentHolder();
+                if (holder != null && holder.formBitmap != null) {
+                    if (mDrawState == STATE_DRAW) {
+                        if (mCacheHwData.size() >0) {
+                            mForceRefresh = true;
+                            mCacheHwData.clear();
+                        }
+                        mPageAdapter.notifyDataSetChanged();
+                        mFormViewPager.setCurrentItem(0);
+                    }
+                    if (mRecordNewLoader == null) {
+                        mRecordNewLoader = new RecordNewImageLoader(LOAD_ACTION_NEW_RECORD);
+                    } else {
+                        mRecordNewLoader.setAction(LOAD_ACTION_NEW_RECORD);
+                    }
+                    mRecordNewLoader.startLoader();
                 } else {
-                    mRecordNewLoader.setAction(LOAD_ACTION_NEW_RECORD);
+                    Toast.makeText(FormDrawActivity.this,
+                            FormDrawActivity.this.getResources().getString(
+                                    R.string.toast_img_loading),
+                            Toast.LENGTH_SHORT).show();
                 }
-                mRecordNewLoader.startLoader();
             } else {
-                Log.i("whd", "item click");
+                Log.i(TAG, "item click");
                 if (mItemShow) {
                     mShowItem.setImageResource(R.drawable.ic_show_item);
                     if (mCusDrawItemView != null) {
@@ -867,16 +841,23 @@ public class FormDrawActivity extends BaseActivity {
                     if (mCusDrawItemView != null) {
                         mCusDrawItemView.setVisibility(View.VISIBLE);
                     }
-                    showItemsReF();
+                    FormPageHolder holder = getCurrentHolder();
+                    if (holder != null) {
+                        showItemsReF(holder);
+                    }
                     mItemShow = true;
                 }
             }
         }
     };
 
-    private void showItemsReF() {
+    private FormPageHolder getCurrentHolder(){
+        return mFormPageHolderList.get(mFormViewPager.getCurrentItem());
+    }
+
+    private void showItemsReF(FormPageHolder holder) {
         if (mDrawItemsTask == null) {
-            mDrawItemsTask = new DrawItemsTask();
+            mDrawItemsTask = new DrawItemsTask(holder);
         }
         mDrawItemsTask.drawItems();
     }
@@ -885,27 +866,10 @@ public class FormDrawActivity extends BaseActivity {
         return x * 10 * 8 / 0.3;
     }
 
-    private String getUrl() {
-        if (mCurrentPage < 0 || mCurrentPage > mPage) {
-            mCurrentPage = 1;
-        }
-        return ApiAddress.getFormImgUri(ZBformApplication.getmLoginUserId(),
-                ZBformApplication.getmLoginUserId(), mFormID, mCurrentPage);
-    }
-
-    private void switchPages(int action) {
-        if (mSwitchPageLoader == null){
-            mSwitchPageLoader = new SwitchPageLoader(this, action);
-        } else {
-            mSwitchPageLoader.setAction(action);
-        }
-        mSwitchPageLoader.startLoader();
-    }
-
-    private void setUpPageTitle() {
+    private void setUpPageTitle(int pos) {
         if (mPage > 1) {
             mPageTitle.setVisibility(View.VISIBLE);
-            mPageTitle.setText(getResources().getString(R.string.page_title, mCurrentPage));
+            mPageTitle.setText(getResources().getString(R.string.page_title, pos));
         } else {
             mPageTitle.setVisibility(View.GONE);
         }
@@ -978,12 +942,12 @@ public class FormDrawActivity extends BaseActivity {
                 startActivity(intent);
                 FormDrawActivity.this.finish();
                 return true;
-            case R.id.img_pre:
-                switchPages(LOAD_ACTION_PRE_IMG);
-                return true;
-            case R.id.img_next:
-                switchPages(LOAD_ACTION_NEXT_IMG);
-                return true;
+//            case R.id.img_pre:
+//                switchPages(LOAD_ACTION_PRE_IMG);
+//                return true;
+//            case R.id.img_next:
+//                switchPages(LOAD_ACTION_NEXT_IMG);
+//                return true;
             default:
                 break;
         }
@@ -1004,15 +968,5 @@ public class FormDrawActivity extends BaseActivity {
         unbindService(conn);
         super.onDestroy();
     }
-
-//    private void fadeInDisplay(ImageView imageView, Bitmap bitmap) {
-//        final TransitionDrawable transitionDrawable =
-//                new TransitionDrawable(new Drawable[]{
-//                        TRANSPARENT_DRAWABLE,
-//                        new BitmapDrawable(imageView.getResources(), bitmap)
-//                });
-//        imageView.setImageDrawable(transitionDrawable);
-//        transitionDrawable.startTransition(500);
-//    }
 
 }

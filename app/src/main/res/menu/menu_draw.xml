@@ -8,17 +8,17 @@
         android:title="@string/view_record_title"
         app:showAsAction="ifRoom" />
 
-    <item
-        android:id="@+id/img_pre"
-        android:icon="@drawable/verticalright"
-        android:orderInCategory="1"
-        android:title="@string/menu_item_pre"
-        app:showAsAction="ifRoom" />
+    <!--<item-->
+        <!--android:id="@+id/img_pre"-->
+        <!--android:icon="@drawable/verticalright"-->
+        <!--android:orderInCategory="1"-->
+        <!--android:title="@string/menu_item_pre"-->
+        <!--app:showAsAction="ifRoom" />-->
 
-    <item
-        android:id="@+id/img_next"
-        android:icon="@drawable/verticalleft"
-        android:orderInCategory="1"
-        android:title="@string/menu_item_next"
-        app:showAsAction="ifRoom" />
+    <!--<item-->
+        <!--android:id="@+id/img_next"-->
+        <!--android:icon="@drawable/verticalleft"-->
+        <!--android:orderInCategory="1"-->
+        <!--android:title="@string/menu_item_next"-->
+        <!--app:showAsAction="ifRoom" />-->
 </menu>
