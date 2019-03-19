@@ -144,6 +144,9 @@ public class ZBformMain extends BaseActivity {
         mLvLeftMenu = findViewById(R.id.id_lv_left_menu);
 
         mTootBarTitle = findViewById(R.id.toolbar_title);
+
+        TextView mFootTitle = findViewById(R.id.lv_footer);
+        mFootTitle.setText(ZBformApplication.getLoginUserGroupName());
         ZBformApplication.sBlePenManager.setZBBleConnectCallback(mBleGattCallback);
         ZBformApplication.sBlePenManager.setBlePenStateCallBack(mBlePenStateCallBack);
         setToolBar();

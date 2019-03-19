@@ -54,13 +54,12 @@
             android:orientation="vertical"
             android:layout_gravity="start">
 
-            <ImageView
+            <TextView
                 android:id="@+id/lv_footer"
                 android:layout_alignParentBottom="true"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/listPreferredItemHeightLarge"
-                android:scaleType="centerInside"
-                android:src="@drawable/list_footer_main"/>
+                android:gravity="center_horizontal"/>
         <ListView
             android:id="@+id/id_lv_left_menu"
             android:layout_above="@+id/lv_footer"

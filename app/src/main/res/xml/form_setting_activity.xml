@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+        xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--<EditTextPreference-->
+            <!--android:key="default_edittext"-->
+            <!--android:defaultValue="@string/default_value_edittext_preference"-->
+            <!--android:title="@string/title_edittext_preference"-->
+            <!--android:summary="@string/summary_edittext_preference"-->
+            <!--android:dialogTitle="@string/dialog_title_edittext_preference" />-->
+            
+    <ListPreference
+            android:key="pen_default_list"
+            android:persistent="false"
+            android:title="@string/form_setting_pen"
+            android:entries="@array/entries_pen_preference"
+            android:entryValues="@array/entryvalues_pen_preference"
+            android:dialogTitle="@string/form_setting_pen" />
+
+    <ListPreference
+        android:key="record_count_list"
+        android:persistent="false"
+        android:title="@string/form_setting_record_count"
+        android:entries="@array/entries_record_preference"
+        android:entryValues="@array/entryvalues_record_preference"
+        android:dialogTitle="@string/form_setting_record_count" />
+
+</PreferenceScreen>

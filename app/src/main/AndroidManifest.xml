@@ -80,6 +80,13 @@
             android:theme="@style/SettingTheme"/>
         <service android:name=".services.ZBFormService" />
 
+        <activity
+            android:name="com.zbform.penform.activity.FormSettingActivity"
+            android:screenOrientation="portrait"
+            android:label="@string/pref_header_form"
+            android:theme="@style/SettingTheme"/>
+        <service android:name=".services.ZBFormService" />
+
         <service android:name=".services.BleConnectService" />
         <!-- 广播注册 -->
         <receiver android:name="com.zbform.penform.update.InstallReceiver">

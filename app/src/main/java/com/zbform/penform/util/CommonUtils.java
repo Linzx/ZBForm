@@ -25,19 +25,37 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.util.TypedValue;
 
+import com.lidroid.xutils.db.sqlite.Selector;
+import com.lidroid.xutils.exception.DbException;
 import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.R;
 import com.zbform.penform.activity.RecordActivity;
+import com.zbform.penform.db.FormSettingEntity;
+import com.zbform.penform.db.ZBStrokeEntity;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 
 
 public class CommonUtils {
     public static final String TAG = "CommonUtils";
+
+    public static FormSettingEntity getFormSetting(String formid){
+        FormSettingEntity settingEntity = null;
+        try {
+            settingEntity = ZBformApplication.mDB.
+                    findFirst(Selector.from(FormSettingEntity.class).
+                            where("formid", "=", formid));
+
+        } catch (DbException e) {
+            e.printStackTrace();
+        }
+        return settingEntity;
+    }
 
     /*
      * address:1536.671.58.6

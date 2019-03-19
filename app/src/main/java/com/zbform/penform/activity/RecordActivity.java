@@ -855,7 +855,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         public void setItem(List<FormItem> items) {
             mItems.clear();
             for (FormItem item : items) {
-                if (item != null && item.getPage() == mCurrentPage) {
+                if (item != null && item.getPage() == mCurrentPage &&
+                        !item.getIdentityFlag().equals("N")) {
                     mItems.add(item);
                 }
             }

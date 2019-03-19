@@ -942,9 +942,12 @@ public class FormDrawActivity extends BaseActivity {
                 startActivity(intent);
                 FormDrawActivity.this.finish();
                 return true;
-//            case R.id.img_pre:
+            case R.id.img_pre:
 //                switchPages(LOAD_ACTION_PRE_IMG);
-//                return true;
+                Intent intent1 = new Intent(this, FormSettingActivity.class);
+                intent1.putExtra("formid",mFormID);
+                startActivity(intent1);
+                return true;
 //            case R.id.img_next:
 //                switchPages(LOAD_ACTION_NEXT_IMG);
 //                return true;

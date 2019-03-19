@@ -89,6 +89,7 @@ public class LoginTask implements IZBformNetBeanCallBack {
                     ZBformApplication.setmLoginUserId(user.results[0].getUserCode());
                     ZBformApplication.setmLoginUserKey(user.results[0].getKeystr());
                     ZBformApplication.setLoginUserName(user.results[0].getName());
+                    ZBformApplication.setLoginUserGroupName(user.results[0].getGroupname());
                     if (mOnLoginTaskListener != null) {
                         mOnLoginTaskListener.onLoginSuccess();
                     }

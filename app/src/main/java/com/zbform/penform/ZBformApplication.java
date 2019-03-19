@@ -32,6 +32,9 @@ public class ZBformApplication extends Application {
     private static String mLoginUserName;
     private static String mLoginUserId;
     private static String mLoginUserKey;
+
+
+    private static String mLoginUserGroupName;
     public static Context context;
     public static DbUtils mDB;
     /**
@@ -110,5 +113,13 @@ public class ZBformApplication extends Application {
 
     public static void setUser(UserInfo.Results mUser) {
         ZBformApplication.mUser = mUser;
+    }
+
+    public static String getLoginUserGroupName() {
+        return mLoginUserGroupName;
+    }
+
+    public static void setLoginUserGroupName(String groupName) {
+        ZBformApplication.mLoginUserGroupName = groupName;
     }
 }

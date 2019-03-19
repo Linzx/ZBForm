@@ -8,12 +8,12 @@
         android:title="@string/view_record_title"
         app:showAsAction="ifRoom" />
 
-    <!--<item-->
-        <!--android:id="@+id/img_pre"-->
-        <!--android:icon="@drawable/verticalright"-->
-        <!--android:orderInCategory="1"-->
-        <!--android:title="@string/menu_item_pre"-->
-        <!--app:showAsAction="ifRoom" />-->
+    <item
+        android:id="@+id/img_pre"
+        android:icon="@drawable/ic_form_setting2"
+        android:orderInCategory="1"
+        android:title="@string/pref_header_form"
+        app:showAsAction="ifRoom" />
 
     <!--<item-->
         <!--android:id="@+id/img_next"-->

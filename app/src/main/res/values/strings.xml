@@ -65,7 +65,7 @@
     <!-- 设置 -->
     <string name="pref_header_account">个人信息</string>
     <string name="pref_header_pen_manage">数码笔管理</string>
-    <string name="pref_header_form">表单设置</string>
+    <string name="pref_header_form">表单个性化设置</string>
 
     <!-- 设置：个人账号信息-->
     <string name="setting_account_code_name">用户名</string>
@@ -91,6 +91,11 @@
     <!-- 设置：表单设置 -->
     <string name="setting_form_new">自动创建表单记录</string>
     <string name="setting_record_last">自动打开最新记录</string>
+
+    <string name="form_setting_pen">表单设置</string>
+    <string name="form_setting_record_count">表单记录数</string>
+    <!--<string name="form_setting_pen_summary"><xliff:g id="page">%d</xliff:g>页</string>-->
+    <string name="form_setting_record_summary">一次加载<xliff:g id="page">%s</xliff:g>记录</string>
 
 
     <string name="cube_ptr_pull_down">下拉</string>
