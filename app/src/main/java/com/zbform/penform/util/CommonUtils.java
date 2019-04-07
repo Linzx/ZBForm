@@ -59,7 +59,7 @@ public class CommonUtils {
 
     /*
      * address:1536.671.58.6
-     *         1536.A  .B .C
+     *         1536.A  .B .C ------>A4纸
      *         A 1536
      *         B 0~72
      *         C 0~107

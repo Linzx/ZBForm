@@ -9,7 +9,7 @@
         app:showAsAction="ifRoom" />
 
     <item
-        android:id="@+id/img_pre"
+        android:id="@+id/form_setting"
         android:icon="@drawable/ic_form_setting2"
         android:orderInCategory="1"
         android:title="@string/pref_header_form"

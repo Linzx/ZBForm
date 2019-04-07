@@ -1,6 +1,5 @@
 package com.zbform.penform.activity;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Service;
 import android.content.ComponentName;
@@ -13,10 +12,15 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PorterDuff;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.support.annotation.NonNull;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
@@ -30,6 +34,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -65,9 +70,13 @@ import com.zbform.penform.task.ModifyItemValueTask;
 import com.zbform.penform.task.RecordTask;
 import com.zbform.penform.task.ZBFormGetRecognizedDataTask;
 import com.zbform.penform.task.ZBFormRecognizeTask;
+import com.zbform.penform.util.CommonUtils;
+import com.zbform.penform.view.CustViewPager;
+import com.zbform.penform.view.PageItemView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -81,6 +90,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     private static final int AUTO_IMG = 3;
 
     private static final int MODIFY_VALUE_MSG = 1000;
+    private static final int MODIFY_UPDATE_ITEM_MSG = 2000;
 
     private int mCurrentPage = 1;
 
@@ -95,33 +105,49 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     private String mBasePageAddress = null;
     private int mPage;
 
+    private int mTargetWidth;
+    private int mTargetHeight;
+
     private boolean isRecognized = false;
 
     private LoadingDialog mLoadingDialog;
     ActionBar mActionBar;
-    ImageView mRecordImg;
+//    ImageView mRecordImg;
+    private ImageView mShowItem;
+    private ImageView mCusDrawItemView;
+    private CustViewPager mRecordViewPager;
     ImageView mItemRecognize;
     DrawerLayout mDrawerLayout;
+    private FrameLayout mRoot;
     private ListView mListView;
     private MenuItemAdapter mAdapter;
 
+    private ArrayList<RecordPageHolder> mRecordPageHolderList = new ArrayList<>();
+    private HashMap<String, String> mValAddress;
+    private DrawItemsTask mDrawItemsTask;
 
     private Handler mHandler = new Handler(){
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            switch(msg.what){
+            switch(msg.what) {
                 case MODIFY_VALUE_MSG:
-                    ModifyPostParams postParams = (ModifyPostParams)msg.obj;
+                    ModifyPostParams postParams = (ModifyPostParams) msg.obj;
                     modifyValue(postParams);
+                    break;
+                case MODIFY_UPDATE_ITEM_MSG:
+                    if (mAdapter != null && mFormInfo != null && mFormInfo.results[0].items.length > 0) {
+                        mAdapter.setItem(Arrays.asList(mFormInfo.results[0].items));
+                        mAdapter.notifyDataSetChanged();
+                    }
                     break;
             }
         }
     };
 
-    Path mPath = new Path();
-    float mScaleX = 0.1929f;
-    float mScaleY = 0.23457f;
+//    Path mPath = new Path();
+//    float mScaleX = 0.1929f;
+//    float mScaleY = 0.23457f;
 
     // 缓存用户新增笔迹数据
     private Hashtable<Integer, List<HwData>> mCachedDataMap = new Hashtable<>();
@@ -140,6 +166,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
     private Context mContext;
     private ZBFormService mService;
+    private RecordPagerAdapter mPageAdapter;
+    private boolean mItemShow = false;
 
     ServiceConnection conn = new ServiceConnection() {
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -160,7 +188,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         setContentView(R.layout.fragment_record);
 
         mContext = this;
-        mRecordImg = findViewById(R.id.record_img);
+//        mRecordImg = findViewById(R.id.record_img);
         mListView = findViewById(R.id.id_lv_right_menu);
         mItemRecognize = findViewById(R.id.item_recognize);
         mItemRecognize.setOnClickListener(this);
@@ -169,6 +197,16 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         LayoutInflater inflater = LayoutInflater.from(this);
         View header = inflater.inflate(R.layout.listitem_recorditem_header_layout, mListView, false);
         mListView.addHeaderView(header);
+        mRoot = findViewById(R.id.ll_root);
+
+        mShowItem = findViewById(R.id.show_item);
+        mShowItem.setOnClickListener(this);
+
+        mRecordViewPager = findViewById(R.id.record_pager);
+
+        mRecordViewPager.addOnPageChangeListener(mOnPageChangeListener);
+
+        mPageAdapter = new RecordPagerAdapter(this);
 
         mFormId = getIntent().getStringExtra("formId");
         mRecordId = getIntent().getStringExtra("recordId");
@@ -209,7 +247,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                 mService.setCurrentPageAddress(mPageAddress);
                 mService.setIsRecordDraw(true);
                 mService.setDrawFormInfo(mFormInfo, mRecordId);
-                mService.setCurrentPage(1);
             }
             Log.i(TAG, "startDraw");
             mService.startDraw();
@@ -224,6 +261,22 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         mActionBar.setTitle("");
     }
 
+    private void initViewPagerData() {
+        mRecordPageHolderList.clear();
+        for (int i = 1; i <= mPage; i++) {
+            RecordPageHolder holder = new RecordPageHolder();
+            holder.mImgUrl =
+                    ApiAddress.getFormImgUri(ZBformApplication.getmLoginUserId(),
+                            ZBformApplication.getmLoginUserId(), mFormId, i);
+
+            holder.mHolderPosition = i - 1;
+            holder.mPageAddress = mValAddress.get(String.valueOf(i));
+            mRecordPageHolderList.add(holder);
+        }
+
+        mPageAdapter.setData(mRecordPageHolderList);
+        mRecordViewPager.setAdapter(mPageAdapter);
+    }
 
     private void initData() {
         mTask = new RecordTask(mContext, mFormId, mRecordId);
@@ -233,7 +286,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         mFormTask = new FormTask();
         mFormTask.setOnFormTaskListener(mFormTaskListener);
         mFormTask.execute(mContext, mFormId);
-
     }
 
     private void toggleRightSliding() {
@@ -250,20 +302,20 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         getMenuInflater().inflate(R.menu.menu_page, menu);
 
         MenuItem data = menu.findItem(R.id.img_form_data);
-        MenuItem pre = menu.findItem(R.id.img_pre);
-        MenuItem next = menu.findItem(R.id.img_next);
+//        MenuItem pre = menu.findItem(R.id.img_pre);
+//        MenuItem next = menu.findItem(R.id.img_next);
 
         data.setVisible(true);
 
-        if (pre != null && next != null) {
-            if (mPage > 1) {
-                pre.setVisible(true);
-                next.setVisible(true);
-            } else {
-                pre.setVisible(false);
-                next.setVisible(false);
-            }
-        }
+//        if (pre != null && next != null) {
+//            if (mPage > 1) {
+//                pre.setVisible(true);
+//                next.setVisible(true);
+//            } else {
+//                pre.setVisible(false);
+//                next.setVisible(false);
+//            }
+//        }
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -277,17 +329,17 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             case R.id.img_form_data:
                 toggleRightSliding();
                 return true;
-            case R.id.img_pre:
-                switchPages(PRE_IMG);
-                return true;
-            case R.id.img_next:
-                if (mFormInfo == null) {
-                    mFormTask = new FormTask();
-                    mFormTask.setOnFormTaskListener(mFormTaskListener);
-                    mFormTask.execute(mContext, mFormId);
-                }
-                switchPages(NEXT_IMG);
-                return true;
+//            case R.id.img_pre:
+//                switchPages(PRE_IMG);
+//                return true;
+//            case R.id.img_next:
+//                if (mFormInfo == null) {
+//                    mFormTask = new FormTask();
+//                    mFormTask.setOnFormTaskListener(mFormTaskListener);
+//                    mFormTask.execute(mContext, mFormId);
+//                }
+//                switchPages(NEXT_IMG);
+//                return true;
             default:
                 break;
         }
@@ -302,14 +354,17 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     @Override
     public void onTaskSuccess(List<RecordInfo.Results> results) {
         recordResults = results;
+        // 获取Form 表单的图片，准备合成
+        initViewPagerData();
+
         Log.i(TAG, "onTaskSuccess()");
         String state = results.get(0).getRecordRecognizeState();
         if("Y".equals(state)){
             isRecognized = true;
             getZBFormRecognizedData(false);
         }
-        // 获取Form 表单的图片，准备合成
-        getFormImg(getUrl());
+
+        dismissLoading();
     }
 
     @Override
@@ -317,49 +372,39 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         dismissLoading();
     }
 
-    private String getUrl() {
-        if (mCurrentPage < 0 || mCurrentPage > mPage) {
-            mCurrentPage = 1;
-        }
-        return ApiAddress.getFormImgUri(ZBformApplication.getmLoginUserId(),
-                ZBformApplication.getmLoginUserId(), mFormId, mCurrentPage);
-    }
-
-    private void switchPages(int action) {
-        // 默认自动跳转的不会超出页数范围
-        if (action == PRE_IMG && mCurrentPage == 1) {
-            Toast.makeText(this, this.getResources().getString(R.string.toast_already_first), Toast.LENGTH_SHORT).show();
-            return;
-        }
-        if (action == NEXT_IMG && mCurrentPage == mPage) {
-            Toast.makeText(this, this.getResources().getString(R.string.toast_already_last), Toast.LENGTH_SHORT).show();
-            return;
-        }
-        Log.i(TAG, "page size = " + mPage);
-        Log.i(TAG, "Current Page = " + mCurrentPage);
-        if (action == PRE_IMG) {
-            if (mCurrentPage > 1) {
-                mCurrentPage -= 1;
-            }
-        } else if (action == NEXT_IMG) {
-            if (mCurrentPage < mPage) {
-                mCurrentPage += 1;
-            }
-        }
-        getFormImg(getUrl());
-
-        mPageAddress = computeCurrentPageAddress(action);
-        Log.i(TAG, "new page address =" + mPageAddress);
-        if (mService != null) {
-            mService.setCurrentPage(mCurrentPage);
-            mService.setCurrentPageAddress(mPageAddress);
-        }
-        if (mAdapter != null && mFormInfo != null && mFormInfo.results[0].items.length > 0) {
-            mAdapter.setItem(Arrays.asList(mFormInfo.results[0].items));
-            mAdapter.notifyDataSetChanged();
-        }
-        mUserDraw = false;
-    }
+//    private void switchPages(int action) {
+//        // 默认自动跳转的不会超出页数范围
+//        if (action == PRE_IMG && mCurrentPage == 1) {
+//            Toast.makeText(this, this.getResources().getString(R.string.toast_already_first), Toast.LENGTH_SHORT).show();
+//            return;
+//        }
+//        if (action == NEXT_IMG && mCurrentPage == mPage) {
+//            Toast.makeText(this, this.getResources().getString(R.string.toast_already_last), Toast.LENGTH_SHORT).show();
+//            return;
+//        }
+//        Log.i(TAG, "page size = " + mPage);
+//        Log.i(TAG, "Current Page = " + mCurrentPage);
+//        if (action == PRE_IMG) {
+//            if (mCurrentPage > 1) {
+//                mCurrentPage -= 1;
+//            }
+//        } else if (action == NEXT_IMG) {
+//            if (mCurrentPage < mPage) {
+//                mCurrentPage += 1;
+//            }
+//        }
+//
+//        mPageAddress = computeCurrentPageAddress(action);
+//        Log.i(TAG, "new page address =" + mPageAddress);
+//        if (mService != null) {
+//            mService.setCurrentPageAddress(mPageAddress);
+//        }
+//        if (mAdapter != null && mFormInfo != null && mFormInfo.results[0].items.length > 0) {
+//            mAdapter.setItem(Arrays.asList(mFormInfo.results[0].items));
+//            mAdapter.notifyDataSetChanged();
+//        }
+//        mUserDraw = false;
+//    }
 
     private void showLoading() {
         Log.i(TAG, "showLoading");
@@ -373,25 +418,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         if (mLoadingDialog != null) {
             Log.i(TAG, "dismissLoading");
             mLoadingDialog.dismiss();
-        }
-    }
-
-    private void getFormImg(String url) {
-        try {
-            showLoading();
-            Glide.with(RecordActivity.this)
-                    .load(url)
-                    .asBitmap()
-                    .skipMemoryCache(true)
-                    .listener(new RecordImgRequestListener())
-                    .transform(new RecordImgTransformation(mContext))
-                    .into(mRecordImg);
-        } catch (Exception e) {
-            Log.i(TAG, "load bitmap ex=" + e.getMessage());
-            e.printStackTrace();
-            dismissLoading();
-        } finally {
-
         }
     }
 
@@ -418,16 +444,21 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
     @Override
     public void onCoordDraw(String pageAddress, int nX, int nY) {
-        mPageAddress = pageAddress;
-        int p = computeCurrentPage(mBasePageAddress, mPageAddress);
-        if (p > mPage || p < 1) {
-            return;
-        }
-        if (mCurrentPage != p) {
-            mCurrentPage = p;
-            Log.i(TAG, "onCoordDraw: mCurrentPage = " + mCurrentPage);
+//        mPageAddress = pageAddress;
+//        int p = computeCurrentPage(mBasePageAddress, mPageAddress);
+//        if (p > mPage || p < 1) {
+//            return;
+//        }
+//        if (mCurrentPage != p) {
+//            mCurrentPage = p;
+//            Log.i(TAG, "onCoordDraw: mCurrentPage = " + mCurrentPage);
+//
+//            switchPages(AUTO_IMG);
+//        }
 
-            switchPages(AUTO_IMG);
+        if (!mPageAddress.equals(pageAddress)){
+            mPageAddress = pageAddress;
+            indexViewPager();
         }
 
         mHwData.setP(mPageAddress);
@@ -446,6 +477,35 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     public void onClick(View v) {
         if (v.getId() == R.id.item_recognize) {
             recognizeZBFormRecordStrokes();
+        } else if(v.getId() == R.id.show_item){
+            Log.i(TAG, "item click");
+            if (mItemShow) {
+                mShowItem.setImageResource(R.drawable.ic_show_item);
+                if (mCusDrawItemView != null) {
+                    mCusDrawItemView.setVisibility(View.GONE);
+                }
+                mItemShow = false;
+            } else {
+                mShowItem.setImageResource(R.drawable.ic_show_item_selected);
+                if (mCusDrawItemView != null) {
+                    mCusDrawItemView.setVisibility(View.VISIBLE);
+                }
+                RecordPageHolder holder = getCurrentHolder();
+                if (holder != null) {
+                    showItemsReF(holder);
+                }
+                mItemShow = true;
+            }
+        }
+    }
+
+    private void indexViewPager(){
+        for (RecordPageHolder holder : mRecordPageHolderList){
+            if (holder.mPageAddress.equals(mPageAddress)){
+
+                mRecordViewPager.setCurrentItem(holder.mHolderPosition, false);
+                break;
+            }
         }
     }
 
@@ -469,160 +529,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         }
     }
 
-    private class RecordImgRequestListener implements RequestListener<String, Bitmap> {
-        public RecordImgRequestListener() {
-            super();
-        }
-
-        @Override
-        public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
-            ((Activity) mContext).runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    dismissLoading();
-                }
-            });
-            return false;
-        }
-
-        @Override
-        public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
-            Log.i(TAG, "onResourceReady bitmap width = " + resource.getWidth() + "  height = " + resource.getHeight());
-
-            int width = resource.getWidth();
-            int height = resource.getHeight();
-
-            Canvas canvas = new Canvas(resource);
-            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
-            paint.setStrokeWidth(2f);
-            paint.setColor(Color.BLACK);
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeJoin(Paint.Join.ROUND);
-            paint.setStrokeCap(Paint.Cap.ROUND);
-            paint.setDither(true);
-            paint.setAntiAlias(true);
-            paint.setFilterBitmap(true);
-
-            //计算scale
-            if (width > height) {
-                if (mFormWidth > mFormHeight) {
-                    mScaleX = (float) width / (float) mFormWidth;
-                    mScaleY = (float) height / (float) mFormHeight;
-                } else {
-                    mScaleX = (float) width / (float) mFormHeight;
-                    mScaleY = (float) height / (float) mFormWidth;
-                }
-            } else {
-                if (mFormWidth > mFormHeight) {
-                    mScaleY = (float) height / (float) mFormWidth;
-                    mScaleX = (float) width / (float) mFormHeight;
-                } else {
-                    mScaleY = (float) height / (float) mFormHeight;
-                    mScaleX = (float) width / (float) mFormWidth;
-                }
-            }
-
-            mCurrentItems = getCurrentItems();
-
-            if (mCurrentItems.size() > 0) {
-                for (RecordDataItem item : mCurrentItems) {
-
-                    HwData hwData = new Gson().fromJson(item.getHwdata(), new TypeToken<HwData>() {
-                    }.getType());
-
-                    //开始将笔迹数据添加到path中，最终在Form img中画出
-                    addHwData2Path(hwData, mPath);
-                }
-            }
-
-            getCurrentCachedPath();
-
-            if (!mPath.isEmpty()) {
-                canvas.drawPath(mPath, paint);
-            }
-
-            if (!mCurrentCachedPath.isEmpty()) {
-                canvas.drawPath(mCurrentCachedPath, paint);
-            }
-
-            ZBformApplication.sBlePenManager.setDrawView(mRecordImg, resource, (float) mFormWidth, (float) mFormHeight);
-            mService.startDraw();
-            mPath.reset();
-            mCurrentCachedPath.reset();
-            ((Activity) mContext).runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    dismissLoading();
-                }
-            });
-            return false;
-        }
-
-        private void getCurrentCachedPath() {
-            if (mCachedDataMap.containsKey(mCurrentPage)) {
-                List<HwData> dataList = mCachedDataMap.get(mCurrentPage);
-                for (HwData hwData : dataList) {
-                    addHwData2Path(hwData, mCurrentCachedPath);
-                }
-            }
-        }
-
-        public void addHwData2Path(HwData hwData, Path path) {
-            Point lastP;
-            boolean firstP = true;
-            for (Point p : hwData.getD()) {
-                lastP = p;
-                if (firstP) {
-                    path.moveTo(p.getX() * mScaleX, p.getY() * mScaleY);
-                    firstP = false;
-                } else {
-                    path.cubicTo(lastP.getX() * mScaleX, lastP.getY() * mScaleY, ((lastP.getX() + p.getX()) / 2) * mScaleX, ((lastP.getY() + p.getY()) / 2) * mScaleY, p.getX() * mScaleX, p.getY() * mScaleY);
-                }
-            }
-        }
-
-    }
-
-    public List<RecordDataItem> getCurrentItems() {
-        if (mPage == 1 && recordResults != null && recordResults.size() > 0) {
-            return Arrays.asList(recordResults.get(0).getItems());
-        }
-        List<RecordDataItem> itemList = new ArrayList<>();
-        if (recordResults.size() > 0) {
-            RecordDataItem[] items = recordResults.get(0).getItems();
-            for (RecordDataItem item : items) {
-
-                HwData hwData = new Gson().fromJson(item.getHwdata(), new TypeToken<HwData>() {
-                }.getType());
-                Log.i(TAG, "hwdata pageaddress = " + hwData.getP() + "   mPageAddress=" + mPageAddress);
-                if (hwData.getP().equals(mPageAddress)) {
-                    Log.i(TAG, "add item to list");
-                    itemList.add(item);
-                }
-            }
-        }
-        return itemList;
-    }
-
-    private class RecordImgTransformation extends BitmapTransformation {
-
-        public RecordImgTransformation(Context context) {
-            super(context);
-        }
-
-        @Override
-        protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
-            Log.i(TAG, "bitmap width = " + toTransform.getWidth() + "  height = " + toTransform.getHeight());
-            return toTransform;
-
-        }
-
-        @Override
-        public String getId() {
-            return "com.zbform.penform.RecordImgTransformation";
-        }
-    }
-
     private FormTask.OnFormTaskListener mFormTaskListener = new FormTask.OnFormTaskListener() {
 
         @Override
@@ -633,25 +539,28 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         @Override
         public void onGetSuccess(FormInfo form) {
             mFormInfo = form;
-            mPageAddress = mFormInfo.results[0].getRinit();
-            mBasePageAddress = mPageAddress;
+            mValAddress = CommonUtils.findValidateAddress(
+                    false, mFormInfo.results[0].getRinit(),
+                    mFormInfo.results[0].getPage());
+
+            mBasePageAddress = mFormInfo.results[0].getRinit();
             Log.i(TAG, "base address = " + mBasePageAddress);
 
             mFormHeight = convertPageSize(mFormInfo.results[0].getHeigh());
             mFormWidth = convertPageSize(mFormInfo.results[0].getWidth());
             Log.i(TAG, "Form height = " + mFormHeight + "   width=" + mFormWidth);
 
-            Log.i(TAG, "set current pageAddress to service: " + mPageAddress);
-            mService.setCurrentPageAddress(mPageAddress);
-            mService.setCurrentPage(1);
             mService.setDrawFormInfo(mFormInfo, mRecordId);
             mService.setIsRecordDraw(true);
+
+
             mTask.getRecord();
 
             if (mFormInfo.results[0].items != null && mFormInfo.results[0].items.length > 0) {
                 mAdapter.setItem(Arrays.asList(mFormInfo.results[0].items));
                 mListView.setAdapter(mAdapter);
             }
+
         }
 
         @Override
@@ -661,7 +570,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
         @Override
         public void onCancelled() {
-
+            dismissLoading();
         }
     };
 
@@ -996,5 +905,455 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         }
     };
 
+    private RecordPageHolder getCurrentHolder(){
+        return mRecordPageHolderList.get(mRecordViewPager.getCurrentItem());
+    }
+
+    private void showItemsReF(RecordPageHolder holder) {
+        if (mDrawItemsTask == null) {
+            mDrawItemsTask = new DrawItemsTask(holder);
+        }
+        mDrawItemsTask.drawItems();
+    }
+
+    private class DrawItemsTask {
+        RecordPageHolder mRecordPageHolder;
+        Bitmap mDrawItemTarget;
+        Canvas mCanvas;
+        Paint mPaint;
+        float mScaleX = 0.1929f;
+        float mScaleY = 0.23457f;
+
+
+        public DrawItemsTask(RecordPageHolder holder) {
+            mRecordPageHolder = holder;
+            mPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
+            mPaint.setStrokeWidth(2f);
+            mPaint.setColor(Color.BLUE);
+            mPaint.setStyle(Paint.Style.STROKE);
+        }
+
+        public void drawItems() {
+            try {
+                Log.i(TAG, "DrawItemsTask begin");
+                if (mFormInfo == null ||
+                        mFormInfo.results[0].items == null ||
+                        mFormInfo.results[0].items.length == 0) {
+                    return;
+                }
+
+                FormItem[] items = mFormInfo.results[0].items;
+
+                if (mDrawItemTarget == null) {
+                    mDrawItemTarget = Bitmap.createBitmap(mTargetWidth, mTargetHeight,
+                            Bitmap.Config.ARGB_8888);
+                    mCanvas = new Canvas(mDrawItemTarget);
+                } else {
+                    mCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                }
+
+                int width = mDrawItemTarget.getWidth();
+                int height = mDrawItemTarget.getHeight();
+                //计算scale
+                if (width > height) {
+                    if (mFormWidth > mFormHeight) {
+                        mScaleX = (float) width / (float) mFormWidth;
+                        mScaleY = (float) height / (float) mFormHeight;
+                    } else {
+                        mScaleX = (float) width / (float) mFormHeight;
+                        mScaleY = (float) height / (float) mFormWidth;
+                    }
+                } else {
+                    if (mFormWidth > mFormHeight) {
+                        mScaleY = (float) height / (float) mFormWidth;
+                        mScaleX = (float) width / (float) mFormHeight;
+                    } else {
+                        mScaleY = (float) height / (float) mFormHeight;
+                        mScaleX = (float) width / (float) mFormWidth;
+                    }
+                }
+
+                int index = mRecordViewPager.getCurrentItem() +1;
+                for (FormItem item : items) {
+                    if (item != null && index == item.getPage()) {
+                        double left = convertPageSize(item.getLocaX()) * mScaleX;
+                        double top = convertPageSize(item.getLocaY()) * mScaleY;
+                        double right = convertPageSize(item.getLocaX() + item.getLocaW()) * mScaleX;
+                        double bottom = convertPageSize(item.getLocaY() + item.getLocaH()) * mScaleY;
+
+//                        Log.i(TAG, "DrawItemsTask left=" + left);
+//                        Log.i(TAG, "DrawItemsTask top=" + top);
+//                        Log.i(TAG, "DrawItemsTask right=" + right);
+//                        Log.i(TAG, "DrawItemsTask bottom=" + bottom);
+                        mCanvas.drawRect((float) left, (float) top, (float) right, (float) bottom, mPaint);
+                    }
+                }
+
+                if (mCusDrawItemView == null && mRecordPageHolder.contentView != null) {
+                    mCusDrawItemView = new ImageView(RecordActivity.this);
+                    FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                            mRecordPageHolder.contentView.getImageView().getWidth(),
+                            mRecordPageHolder.contentView.getImageView().getHeight());
+                    params.gravity = Gravity.CENTER;
+                    mCusDrawItemView.setLayoutParams(params);
+                    mCusDrawItemView.setImageBitmap(mDrawItemTarget);
+                    mRoot.addView(mCusDrawItemView);
+                } else {
+                    mCusDrawItemView.setImageBitmap(mDrawItemTarget);
+                    mCusDrawItemView.invalidate();
+                }
+            } catch (Exception e) {
+                Log.i(TAG, "queue ex=" + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        public void clear() {
+            if (mDrawItemTarget != null && !mDrawItemTarget.isRecycled()) {
+                mDrawItemTarget.recycle();
+                mDrawItemTarget = null;
+            }
+        }
+    }
+
+    private class RecordPageHolder {
+        PageItemView contentView;
+        Bitmap formBitmap;
+
+        int mHolderPosition;
+        String mImgUrl;
+        String mPageAddress;
+    }
+
+    public class ImageLoader {
+        PageItemView mItemView;
+        RecordPageHolder mRecordPageHolder;
+
+        private class RecordImgRequestListener implements RequestListener<String, Bitmap> {
+            public RecordImgRequestListener() {
+                super();
+            }
+
+            @Override
+            public boolean onException(Exception e, String model, Target<Bitmap> target, boolean isFirstResource) {
+                return false;
+            }
+
+            @Override
+            public boolean onResourceReady(Bitmap resource, String model, Target<Bitmap> target, boolean isFromMemoryCache, boolean isFirstResource) {
+                Log.i(TAG, "onResourceReady bitmap width = " + resource.getWidth() + "  height = " + resource.getHeight());
+                if (resource != null) {
+                    mRecordPageHolder.formBitmap = resource;
+                    if (mRecordPageHolder.mHolderPosition == mRecordViewPager.getCurrentItem()) {
+                        drawForm(mRecordPageHolder);
+                    }
+                } else {
+                    mRecordPageHolder.formBitmap = null;
+                }
+
+                mItemView.dismissLoading();
+                return false;
+            }
+        }
+
+        private class RecordImgTransformation extends BitmapTransformation {
+
+            public RecordImgTransformation(Context context) {
+                super(context);
+            }
+
+            @Override
+            protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
+                Log.i(TAG, "bitmap width = " + toTransform.getWidth() + "  height = " + toTransform.getHeight());
+                return toTransform;
+
+            }
+
+            @Override
+            public String getId() {
+                return "com.zbform.penform.RecordImgTransformation";
+            }
+        }
+
+        public ImageLoader(RecordPageHolder page) {
+            mItemView = page.contentView;
+            mRecordPageHolder = page;
+        }
+
+        public void startLoader() {
+            try {
+                Glide.with(RecordActivity.this)
+                        .load(mRecordPageHolder.mImgUrl)
+                        .asBitmap()
+                        .skipMemoryCache(true)
+                        .listener(new RecordImgRequestListener())
+                        .transform(new RecordImgTransformation(mContext))
+                        .into(mItemView.getImageView());
+            } catch (Exception e) {
+                Log.i(TAG, "bitmap ex=" + e.getMessage());
+                e.printStackTrace();
+            } finally {
+
+            }
+        }
+    }
+
+    private void drawForm(RecordPageHolder recordPageHolder) {
+        if (recordPageHolder.formBitmap != null &&
+                recordPageHolder.contentView != null) {
+            mTargetWidth = recordPageHolder.formBitmap.getWidth();
+            mTargetHeight = recordPageHolder.formBitmap.getHeight();
+//            Log.i(TAG, "onResourceReady W=" + mTargetWidth);
+//            Log.i(TAG, "onResourceReady H=" + mTargetHeight);
+
+            ZBformApplication.sBlePenManager.setDrawView(recordPageHolder.contentView.getImageView(),
+                    recordPageHolder.formBitmap);
+            if (mFormHeight > 0 && mFormWidth > 0) {
+                ZBformApplication.sBlePenManager.setPaperSize((float) mFormWidth, (float) mFormHeight);
+            }
+            if (mValAddress != null) {
+                String index = String.valueOf(recordPageHolder.mHolderPosition + 1);
+                mPageAddress = mValAddress.get(index);
+                Log.i(TAG, "switch page=" + mPageAddress);
+            }
+
+            if (mService != null) {
+                mService.setCurrentPageAddress(mPageAddress);
+            }
+            mService.startDraw();
+
+            new DrawHwDataTask(recordPageHolder).execute();
+            if (mItemShow) {
+                showItemsReF(recordPageHolder);
+            }
+        } else {
+            Log.i(TAG, "holder resource null");
+        }
+    }
+
+    private class DrawHwDataTask extends AsyncTask<Void, Void, Void> {
+
+        private Bitmap mDrawTarget;
+        ImageView imageView;
+        Path mPath = new Path();
+        float mScaleX = 0.1929f;
+        float mScaleY = 0.23457f;
+
+        public DrawHwDataTask(Bitmap target) {
+            mDrawTarget = target;
+        }
+
+        public DrawHwDataTask(RecordPageHolder holder) {
+            mDrawTarget = holder.formBitmap;
+            imageView = holder.contentView.getImageView();
+        }
+        @Override
+        protected Void doInBackground(Void... params) {
+//        public void execute(){
+            Canvas canvas = new Canvas(mDrawTarget);
+            int width = mDrawTarget.getWidth();
+            int height = mDrawTarget.getHeight();
+
+            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
+            paint.setStrokeWidth(2f);
+            paint.setColor(Color.BLACK);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeJoin(Paint.Join.ROUND);
+            paint.setStrokeCap(Paint.Cap.ROUND);
+            paint.setDither(true);
+            paint.setAntiAlias(true);
+            paint.setFilterBitmap(true);
+
+            //计算scale
+            if (width > height) {
+                if (mFormWidth > mFormHeight) {
+                    mScaleX = (float) width / (float) mFormWidth;
+                    mScaleY = (float) height / (float) mFormHeight;
+                } else {
+                    mScaleX = (float) width / (float) mFormHeight;
+                    mScaleY = (float) height / (float) mFormWidth;
+                }
+            } else {
+                if (mFormWidth > mFormHeight) {
+                    mScaleY = (float) height / (float) mFormWidth;
+                    mScaleX = (float) width / (float) mFormHeight;
+                } else {
+                    mScaleY = (float) height / (float) mFormHeight;
+                    mScaleX = (float) width / (float) mFormWidth;
+                }
+            }
+
+            mCurrentItems = getCurrentItems();
+
+            if (mCurrentItems.size() > 0) {
+                for (RecordDataItem item : mCurrentItems) {
+
+                    HwData hwData = new Gson().fromJson(item.getHwdata(), new TypeToken<HwData>() {
+                    }.getType());
+
+                    //开始将笔迹数据添加到path中，最终在Form img中画出
+                    addHwData2Path(hwData, mPath);
+                }
+            }
+
+            getCurrentCachedPath();
+
+            if (!mPath.isEmpty()) {
+                canvas.drawPath(mPath, paint);
+            }
+
+            if (!mCurrentCachedPath.isEmpty()) {
+                canvas.drawPath(mCurrentCachedPath, paint);
+            }
+            mPath.reset();
+            mCurrentCachedPath.reset();
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            imageView.setImageBitmap(mDrawTarget);
+            mPath.reset();
+            mCurrentCachedPath.reset();
+        }
+
+        public List<RecordDataItem> getCurrentItems() {
+            if (mPage == 1 && recordResults != null && recordResults.size() > 0) {
+                return Arrays.asList(recordResults.get(0).getItems());
+            }
+            List<RecordDataItem> itemList = new ArrayList<>();
+            if (recordResults.size() > 0) {
+                RecordDataItem[] items = recordResults.get(0).getItems();
+                for (RecordDataItem item : items) {
+
+                    HwData hwData = new Gson().fromJson(item.getHwdata(), new TypeToken<HwData>() {
+                    }.getType());
+                    Log.i(TAG, "hwdata pageaddress = " + hwData.getP() + "   mPageAddress=" + mPageAddress);
+                    if (hwData.getP().equals(mPageAddress)) {
+                        Log.i(TAG, "add item to list");
+                        itemList.add(item);
+                    }
+                }
+            }
+            return itemList;
+        }
+
+        private void getCurrentCachedPath() {
+            if (mCachedDataMap.containsKey(mCurrentPage)) {
+                List<HwData> dataList = mCachedDataMap.get(mCurrentPage);
+                for (HwData hwData : dataList) {
+                    addHwData2Path(hwData, mCurrentCachedPath);
+                }
+            }
+        }
+
+        public void addHwData2Path(HwData hwData, Path path) {
+            Point lastP;
+            boolean firstP = true;
+            for (Point p : hwData.getD()) {
+                lastP = p;
+                if (firstP) {
+                    path.moveTo(p.getX() * mScaleX, p.getY() * mScaleY);
+                    firstP = false;
+                } else {
+                    path.cubicTo(lastP.getX() * mScaleX, lastP.getY() * mScaleY, ((lastP.getX() + p.getX()) / 2) * mScaleX, ((lastP.getY() + p.getY()) / 2) * mScaleY, p.getX() * mScaleX, p.getY() * mScaleY);
+                }
+            }
+        }
+
+    }
+
+    private ViewPager.OnPageChangeListener mOnPageChangeListener = new ViewPager.OnPageChangeListener() {
+        @Override
+        public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+            Log.i(TAG,"scrolled");
+        }
+
+        @Override
+        public void onPageSelected(int position) {
+            Log.i(TAG, "onPageSelected=" + position);
+//            setUpPageTitle(position + 1);
+            mCurrentPage = position + 1;
+            RecordPageHolder pageHolder = mRecordPageHolderList.get(position);
+            if (pageHolder != null) {
+                drawForm(pageHolder);
+            }
+            Message msg = mHandler.obtainMessage(MODIFY_UPDATE_ITEM_MSG);
+            mHandler.sendMessage(msg);
+        }
+
+        @Override
+        public void onPageScrollStateChanged(int state) {
+            Log.i("whd","onPageScrollStateChanged");
+        }
+    };
+
+    private class RecordPagerAdapter extends PagerAdapter {
+        ArrayList<RecordPageHolder> mList;
+        Context mContext;
+        LayoutInflater mInflater;
+
+        RecordPagerAdapter(Context context) {
+            mContext = context;
+            mInflater = LayoutInflater.from(mContext);
+        }
+
+        public void setData(ArrayList<RecordPageHolder> list) {
+            mList = list;
+        }
+
+        @Override
+        public int getCount() {
+            return mList.size();
+        }
+
+        @Override
+        public View instantiateItem(ViewGroup container, int position) {
+            Log.i(TAG, "instantiateItem=" + position);
+            PageItemView contentView = new PageItemView(container.getContext());
+
+            RecordPageHolder pageHolder = mList.get(position);
+            pageHolder.contentView = contentView;
+            new ImageLoader(pageHolder).startLoader();
+
+            container.addView(contentView, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            return contentView;
+        }
+
+        @Override
+        public void destroyItem(ViewGroup container, int position, Object object) {
+            PageItemView rootView = (PageItemView) object;
+            if (rootView == null)
+                return;
+
+            Log.i(TAG, "destroyItem=" + position);
+            if (position < mList.size()) {
+                RecordPageHolder pageHolder = mList.get(position);
+                if (pageHolder != null) {
+                    pageHolder.contentView = null;
+                    pageHolder.formBitmap = null;
+                }
+            }
+            Glide.clear(rootView.getImageView());
+            container.removeView((View) object);
+        }
+
+        @Override
+        public boolean isViewFromObject(View view, Object object) {
+            return view == object;
+        }
+
+        @Override
+        public int getItemPosition(@NonNull Object object) {
+//            if (mForceRefresh) {
+//                return POSITION_NONE;
+//            } else {
+                return super.getItemPosition(object);
+//            }
+        }
+    }
 
 }

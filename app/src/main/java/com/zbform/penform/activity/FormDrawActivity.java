@@ -79,7 +79,6 @@ public class FormDrawActivity extends BaseActivity {
     private static final int FAST_CLICK_DELAY_TIME = 1000;
 
     private FormInfo mFormInfo;
-    private int mCurrentPage = 1;
     private int mPage;
     private String mPageAddress;
     private String mFormID;
@@ -108,11 +107,8 @@ public class FormDrawActivity extends BaseActivity {
     private boolean mItemShow = false;
     private DrawItemsTask mDrawItemsTask;
     private PreferencesUtility mPreferencesUtility;
-    private ImageLoader mImageLoader;
     private FormOpenLoader mFormOpenLoader;
-//    private SwitchPageLoader mSwitchPageLoader;
     private RecordNewImageLoader mRecordNewLoader;
-//    private PenOpenLoader mPenOpenLoader;
     private FormPagerAdapter mPageAdapter;
     private boolean mForceRefresh = false;
     private ArrayList<FormPageHolder> mFormPageHolderList = new ArrayList<>();
@@ -182,11 +178,11 @@ public class FormDrawActivity extends BaseActivity {
             return;
         }
         initFormData(intent, LOAD_ACTION_PEN_OPEN);
-
-        if (mToolbar != null) {
-            Menu menu = mToolbar.getMenu();
-            setUpMenu(menu);
-        }
+//
+//        if (mToolbar != null) {
+//            Menu menu = mToolbar.getMenu();
+//            setUpMenu(menu);
+//        }
     }
 
     private void initFormData(Intent intent, int action) {
@@ -194,7 +190,7 @@ public class FormDrawActivity extends BaseActivity {
             mPage = intent.getIntExtra("page", 1);
             mPageAddress = intent.getStringExtra("pageaddress");
             mFormName = intent.getStringExtra("formname");
-            mCurrentPage = intent.getIntExtra("currentpage", 1);
+//            mCurrentPage = intent.getIntExtra("currentpage", 1);
             setUpPageTitle(1);
 
             String initAddress = intent.getStringExtra("initaddress");
@@ -300,7 +296,6 @@ public class FormDrawActivity extends BaseActivity {
         @Override
         public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
 
-            Log.i("whd","scrolled");
         }
 
         @Override
@@ -315,7 +310,7 @@ public class FormDrawActivity extends BaseActivity {
 
         @Override
         public void onPageScrollStateChanged(int state) {
-            Log.i("whd","onPageScrollStateChanged");
+            Log.i(TAG,"onPageScrollStateChanged");
         }
     };
 
@@ -900,28 +895,9 @@ public class FormDrawActivity extends BaseActivity {
         }
     }
 
-    private void setUpMenu(Menu menu) {
-        if (menu == null) return;
-        MenuItem pre = menu.findItem(R.id.img_pre);
-        MenuItem next = menu.findItem(R.id.img_next);
-
-        if (pre != null && next != null) {
-            if (mPage > 1) {
-                pre.setVisible(true);
-                next.setVisible(true);
-            } else {
-                pre.setVisible(false);
-                next.setVisible(false);
-            }
-        }
-    }
-
     @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
-
         getMenuInflater().inflate(R.menu.menu_draw, menu);
-        setUpMenu(menu);
-
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -939,18 +915,15 @@ public class FormDrawActivity extends BaseActivity {
                 Intent intent = new Intent(FormDrawActivity.this,
                         RecordListActivity.class);
                 intent.putExtra("formId", mFormID);
+                intent.putExtra("title", mFormName);
                 startActivity(intent);
                 FormDrawActivity.this.finish();
                 return true;
-            case R.id.img_pre:
-//                switchPages(LOAD_ACTION_PRE_IMG);
+            case R.id.form_setting:
                 Intent intent1 = new Intent(this, FormSettingActivity.class);
                 intent1.putExtra("formid",mFormID);
                 startActivity(intent1);
                 return true;
-//            case R.id.img_next:
-//                switchPages(LOAD_ACTION_NEXT_IMG);
-//                return true;
             default:
                 break;
         }

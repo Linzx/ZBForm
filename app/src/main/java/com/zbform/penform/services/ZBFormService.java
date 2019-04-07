@@ -57,7 +57,7 @@ public class ZBFormService extends Service {
     private FormInfo mDrawFormInfo;
     private String mRecordId;
     private boolean mStopRecordCoord = true;
-    private int mCurrentPage = 1;
+//    private int mCurrentPage = 1;
     private String mPageAddress = "0.0.0.0";
     private boolean mIsRecordDraw = false;
     //    private Executor mExecutor = Executors.newCachedThreadPool();
@@ -708,9 +708,9 @@ public class ZBFormService extends Service {
         }
     }
 
-    public void setCurrentPage(int page) {
-        mCurrentPage = page;
-    }
+//    public void setCurrentPage(int page) {
+//        mCurrentPage = page;
+//    }
 
     public void setFormList(List<FormListInfo.Results> list) {
         mFormList = list;

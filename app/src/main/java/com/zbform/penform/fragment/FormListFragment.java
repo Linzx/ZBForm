@@ -279,6 +279,7 @@ public class FormListFragment extends BaseFragment implements FormListTask.OnFor
 
                     Intent intent = new Intent(mContext, RecordListActivity.class);
                     intent.putExtra("formId", formId);
+                    intent.putExtra("title", viewHolder.formItem.getName().replace(".pdf",""));
                     startActivity(intent);
                     //mFragmentChangeCallBack.onRecordListFragmentSelect(formId);
                 }

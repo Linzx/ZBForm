@@ -42,6 +42,7 @@ public class RecordListActivity extends BaseActivity implements RecordListTask.O
     private Handler handler = new Handler();
     private RecordListTask mTask;
     private String mFormId;
+    private String mFormName;
     private ActionBar mActionBar;
 
     private Context mContext;
@@ -55,7 +56,7 @@ public class RecordListActivity extends BaseActivity implements RecordListTask.O
         mPreferencesUtility = PreferencesUtility.getInstance(this);
         mContext = this;
         mFormId = getIntent().getStringExtra("formId");
-
+        mFormName = getIntent().getStringExtra("title");
         ptrClassicFrameLayout = findViewById(R.id.record_list_view_frame);
         mListView = findViewById(R.id.record_list_view);
 
@@ -70,7 +71,7 @@ public class RecordListActivity extends BaseActivity implements RecordListTask.O
         mActionBar.setDisplayHomeAsUpEnabled(true);
         mActionBar.setTitle("");
         TextView title = findViewById(R.id.toolbar_title);
-        title.setText(R.string.title_record_list);
+        title.setText(mFormName);
     }
 
     @Override
