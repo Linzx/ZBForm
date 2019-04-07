@@ -49,7 +49,9 @@ public class BleConnectService extends Service implements ZBFormBlePenManager.IZ
         public void run() {
             Log.i(TAG,"isConnectSuccess="+isConnectSuccess);
             Log.i(TAG,"getIsConnectedNow="+ZBformApplication.sBlePenManager.getIsConnectedNow());
-            if (!isConnectSuccess && !ZBformApplication.sBlePenManager.getIsConnectedNow()) {
+            if (
+//                    !isConnectSuccess &&
+                    !ZBformApplication.sBlePenManager.getIsConnectedNow()) {
                 if (mBlePenManager.getScanState() == BleScanState.STATE_IDLE) {
                     Log.i(TAG, "Scan Runnable, idle state, start scan");
                     mBlePenManager.scan();
@@ -71,12 +73,13 @@ public class BleConnectService extends Service implements ZBFormBlePenManager.IZ
     }
 
     public void startAutoScan() {
+        Log.i(TAG, "stopAutoScan");
         mBlePenManager.setZBBleConnectCallback(this);
         mBlePenManager.setZBBleScanCallback(this);
         if (!mLastPenMac.equals(PEN_DEFAULT_VALUE) &&
                 !mLastPenName.equals(PEN_DEFAULT_VALUE) &&
                 !ZBformApplication.sBlePenManager.getIsConnectedNow()) {
-            Log.i(TAG, "startAutoScan");
+            Log.i(TAG, "startAutoScan1");
             mScanStoped = false;
 
             mScanHandler.post(mScanRunnable);
@@ -143,7 +146,7 @@ public class BleConnectService extends Service implements ZBFormBlePenManager.IZ
         //一次scan结束如果还没有连接，继续scan
         if (!mLastPenMac.equals(PEN_DEFAULT_VALUE) &&
                 !mLastPenName.equals(PEN_DEFAULT_VALUE) &&
-                !isConnectSuccess &&
+//                !isConnectSuccess &&
                 !ZBformApplication.sBlePenManager.getIsConnectedNow()) {
             Log.i(TAG, "onScanFinished loop");
             mScanHandler.post(mScanRunnable);

@@ -57,6 +57,7 @@ public class LoadingDialog extends Dialog {
         attributes.width = screenWidth/3;
         attributes.height = attributes.width;
         getWindow().setAttributes(attributes);
+        setCanceledOnTouchOutside(mCancelable);
         setCancelable(mCancelable);
 
         TextView tv_loading = findViewById(R.id.tv_loading);
@@ -79,12 +80,12 @@ public class LoadingDialog extends Dialog {
         super.dismiss();
     }
 
-    @Override
-    public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
-        if(keyCode == KeyEvent.KEYCODE_BACK){
-            // 屏蔽返回键
-            return mCancelable;
-        }
-        return super.onKeyDown(keyCode, event);
-    }
+//    @Override
+//    public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
+//        if(keyCode == KeyEvent.KEYCODE_BACK){
+//            // 屏蔽返回键
+//            return mCancelable;
+//        }
+//        return super.onKeyDown(keyCode, event);
+//    }
 }

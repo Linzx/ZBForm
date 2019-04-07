@@ -175,8 +175,10 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
 
     private void showLoading() {
         Log.i(TAG, "showLoading, create");
-        progressDialog = new LoadingDialog(PenManagerActivity.this, getString(R.string.connecting_pen));
         try {
+            if (progressDialog == null) {
+                progressDialog = new LoadingDialog(PenManagerActivity.this, getString(R.string.connecting_pen), true);
+            }
             progressDialog.show();
         } catch (Exception e) {
             e.printStackTrace();
@@ -288,8 +290,14 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     //连接回调
     @Override
     public void onStartConnect() {
+        Log.i(TAG, "onStartConnect");
         if (mIsConnectButtonPressed) {
-            showLoading();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    showLoading();
+                }
+            });
         }
     }
 
@@ -314,15 +322,28 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
         Log.i(TAG, "onConnectSuccess");
 
         mIsConnectButtonPressed = false;
-        dismissLoading();
         mDeviceAdapter.addDevice(0, bleDevice);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                dismissLoading();
+            }
+        });
     }
 
     @Override
     public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
+        Log.i(TAG, "onDisConnected");
         mIsConnectButtonPressed = false;
-        dismissLoading();
         mDeviceAdapter.removeDevice(bleDevice);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mPenInfoLayout.setVisibility(View.GONE);
+                mScanLayout.setVisibility(View.VISIBLE);
+                dismissLoading();
+            }
+        });
     }
 
 
