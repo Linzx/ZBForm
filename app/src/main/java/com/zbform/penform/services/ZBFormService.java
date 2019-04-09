@@ -260,6 +260,8 @@ public class ZBFormService extends Service {
 
                     for (Point point : stroke.dList) {
                         ZBStrokeEntity strokeEntity = new ZBStrokeEntity();
+                        strokeEntity.setPenMac(ZBformApplication.sBlePenManager.getBleDeviceMac());
+                        strokeEntity.setPenMac(ZBformApplication.sBlePenManager.getBleDeviceSyncNum());
                         strokeEntity.setUserid(ZBformApplication.getmLoginUserId());
                         try {
                             strokeEntity.setFormid(mDrawFormInfo.results[0].getUuid());
@@ -385,6 +387,8 @@ public class ZBFormService extends Service {
                         item.id = entity.recordid;
                         item.itemid = entity.itemid;
                         item.userid = entity.userid;
+                        item.penMac = entity.penMac;
+                        item.penSid = entity.penSid;
                         mInnerItems.add(item);
                     }
 
