@@ -136,7 +136,8 @@ public class ApiAddress {
         return simpleDateFormat.format(date);
     }
 
-    public static String getNewRecordUri(String userid, String userkey, String formid) {
+    public static String getNewRecordUri(String userid, String userkey,
+                                         String formid, String sid, String mac) {
         String signCode = getSignCode(userid + userkey + SYSTEM_KEY);
 
         StringBuilder sb = new StringBuilder();
@@ -149,6 +150,14 @@ public class ApiAddress {
         sb.append(Uri.encode(userid));
         sb.append("&formid=");
         sb.append(Uri.encode(formid));
+        if (!TextUtils.isEmpty(sid)) {
+            sb.append("&penSid=");
+            sb.append(Uri.encode(sid));
+        }
+        if (!TextUtils.isEmpty(mac)) {
+            sb.append("&penMac=");
+            sb.append(Uri.encode(mac));
+        }
 
         Log.i(TAG, "get form img url=" + sb.toString());
         return sb.toString();

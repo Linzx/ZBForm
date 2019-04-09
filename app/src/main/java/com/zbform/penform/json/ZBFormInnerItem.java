@@ -31,6 +31,12 @@ public class ZBFormInnerItem {
     @Expose(serialize = true, deserialize = true)
     public String itemid;
 
+    @Expose(serialize = true, deserialize = true)
+    public String penSid;
+
+    @Expose(serialize = true, deserialize = true)
+    public String penMac;
+
     /// <summary>
     /// 笔迹数据数组
     /// </summary>
@@ -70,6 +76,22 @@ public class ZBFormInnerItem {
 
     public void setItemid(String itemid) {
         this.itemid = itemid;
+    }
+
+    public String getPenSid() {
+        return penSid;
+    }
+
+    public void setPenSid(String penSid) {
+        this.penSid = penSid;
+    }
+
+    public String getPenMac() {
+        return penMac;
+    }
+
+    public void setPenMac(String penMac) {
+        this.penMac = penMac;
     }
 
     public HwData[] getData() {

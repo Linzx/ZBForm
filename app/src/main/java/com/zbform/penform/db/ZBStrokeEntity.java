@@ -60,6 +60,28 @@ public class ZBStrokeEntity extends EntityBase{
     @Column(column = "y")
     public int y;
 
+    public String getPenSid() {
+        return penSid;
+    }
+
+    public void setPenSid(String penSid) {
+        this.penSid = penSid;
+    }
+
+    public String getPenMac() {
+        return penMac;
+    }
+
+    public void setPenMac(String penMac) {
+        this.penMac = penMac;
+    }
+
+    @Column(column = "penSid")
+    public String penSid;
+
+    @Column(column = "penMac")
+    public String penMac;
+
     @Transient
     public ArrayList<Point> dList = new ArrayList<Point>();
 

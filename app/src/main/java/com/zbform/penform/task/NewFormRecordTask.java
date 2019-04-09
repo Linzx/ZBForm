@@ -34,7 +34,9 @@ public class NewFormRecordTask implements IZBformNetBeanCallBack {
 	public void execute(Context context, String formid) {
 		mContext = context;
 		String formListUri = ApiAddress.getNewRecordUri(ZBformApplication.getmLoginUserId(),
-				ZBformApplication.getmLoginUserKey(),formid);
+				ZBformApplication.getmLoginUserKey(),formid,
+				ZBformApplication.sBlePenManager.getBleDeviceSyncNum(),
+				ZBformApplication.sBlePenManager.getBleDeviceMac());
 		ZBformNetBean formListTask = new ZBformNetBean(context, formListUri,
 				HttpRequest.HttpMethod.GET);
 		formListTask.setNetTaskCallBack(this);
