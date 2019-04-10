@@ -497,6 +497,8 @@ public class ZBFormService extends Service {
 //                test = "IZBform-181210896100217";
 //            }
             params.addQueryStringParameter("itemid", Uri.encode(mInnerItem.getItemid()));
+            params.addQueryStringParameter("penSid", Uri.encode(mInnerItem.getPenSid()));
+            params.addQueryStringParameter("penMac", Uri.encode(mInnerItem.getPenMac()));
 
 
             Log.i(TAG, "mInnerItems formid=" + mInnerItem.getFormid());
