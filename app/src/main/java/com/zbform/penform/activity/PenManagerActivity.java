@@ -65,6 +65,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     private View mScanLayout;
     private TextView mPenName;
     private TextView mPenMac;
+    private TextView mPenSid;
     private TextView mPenPower;
     private TextView mPenVersion;
     private ActionBar mActionBar;
@@ -229,6 +230,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
         mPenInfoLayout = findViewById(R.id.pen_info);
         mPenName = findViewById(R.id.pen_name);
         mPenMac = findViewById(R.id.pen_mac);
+        mPenSid = findViewById(R.id.pen_sid);
         mPenPower = findViewById(R.id.pen_power);
         mPenVersion = findViewById(R.id.pen_version);
 
@@ -350,6 +352,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
     public void setPenInfo() {
         mPenName.setText(mBlePenManager.getBleDeviceName());
         mPenMac.setText(mBlePenManager.getBleDeviceMac());
+        mPenSid.setText(mBlePenManager.getBleDeviceSyncNum());
         mPenPower.setText(mBlePenManager.getBleDevicePower() + "%");
         mPenVersion.setText(mBlePenManager.getBleDeviceSwVersion());
     }
@@ -431,6 +434,7 @@ public class PenManagerActivity extends BaseActivity implements View.OnClickList
                 mScanLayout.setVisibility(View.GONE);
                 mPenName.setText(mBlePenManager.getBleDeviceName());
                 mPenMac.setText(mBlePenManager.getBleDeviceMac());
+                mPenSid.setText(mBlePenManager.getBleDeviceSyncNum());
             }
         });
     }

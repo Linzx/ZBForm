@@ -78,6 +78,7 @@
     <string name="pen_name_title">数码笔：</string>
     <string name="pen_power_title">剩余电量：</string>
     <string name="pen_mac_title">MAC：</string>
+    <string name="pen_sid_title">SID：</string>
     <string name="pen_version_title">固件版本：</string>
 
     <string name="pen_nav_start_to_connect">开始连接</string>
