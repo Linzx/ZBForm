@@ -261,7 +261,7 @@ public class ZBFormService extends Service {
                     for (Point point : stroke.dList) {
                         ZBStrokeEntity strokeEntity = new ZBStrokeEntity();
                         strokeEntity.setPenMac(ZBformApplication.sBlePenManager.getBleDeviceMac());
-                        strokeEntity.setPenMac(ZBformApplication.sBlePenManager.getBleDeviceSyncNum());
+                        strokeEntity.setPenSid(ZBformApplication.sBlePenManager.getBleDeviceSyncNum());
                         strokeEntity.setUserid(ZBformApplication.getmLoginUserId());
                         try {
                             strokeEntity.setFormid(mDrawFormInfo.results[0].getUuid());

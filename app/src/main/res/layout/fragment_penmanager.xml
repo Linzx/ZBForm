@@ -106,6 +106,28 @@
             android:padding="10dp">
 
             <TextView
+                android:id="@+id/pen_sid_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/pen_sid_title"
+                android:textColor="@color/colorPrimary"
+                android:textSize="@dimen/pen_info_title_size" />
+
+            <TextView
+                android:id="@+id/pen_sid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="right"
+                android:textSize="@dimen/pen_info_content_size" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/pen_info_item_height"
+            android:orientation="horizontal"
+            android:padding="10dp">
+
+            <TextView
                 android:id="@+id/pen_power_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
