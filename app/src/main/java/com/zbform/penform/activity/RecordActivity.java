@@ -121,6 +121,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     private FrameLayout mRoot;
     private ListView mListView;
     private MenuItemAdapter mAdapter;
+    private TextView mPageTitle;
 
     private ArrayList<RecordPageHolder> mRecordPageHolderList = new ArrayList<>();
     private HashMap<String, String> mValAddress;
@@ -150,14 +151,14 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 //    float mScaleY = 0.23457f;
 
     // 缓存用户新增笔迹数据
-    private Hashtable<Integer, List<HwData>> mCachedDataMap = new Hashtable<>();
+    private Hashtable<String, List<HwData>> mCachedDataMap = new Hashtable<>();
 
     // 缓存识别后的表单记录数据
     private Hashtable<Integer, List<ZBFormRecognizedResult>> mCachedZBFormRecognizedResultMap = new Hashtable<>();
 
     private boolean mUserDraw = false;
     private HwData mHwData = new HwData();
-    private Path mCurrentCachedPath = new Path();
+
 
     private FormTask mFormTask;
     private FormInfo mFormInfo = null;
@@ -198,6 +199,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         View header = inflater.inflate(R.layout.listitem_recorditem_header_layout, mListView, false);
         mListView.addHeaderView(header);
         mRoot = findViewById(R.id.ll_root);
+        mPageTitle = findViewById(R.id.page_title);
 
         mShowItem = findViewById(R.id.show_item);
         mShowItem.setOnClickListener(this);
@@ -250,6 +252,15 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         }
     }
 
+    private void setUpPageTitle(int pos) {
+        if (mPage > 1) {
+            mPageTitle.setVisibility(View.VISIBLE);
+            mPageTitle.setText(getResources().getString(R.string.page_title, pos));
+        } else {
+            mPageTitle.setVisibility(View.GONE);
+        }
+    }
+
     private void setToolBar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -294,6 +305,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             mFormTask.setOnFormTaskListener(mFormTaskListener);
             mFormTask.execute(mContext, mFormId);
         }
+        setUpPageTitle(1);
     }
 
     private void toggleRightSliding() {
@@ -432,39 +444,30 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
     @Override
     public void onPenDown() {
-        mHwData = new HwData();
+        if (mPageAddress != null) {
+            mHwData = new HwData();
+        }
     }
 
     @Override
     public void onPenUp() {
-        if (mHwData.dList != null && mHwData.dList.size() > 0) {
+        if (mPageAddress != null && mHwData.dList != null && mHwData.dList.size() > 0) {
             mHwData.setD(mHwData.dList.toArray(new Point[mHwData.dList.size()]));
 
             List<HwData> dataList = new ArrayList<>();
-            if (mCachedDataMap.containsKey(mCurrentPage)) {
-                dataList = mCachedDataMap.get(mCurrentPage);
+            if (mCachedDataMap.containsKey(mPageAddress)) {
+                dataList = mCachedDataMap.get(mPageAddress);
             }
 
             dataList.add(mHwData);
-            mCachedDataMap.put(mCurrentPage, dataList);
+            mCachedDataMap.put(mPageAddress, dataList);
             mUserDraw = true;
         }
     }
 
     @Override
     public void onCoordDraw(String pageAddress, int nX, int nY) {
-//        mPageAddress = pageAddress;
-//        int p = computeCurrentPage(mBasePageAddress, mPageAddress);
-//        if (p > mPage || p < 1) {
-//            return;
-//        }
-//        if (mCurrentPage != p) {
-//            mCurrentPage = p;
-//            Log.i(TAG, "onCoordDraw: mCurrentPage = " + mCurrentPage);
-//
-//            switchPages(AUTO_IMG);
-//        }
-
+        if (mPageAddress == null) return;
         if (!mPageAddress.equals(pageAddress)){
             mPageAddress = pageAddress;
             indexViewPager();
@@ -1057,6 +1060,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                         Log.i("whd","onResourceReady draw hw");
                         drawForm(mRecordPageHolder);
                     }
+                    new DrawHwDataTask(mRecordPageHolder).execute();
                 } else {
                     mRecordPageHolder.formBitmap = null;
                 }
@@ -1111,6 +1115,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
     private void drawForm(RecordPageHolder recordPageHolder) {
         if (recordPageHolder.formBitmap != null &&
                 recordPageHolder.contentView != null) {
+
+
             mTargetWidth = recordPageHolder.formBitmap.getWidth();
             mTargetHeight = recordPageHolder.formBitmap.getHeight();
 //            Log.i(TAG, "onResourceReady W=" + mTargetWidth);
@@ -1132,8 +1138,9 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             }
             mService.startDraw();
 
-            Log.i("whd","onpage draw hw");
-            new DrawHwDataTask(recordPageHolder).execute();
+//            Log.i("whd","onpage draw hw");
+            //new DrawHwDataTask(recordPageHolder).execute();
+
             if (mItemShow) {
                 showItemsReF(recordPageHolder);
             }
@@ -1142,21 +1149,24 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         }
     }
 
-    private class DrawHwDataTask extends AsyncTask<Void, Void, Void> {
+    private class DrawHwDataTask {//extends AsyncTask<Void, Void, Void> {
 
         private Bitmap mDrawTarget;
         ImageView imageView;
         Path mPath = new Path();
+        Path mCurrentCachedPath = new Path();
         float mScaleX = 0.1929f;
         float mScaleY = 0.23457f;
+        String mDrawAddress;
 
         public DrawHwDataTask(RecordPageHolder holder) {
             mDrawTarget = holder.formBitmap;
             imageView = holder.contentView.getImageView();
+            mDrawAddress = holder.mPageAddress;
         }
-        @Override
-        protected Void doInBackground(Void... params) {
-//        public void execute(){
+//        @Override
+//        protected Void doInBackground(Void... params) {
+        public void execute(){
             Canvas canvas = new Canvas(mDrawTarget);
             int width = mDrawTarget.getWidth();
             int height = mDrawTarget.getHeight();
@@ -1214,19 +1224,20 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                 canvas.drawPath(mCurrentCachedPath, paint);
             }
             Log.i(TAG, "draw hwdata ");
-//            mPath.reset();
-//            mCurrentCachedPath.reset();
-//            imageView.setImageBitmap(mDrawTarget);
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-            imageView.setImageBitmap(mDrawTarget);
             mPath.reset();
             mCurrentCachedPath.reset();
+            imageView.setImageBitmap(mDrawTarget);
+//            return null;
         }
+
+//        @Override
+//        protected void onPostExecute(Void aVoid) {
+//            super.onPostExecute(aVoid);
+//
+//            imageView.setImageBitmap(mDrawTarget);
+//            mPath.reset();
+//            mCurrentCachedPath.reset();
+//        }
 
         public List<RecordDataItem> getCurrentItems() {
             if (mPage == 1 && recordResults != null && recordResults.size() > 0) {
@@ -1240,7 +1251,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                     HwData hwData = new Gson().fromJson(item.getHwdata(), new TypeToken<HwData>() {
                     }.getType());
                     Log.i(TAG, "hwdata pageaddress = " + hwData.getP() + "   mPageAddress=" + mPageAddress);
-                    if (hwData.getP().equals(mPageAddress)) {
+                    if (hwData.getP().equals(mDrawAddress)) {
                         Log.i(TAG, "add item to list");
                         itemList.add(item);
                     }
@@ -1250,8 +1261,8 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         }
 
         private void getCurrentCachedPath() {
-            if (mCachedDataMap.containsKey(mCurrentPage)) {
-                List<HwData> dataList = mCachedDataMap.get(mCurrentPage);
+            if (mCachedDataMap.containsKey(mDrawAddress)) {
+                List<HwData> dataList = mCachedDataMap.get(mDrawAddress);
                 for (HwData hwData : dataList) {
                     addHwData2Path(hwData, mCurrentCachedPath);
                 }
@@ -1283,10 +1294,11 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         @Override
         public void onPageSelected(int position) {
             Log.i(TAG, "onPageSelected=" + position);
-//            setUpPageTitle(position + 1);
+            setUpPageTitle(position + 1);
             mCurrentPage = position + 1;
             RecordPageHolder pageHolder = mRecordPageHolderList.get(position);
             if (pageHolder != null) {
+                Log.i("whd", "onPageSelected  drawForm");
                 drawForm(pageHolder);
             }
             Message msg = mHandler.obtainMessage(MODIFY_UPDATE_ITEM_MSG);

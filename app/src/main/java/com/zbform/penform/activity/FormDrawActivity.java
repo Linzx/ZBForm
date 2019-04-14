@@ -269,9 +269,7 @@ public class FormDrawActivity extends BaseActivity {
                 mPageAddress = mValAddress.get(index);
                 Log.i(TAG, "switch page=" + mPageAddress);
             }
-            if (mDrawState == STATE_DRAW && mCacheHwData.size() > 0) {
-                new DrawHwDataTask(formPageHolder.formBitmap).execute();
-            }
+
 
             if (mService != null) {
                 mService.setCurrentPageAddress(mPageAddress);
@@ -412,6 +410,10 @@ public class FormDrawActivity extends BaseActivity {
                 } else {
                     mFormPageHolder.formBitmap = null;
                 }
+                if (mDrawState == STATE_DRAW && mCacheHwData.size() > 0) {
+                    new DrawHwDataTask(resource).execute();
+                }
+
                 mItemView.dismissLoading();
                 return false;
             }
@@ -613,7 +615,7 @@ public class FormDrawActivity extends BaseActivity {
         }
     }
 
-    private class DrawHwDataTask extends AsyncTask<Void, Void, Void> {
+    private class DrawHwDataTask {//extends AsyncTask<Void, Void, Void> {
         private Bitmap mDrawTarget;
         Path mPath = new Path();
         float mScaleX = 0.1929f;
@@ -623,11 +625,12 @@ public class FormDrawActivity extends BaseActivity {
             mDrawTarget = target;
         }
 
-        @Override
-        protected Void doInBackground(Void... params) {
+//        @Override
+//        protected Void doInBackground(Void... params) {
+        public void execute(){
             try {
                 Log.i(TAG, "DrawHwDataTask begin");
-                if (mCacheHwData.size() == 0) return null;
+                if (mCacheHwData.size() == 0) return;
 
                 int width = mDrawTarget.getWidth();
                 int height = mDrawTarget.getHeight();
@@ -658,7 +661,7 @@ public class FormDrawActivity extends BaseActivity {
                     }
                 }
 
-                if (!found) return null;
+                if (!found) return;
 
                 Canvas canvas = new Canvas(mDrawTarget);
                 Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG);
@@ -676,15 +679,16 @@ public class FormDrawActivity extends BaseActivity {
                 Log.i(TAG, "queue ex=" + e.getMessage());
                 e.printStackTrace();
             }
-            return null;
+            mPath.reset();
+//            return null;
         }
 
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-            mPath.reset();
-            dismissLoading();
-        }
+//        @Override
+//        protected void onPostExecute(Void aVoid) {
+//            super.onPostExecute(aVoid);
+//            mPath.reset();
+//            dismissLoading();
+//        }
 
         public void addHwData2Path(HwData hwData) {
             Point lastP;

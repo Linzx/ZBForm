@@ -151,7 +151,8 @@ public class ZBFormService extends Service {
                             entity = CommonUtils.getFormSetting(form.mForm.getUuid());
                         }
 
-                        if (entity != null && entity.getOpentype() == 2) {
+                        if (entity != null &&
+                                entity.getOpentype() == 2) {
                             //笔自动定位最后一条记录
                             RecordFinder finder = new RecordFinder(form.mForm.getUuid());
                             finder.openLastRecord();
