@@ -21,9 +21,11 @@ import com.pullrefresh.PtrDefaultHandler;
 import com.pullrefresh.PtrFrameLayout;
 import com.pullrefresh.loadmore.OnLoadMoreListener;
 import com.zbform.penform.R;
+import com.zbform.penform.db.FormSettingEntity;
 import com.zbform.penform.json.RecordItem;
 import com.zbform.penform.json.RecordListInfo;
 import com.zbform.penform.task.RecordListTask;
+import com.zbform.penform.util.CommonUtils;
 import com.zbform.penform.util.PreferencesUtility;
 
 import java.text.ParsePosition;
@@ -45,19 +47,24 @@ public class RecordListActivity extends BaseActivity implements RecordListTask.O
     private String mFormName;
     private ActionBar mActionBar;
 
+    private int mCurrentPage = 1;
+    private boolean mRefresh = false;
+    private int mPageSize = 10;
+    private int mTotalPage;
     private Context mContext;
-    private PreferencesUtility mPreferencesUtility;
+//    private PreferencesUtility mPreferencesUtility;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.fragment_recordlist);
 
-        mPreferencesUtility = PreferencesUtility.getInstance(this);
+//        mPreferencesUtility = PreferencesUtility.getInstance(this);
         mContext = this;
         mFormId = getIntent().getStringExtra("formId");
         mFormName = getIntent().getStringExtra("title");
         ptrClassicFrameLayout = findViewById(R.id.record_list_view_frame);
+//        ptrClassicFrameLayout.setLoadMoreEnable(true);
         mListView = findViewById(R.id.record_list_view);
 
         setToolBar();
@@ -88,6 +95,11 @@ public class RecordListActivity extends BaseActivity implements RecordListTask.O
 
     private void initData() {
         mTask = new RecordListTask(mContext, mFormId);
+        FormSettingEntity entity = CommonUtils.getFormSetting(mFormId);
+        if (entity != null) {
+            mPageSize = entity.getRecordcount();
+            Log.i("whd","mPageSize="+mPageSize);
+        }
         mTask.setTaskListener(this);
         mAdapter = new ListViewAdapter(mContext);
         mListView.setAdapter(mAdapter);
@@ -107,13 +119,13 @@ public class RecordListActivity extends BaseActivity implements RecordListTask.O
                     @Override
                     public void run() {
                         Log.i(TAG, "get record list");
+                        mCurrentPage = 1;
+                        mRefresh = true;
+                        if (mPageSize != 0) {
+                            //0 代表加载全部
+                            mTask.setPageInfo(String.valueOf(mCurrentPage), String.valueOf(mPageSize));
+                        }
                         mTask.getRecordList();
-//                        page = 0;
-//                        mData.clear();
-//                        for (int i = 0; i < 40; i++) {
-//                            mData.add(new String("GridView item  -" + i));
-//                        }
-//                        mAdapter.notifyDataSetChanged();
 //                        ptrClassicFrameLayout.refreshComplete();
 //                        ptrClassicFrameLayout.setLoadMoreEnable(true);
                     }
@@ -129,13 +141,12 @@ public class RecordListActivity extends BaseActivity implements RecordListTask.O
 
                     @Override
                     public void run() {
-//                        for (int i = 0; i < 4; i++) {
-//                            mData.add(new String("GridView item -- add" + page));
-//                        }
-//                        mAdapter.notifyDataSetChanged();
+                        mRefresh = false;
+                        mCurrentPage++;
+                        Log.i("whd", "load more mCurrentPage=" + mCurrentPage);
+                        mTask.setPageInfo(String.valueOf(mCurrentPage), String.valueOf(mPageSize));
+                        mTask.getRecordList();
 //                        ptrClassicFrameLayout.loadMoreComplete(true);
-//                        page++;
-                        Toast.makeText(mContext, "load more complete", Toast.LENGTH_SHORT).show();
                     }
                 }, 1000);
             }
@@ -151,26 +162,55 @@ public class RecordListActivity extends BaseActivity implements RecordListTask.O
     public void onTaskSuccess(List<RecordListInfo.Results> results) {
         recordListResults = results;
         if (recordListResults.size() > 0) {
+            mTotalPage = recordListResults.get(0).getTotalPage();
             mData = Arrays.asList(recordListResults.get(0).getItems());
-            mAdapter.setData(mData);
-            mAdapter.notifyDataSetChanged();
+            if (mData != null && mData.size() > 0) {
+                if (mRefresh) {
+                    mAdapter.clearData();
+                }
+                mAdapter.setData(mData);
+                mAdapter.notifyDataSetChanged();
+                if (mRefresh && mPageSize > 0) {
+                    //mPageSize 0 代表加载全部, 不显示底部More
+                    ptrClassicFrameLayout.setLoadMoreEnable(true);
+                }
+            } else {
+                if (mCurrentPage > 1) {
+                    mCurrentPage--;
+                }
+                Log.i("whd", "mCurrentPage last=" + mCurrentPage);
+                Toast.makeText(mContext, RecordListActivity.this.getResources().getString(R.string.toast_load_last), Toast.LENGTH_SHORT).show();
+            }
         }
         ptrClassicFrameLayout.refreshComplete();
-
-        if (mPreferencesUtility.getPreRecordLast() && mData.size() > 0) {
-            RecordItem recordItem = mData.get(0);
-            Intent intent = new Intent(mContext, RecordActivity.class);
-            intent.putExtra("formId", mFormId);
-            intent.putExtra("recordId", recordItem.getHwuuid());
-            intent.putExtra("page", recordItem.getHwpage());
-            intent.putExtra("recordCode", recordItem.getHwcode());
-            startActivity(intent);
+        if(ptrClassicFrameLayout.isLoadMoreEnable()) {
+            ptrClassicFrameLayout.loadMoreComplete(true);
         }
+//        if (mPreferencesUtility.getPreRecordLast() && mData.size() > 0) {
+//            RecordItem recordItem = mData.get(0);
+//            Intent intent = new Intent(mContext, RecordActivity.class);
+//            intent.putExtra("formId", mFormId);
+//            intent.putExtra("recordId", recordItem.getHwuuid());
+//            intent.putExtra("page", recordItem.getHwpage());
+//            intent.putExtra("recordCode", recordItem.getHwcode());
+//            startActivity(intent);
+//        }
     }
 
     @Override
     public void onTaskFail() {
         ptrClassicFrameLayout.refreshComplete();
+        if(ptrClassicFrameLayout.isLoadMoreEnable()) {
+            ptrClassicFrameLayout.loadMoreComplete(true);
+        }
+    }
+
+    @Override
+    public void onTaskCancelled() {
+        ptrClassicFrameLayout.refreshComplete();
+        if(ptrClassicFrameLayout.isLoadMoreEnable()) {
+            ptrClassicFrameLayout.loadMoreComplete(true);
+        }
     }
 
 
@@ -218,7 +258,6 @@ public class RecordListActivity extends BaseActivity implements RecordListTask.O
             convertView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-//                    mFragmentChangeCallBack.onRecordFragmentSelect(mFormId, recordItem.getHwuuid(),recordItem.getHwcode(),recordItem.getHwpage());
                     Intent intent = new Intent(mContext, RecordActivity.class);
                     intent.putExtra("formId", mFormId);
                     intent.putExtra("recordId", recordItem.getHwuuid());
@@ -235,9 +274,19 @@ public class RecordListActivity extends BaseActivity implements RecordListTask.O
         }
 
         public void setData(List<RecordItem> data) {
-            datas = data;
+            if (data == null) {
+                datas = data;
+            } else {
+                datas.addAll(data);
+            }
+            Log.i("whd", "date len=" + datas.size());
         }
 
+        public void clearData(){
+            if (datas != null) {
+                datas.clear();
+            }
+        }
     }
 
     public String convertDateFormat(String origin) {

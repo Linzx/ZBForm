@@ -56,10 +56,10 @@ public class FormSettingActivity extends AppCompatPreferenceActivity implements 
             mPenPreference.setValue("0");
             mPenPreference.setSummary(mEntityPen[0]);
 
-            mRecordPreference.setValue("0");
+            mRecordPreference.setValue("10");
             mRecordPreference.setSummary(getResources().getString(
                     R.string.form_setting_record_summary,
-                    mEntityRecord[0]));
+                    mEntityRecord[2]));
         } else {
             Log.i(TAG,"got entity");
             String type = String.valueOf(mSettingEntity.getOpentype());

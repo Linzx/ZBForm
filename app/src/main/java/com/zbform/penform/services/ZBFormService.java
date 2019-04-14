@@ -28,19 +28,24 @@ import com.lidroid.xutils.http.ResponseInfo;
 import com.lidroid.xutils.http.client.HttpRequest;
 import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.activity.FormDrawActivity;
+import com.zbform.penform.activity.RecordActivity;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
+import com.zbform.penform.db.FormSettingEntity;
 import com.zbform.penform.db.ZBStrokeEntity;
 import com.zbform.penform.json.FormInfo;
 import com.zbform.penform.json.FormItem;
 import com.zbform.penform.json.FormListInfo;
 import com.zbform.penform.json.HwData;
 import com.zbform.penform.json.Point;
+import com.zbform.penform.json.RecordItem;
+import com.zbform.penform.json.RecordListInfo;
 import com.zbform.penform.json.UpLoadStrokeinfo;
 import com.zbform.penform.json.ZBFormInnerItem;
 import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.net.ErrorCode;
 import com.zbform.penform.net.IZBformNetBeanCallBack;
 import com.zbform.penform.net.ZBformNetBean;
+import com.zbform.penform.task.RecordListTask;
 import com.zbform.penform.util.CommonUtils;
 
 import java.util.ArrayList;
@@ -57,7 +62,6 @@ public class ZBFormService extends Service {
     private FormInfo mDrawFormInfo;
     private String mRecordId;
     private boolean mStopRecordCoord = true;
-//    private int mCurrentPage = 1;
     private String mPageAddress = "0.0.0.0";
     private boolean mIsRecordDraw = false;
     //    private Executor mExecutor = Executors.newCachedThreadPool();
@@ -141,7 +145,20 @@ public class ZBFormService extends Service {
                     //如果现在是在修改记录界面。不要再识别新的了
                     if (!mIsRecordDraw) {
                         TargetForm form = findPageForm(pageAddress);
-                        startPageFormActivity(form);
+
+                        FormSettingEntity entity = null;
+                        if (form != null) {
+                            entity = CommonUtils.getFormSetting(form.mForm.getUuid());
+                        }
+
+                        if (entity != null && entity.getOpentype() == 2) {
+                            //笔自动定位最后一条记录
+                            RecordFinder finder = new RecordFinder(form.mForm.getUuid());
+                            finder.openLastRecord();
+                        } else {
+                            //笔自动打开表单
+                            startPageFormActivity(form);
+                        }
                     }
                     mPageAddress = pageAddress;
                 }
@@ -242,7 +259,6 @@ public class ZBFormService extends Service {
             while (true) {
                 try {
                     if (mStopRecordCoord && mCoordQueue.isEmpty()) {
-//                        mCurrentPage = 1;
                         mDrawFormInfo = null;
                         mRecordId = "";
                         Log.i(TAG, "stop!!!!!");
@@ -632,6 +648,56 @@ public class ZBFormService extends Service {
         }
     }
 
+    private class RecordFinder implements RecordListTask.OnTaskListener{
+        RecordListTask mTask;
+        String mFormId;
+
+        RecordFinder(String formid){
+            mFormId = formid;
+            mTask = new RecordListTask(mContext, formid);
+            mTask.setPageInfo("1", "1");
+            mTask.setTaskListener(this);
+        }
+
+        public void openLastRecord(){
+            mTask.getRecordList();
+        }
+
+        @Override
+        public void onTaskStart() {
+
+        }
+
+        @Override
+        public void onTaskSuccess(List<RecordListInfo.Results> results) {
+            if (results.size() > 0) {
+                final RecordItem[] items = results.get(0).getItems();
+                if (items != null && items.length > 0) {
+                    RecordItem recordItem = items[0];
+                    Intent intent = new Intent(mContext, RecordActivity.class);
+                    intent.putExtra("formId", mFormId);
+                    intent.putExtra("recordId", recordItem.getHwuuid());
+                    intent.putExtra("page", recordItem.getHwpage());
+                    intent.putExtra("recordCode", recordItem.getHwcode());
+                    startActivity(intent);
+                    Log.i(TAG, "start last record");
+                } else {
+                    Log.i(TAG, "can not find last record");
+                }
+            }
+        }
+
+        @Override
+        public void onTaskFail() {
+
+        }
+
+        @Override
+        public void onTaskCancelled() {
+
+        }
+    }
+
     @Override
     public void onCreate() {
         Log.i(TAG, "ZBFormService onCreate");
@@ -713,10 +779,6 @@ public class ZBFormService extends Service {
             e.printStackTrace();
         }
     }
-
-//    public void setCurrentPage(int page) {
-//        mCurrentPage = page;
-//    }
 
     public void setFormList(List<FormListInfo.Results> list) {
         mFormList = list;

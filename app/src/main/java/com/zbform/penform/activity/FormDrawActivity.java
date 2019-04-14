@@ -43,6 +43,7 @@ import com.bumptech.glide.request.target.Target;
 import com.zbform.penform.R;
 import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
+import com.zbform.penform.db.FormSettingEntity;
 import com.zbform.penform.dialog.LoadingDialog;
 import com.zbform.penform.json.FormInfo;
 import com.zbform.penform.json.FormItem;
@@ -106,7 +107,7 @@ public class FormDrawActivity extends BaseActivity {
     private HashMap<String, String> mValAddress;
     private boolean mItemShow = false;
     private DrawItemsTask mDrawItemsTask;
-    private PreferencesUtility mPreferencesUtility;
+//    private PreferencesUtility mPreferencesUtility;
     private FormOpenLoader mFormOpenLoader;
     private RecordNewImageLoader mRecordNewLoader;
     private FormPagerAdapter mPageAdapter;
@@ -139,7 +140,7 @@ public class FormDrawActivity extends BaseActivity {
         Log.i(TAG, "onCreate");
         setContentView(R.layout.formimg_activity);
         mZBFormBlePenManager = ZBFormBlePenManager.getInstance(FormDrawActivity.this);
-        mPreferencesUtility = PreferencesUtility.getInstance(this);
+//        mPreferencesUtility = PreferencesUtility.getInstance(this);
         mResources = getResources();
         mRoot = findViewById(R.id.ll_root);
 //        mImgView = (ImageView) findViewById(R.id.form_img);
@@ -526,7 +527,10 @@ public class FormDrawActivity extends BaseActivity {
             }
 
             dismissLoading();
-            if (mPreferencesUtility.getPreFormDefNew()) {
+
+            FormSettingEntity entity = CommonUtils.getFormSetting(mFormID);
+            //自动创建表单记录
+            if (entity != null && entity.getOpentype() == 1) {
                 if (mRecordNewLoader == null) {
                     mRecordNewLoader = new RecordNewImageLoader(LOAD_ACTION_NEW_RECORD);
                 } else {

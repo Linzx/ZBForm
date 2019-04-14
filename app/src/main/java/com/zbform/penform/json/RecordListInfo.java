@@ -10,6 +10,11 @@ public class RecordListInfo extends BaseInfo {
         String uuid;
         String group;
         String name;
+        int pageNo;
+        int pageSize;
+        int totalCount;
+        int totalPage;
+
         RecordItem[] items;
 
         public String getCode() {
@@ -50,6 +55,38 @@ public class RecordListInfo extends BaseInfo {
 
         public void setItems(RecordItem[] items) {
             this.items = items;
+        }
+
+        public int getPageNo() {
+            return pageNo;
+        }
+
+        public void setPageNo(int pageNo) {
+            this.pageNo = pageNo;
+        }
+
+        public int getPageSize() {
+            return pageSize;
+        }
+
+        public void setPageSize(int pageSize) {
+            this.pageSize = pageSize;
+        }
+
+        public int getTotalCount() {
+            return totalCount;
+        }
+
+        public void setTotalCount(int totalCount) {
+            this.totalCount = totalCount;
+        }
+
+        public int getTotalPage() {
+            return totalPage;
+        }
+
+        public void setTotalPage(int totalPage) {
+            this.totalPage = totalPage;
         }
 
         @Override

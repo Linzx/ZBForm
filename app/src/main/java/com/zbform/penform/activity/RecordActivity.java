@@ -208,18 +208,15 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
         mPageAdapter = new RecordPagerAdapter(this);
 
-        mFormId = getIntent().getStringExtra("formId");
-        mRecordId = getIntent().getStringExtra("recordId");
-        mPage = getIntent().getIntExtra("page", 0);
-        mRecordCode = getIntent().getStringExtra("recordCode");
-        Log.i(TAG, "form id = " + mFormId + "  record id = " + mRecordId + "  page = " + mPage + "  record code = " + mRecordCode);
-
         setToolBar();
 
-        initData();
-
-        ZBformApplication.sBlePenManager.setBlePenDrawCallback(this);
-
+        initData(getIntent());
+    }
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        Log.i(TAG, "onNewIntent");
+        initData(intent);
     }
 
     @Override
@@ -278,14 +275,25 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         mRecordViewPager.setAdapter(mPageAdapter);
     }
 
-    private void initData() {
-        mTask = new RecordTask(mContext, mFormId, mRecordId);
-        mTask.setTaskListener(this);
+    private void initData(Intent intent) {
+        if (intent == null) return;
+        String newFormId = intent.getStringExtra("formId");
+        if (!newFormId.equals(mFormId)) {
+            mFormId = newFormId;
+            mRecordId = intent.getStringExtra("recordId");
+            mPage = intent.getIntExtra("page", 0);
+            mRecordCode = intent.getStringExtra("recordCode");
+            Log.i(TAG, "form id = " + mFormId + "  record id = " + mRecordId + "  page = " + mPage + "  record code = " + mRecordCode);
 
-        // 获取表单，为了查询form item
-        mFormTask = new FormTask();
-        mFormTask.setOnFormTaskListener(mFormTaskListener);
-        mFormTask.execute(mContext, mFormId);
+
+            mTask = new RecordTask(mContext, mFormId, mRecordId);
+            mTask.setTaskListener(this);
+
+            // 获取表单，为了查询form item
+            mFormTask = new FormTask();
+            mFormTask.setOnFormTaskListener(mFormTaskListener);
+            mFormTask.execute(mContext, mFormId);
+        }
     }
 
     private void toggleRightSliding() {
@@ -357,6 +365,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         // 获取Form 表单的图片，准备合成
         initViewPagerData();
 
+        ZBformApplication.sBlePenManager.setBlePenDrawCallback(this);
         Log.i(TAG, "onTaskSuccess()");
         String state = results.get(0).getRecordRecognizeState();
         if("Y".equals(state)){
@@ -1045,6 +1054,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
                 if (resource != null) {
                     mRecordPageHolder.formBitmap = resource;
                     if (mRecordPageHolder.mHolderPosition == mRecordViewPager.getCurrentItem()) {
+                        Log.i("whd","onResourceReady draw hw");
                         drawForm(mRecordPageHolder);
                     }
                 } else {
@@ -1122,6 +1132,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             }
             mService.startDraw();
 
+            Log.i("whd","onpage draw hw");
             new DrawHwDataTask(recordPageHolder).execute();
             if (mItemShow) {
                 showItemsReF(recordPageHolder);
@@ -1138,10 +1149,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         Path mPath = new Path();
         float mScaleX = 0.1929f;
         float mScaleY = 0.23457f;
-
-        public DrawHwDataTask(Bitmap target) {
-            mDrawTarget = target;
-        }
 
         public DrawHwDataTask(RecordPageHolder holder) {
             mDrawTarget = holder.formBitmap;
@@ -1185,6 +1192,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
             mCurrentItems = getCurrentItems();
 
+            Log.i("whd", "draw len="+mCurrentItems.size());
             if (mCurrentItems.size() > 0) {
                 for (RecordDataItem item : mCurrentItems) {
 
@@ -1205,9 +1213,10 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
             if (!mCurrentCachedPath.isEmpty()) {
                 canvas.drawPath(mCurrentCachedPath, paint);
             }
-            mPath.reset();
-            mCurrentCachedPath.reset();
-
+            Log.i(TAG, "draw hwdata ");
+//            mPath.reset();
+//            mCurrentCachedPath.reset();
+//            imageView.setImageBitmap(mDrawTarget);
             return null;
         }
 
@@ -1269,7 +1278,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         @Override
         public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
 
-            Log.i(TAG,"scrolled");
         }
 
         @Override
@@ -1287,7 +1295,6 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
 
         @Override
         public void onPageScrollStateChanged(int state) {
-            Log.i("whd","onPageScrollStateChanged");
         }
     };
 

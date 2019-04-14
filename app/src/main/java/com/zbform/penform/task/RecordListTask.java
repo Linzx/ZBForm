@@ -24,6 +24,8 @@ public class RecordListTask implements IZBformNetBeanCallBack {
     private String mUserId;
     private String mUserKeyStr;
     private String mFormId;
+    private String mPage;
+    private String mPageSize;
 
     private Context mContext;
     private OnTaskListener mOnTaskListener;
@@ -35,6 +37,8 @@ public class RecordListTask implements IZBformNetBeanCallBack {
         void onTaskSuccess(List<RecordListInfo.Results> results);
 
         void onTaskFail();
+
+        void onTaskCancelled();
     }
 
     public RecordListTask(Context context, String formId){
@@ -42,11 +46,19 @@ public class RecordListTask implements IZBformNetBeanCallBack {
         mUserKeyStr = ZBformApplication.getmLoginUserKey();
         mContext = context;
         mFormId = formId;
+//        mPage = page;
+//        mPageSize = pagesize;
+    }
+
+    public void setPageInfo(String page, String pagesize){
+        mPage = page;
+        mPageSize = pagesize;
     }
 
     public void getRecordList() {
         Log.i(TAG, "[getRecordList] begin");
-        String getRecordListUrl = ApiAddress.getRecordListUri(mUserId, mUserKeyStr, mFormId);
+        String getRecordListUrl = ApiAddress.getRecordListUri(mUserId, mUserKeyStr,
+                mFormId, mPage, mPageSize);
         ZBformNetBean getRecordListTask = new ZBformNetBean(mContext, getRecordListUrl,
                 HttpRequest.HttpMethod.GET);
         getRecordListTask.setNetTaskCallBack(this);
@@ -70,7 +82,9 @@ public class RecordListTask implements IZBformNetBeanCallBack {
     @Override
     public void onCancelled() {
         // TODO Auto-generated method stub
-
+        if (mOnTaskListener != null) {
+            mOnTaskListener.onTaskCancelled();
+        }
     }
 
     @Override

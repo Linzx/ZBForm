@@ -215,7 +215,8 @@ public class ApiAddress {
         return sb.toString();
     }
 
-    public static String getRecordListUri(String userid, String userkey, String formId) {
+    public static String getRecordListUri(String userid, String userkey,
+                                          String formId, String page, String pagesize) {
         String signCode = getSignCode(userid + userkey + SYSTEM_KEY);
 
         StringBuilder sb = new StringBuilder();
@@ -228,6 +229,15 @@ public class ApiAddress {
         sb.append(Uri.encode(userid));
         sb.append("&formid=");
         sb.append(Uri.encode(formId));
+        if (!TextUtils.isEmpty(page)) {
+            sb.append("&page=");
+            sb.append(Uri.encode(page));
+            if (TextUtils.isEmpty(pagesize)){
+                pagesize = "10";
+            }
+            sb.append("&size=");
+            sb.append(Uri.encode(pagesize));
+        }
 
         Log.i(TAG, "get record list url=" + sb.toString());
         return sb.toString();
