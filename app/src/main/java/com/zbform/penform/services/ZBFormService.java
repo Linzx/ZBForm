@@ -1,18 +1,28 @@
 package com.zbform.penform.services;
 
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.PowerManager;
+import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -26,9 +36,11 @@ import com.lidroid.xutils.exception.HttpException;
 import com.lidroid.xutils.http.RequestParams;
 import com.lidroid.xutils.http.ResponseInfo;
 import com.lidroid.xutils.http.client.HttpRequest;
+import com.zbform.penform.R;
 import com.zbform.penform.ZBformApplication;
 import com.zbform.penform.activity.FormDrawActivity;
 import com.zbform.penform.activity.RecordActivity;
+import com.zbform.penform.activity.ZBformMain;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.db.FormSettingEntity;
 import com.zbform.penform.db.ZBStrokeEntity;
@@ -53,6 +65,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static com.zbform.penform.net.ApiAddress.CHANNEL_ID;
+
 public class ZBFormService extends Service {
     private static final String TAG = "ZBFormService";
 
@@ -67,7 +81,7 @@ public class ZBFormService extends Service {
     //    private Executor mExecutor = Executors.newCachedThreadPool();
     private IntentFilter mIntentFilter;
     private NetworkChangeReceiver mNetworkChangeReceiver;
-
+    PowerManager.WakeLock mWakeLock = null;
 
     private LocalBinder binder = new LocalBinder();
 
@@ -143,7 +157,7 @@ public class ZBFormService extends Service {
                         !mPageAddress.equals(pageAddress)) {
 
                     //如果现在是在修改记录界面。不要再识别新的了
-                    if (!mIsRecordDraw) {
+                    if (!mIsRecordDraw && ZBformApplication.isForeground) {
                         TargetForm form = findPageForm(pageAddress);
 
                         FormSettingEntity entity = null;
@@ -160,8 +174,8 @@ public class ZBFormService extends Service {
                             //笔自动打开表单
                             startPageFormActivity(form);
                         }
+                        mPageAddress = pageAddress;
                     }
-                    mPageAddress = pageAddress;
                 }
             }
             if (!ZBformApplication.sBlePenManager.getCanDraw()) {
@@ -275,6 +289,7 @@ public class ZBFormService extends Service {
                         strokePage = Integer.valueOf(mValAddress.get(stroke.getP()));
                     }catch(Exception e){}
 
+                    String itemId = "";
                     for (Point point : stroke.dList) {
                         ZBStrokeEntity strokeEntity = new ZBStrokeEntity();
                         strokeEntity.setPenMac(ZBformApplication.sBlePenManager.getBleDeviceMac());
@@ -287,7 +302,10 @@ public class ZBFormService extends Service {
                         }
                         strokeEntity.setRecordid(mRecordId);
 
-                        String itemId = findFormRecordId(strokePage, point.getX(), point.getY());
+                        //一个笔画维持一个item
+                        if (TextUtils.isEmpty(itemId)){
+                            itemId = findFormRecordId(strokePage, point.getX(), point.getY());
+                        }
                         //笔迹不在item内，记录为page * -1
                         if (TextUtils.isEmpty(itemId)) {
                             itemId = String.valueOf(-1 * strokePage);
@@ -699,10 +717,58 @@ public class ZBFormService extends Service {
         }
     }
 
+    public void  setForegroundServiceLeg() {
+        Log.i("whd1", "setForegroundServiceLeg");
+        Intent notificationIntent = new Intent(this, ZBformMain.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+        //把该service创建为前台service
+        String notificationTitle = getString(R.string.app_name);
+        String notificationContent = getString(R.string.app_running);
+
+        Notification notification = new Notification.Builder(this)
+                .setAutoCancel(false)
+                .setContentTitle(notificationTitle)
+                .setContentText(notificationContent)
+                .setSmallIcon(R.mipmap.ic_launcher)//设置图标
+                .setContentIntent(pendingIntent)//点击之后的页面
+                .build();
+
+        startForeground(ZBformApplication.NOTIFICATION_ID, notification);
+    }
+
+    /**
+     *通过通知启动服务
+     */
+    @TargetApi(Build.VERSION_CODES.O)
+    public void  setForegroundServiceO() {
+        Log.i("whd1", "setForegroundServiceO");
+        Intent notificationIntent = new Intent(this, ZBformMain.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this,
+                0, notificationIntent, 0);
+        String channelName = getString(R.string.app_name_demo);
+        String notificationTitle = getString(R.string.app_name);
+        String notificationContent = getString(R.string.app_running);
+        int importance = NotificationManager.IMPORTANCE_HIGH;
+        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, channelName, importance);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID);
+        builder.setLargeIcon(BitmapFactory.decodeResource(this.getResources(), R.mipmap.ic_launcher))
+                .setSmallIcon(R.mipmap.ic_launcher) //设置通知图标
+                .setContentTitle(notificationTitle)//设置通知标题
+                .setContentText(notificationContent)//设置通知内容
+                .setContentIntent(pendingIntent)
+                .setShowWhen(true)
+                .setAutoCancel(false) //用户触摸时，自动关闭
+                .setOngoing(true);//设置处于运行状态
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.createNotificationChannel(channel);
+        startForeground(ZBformApplication.NOTIFICATION_ID, builder.build());
+    }
+
     @Override
     public void onCreate() {
         Log.i(TAG, "ZBFormService onCreate");
         ZBformApplication.sBlePenManager.setBlePenDrawCallback(mIBlePenDrawCallBack);
+
 
         mUpLoadQueryHandler = new UpLoadQueryHandler();
         mContext = this;
@@ -721,6 +787,11 @@ public class ZBFormService extends Service {
 //        new UpLoadQueueTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR); //.start();
         //刚启动，查询一次，上传遗漏数据
 //        new UpLoadStrokeDBQuery().execute();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            setForegroundServiceO();
+        } else {
+            setForegroundServiceLeg();
+        }
         return START_STICKY;
     }
 
@@ -748,9 +819,11 @@ public class ZBFormService extends Service {
                 mDrawFormInfo.results[0].getPage());
     }
 
+
+
     public void startDraw() {
         if (!mStopRecordCoord) return;
-
+        acquireWakeLock();
         Log.i(TAG, "SERVICE startDraw");
         mStopRecordCoord = false;
         new CoodSaveDBTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -769,6 +842,7 @@ public class ZBFormService extends Service {
         if (mStopRecordCoord) return;
         Log.i(TAG, "SERVICE stopdraw1");
 
+        releaseWakeLock();
         mIGetHwDataCallBack = null;
         mStopRecordCoord = true;
         ZBformApplication.sBlePenManager.stopDraw();
@@ -778,6 +852,36 @@ public class ZBFormService extends Service {
             mCoordQueue.put(coord);
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void acquireWakeLock(){
+        try {
+            if (null == mWakeLock) {
+                PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
+                mWakeLock = pm.newWakeLock(PowerManager.ON_AFTER_RELEASE
+                        | PowerManager.PARTIAL_WAKE_LOCK
+                        | PowerManager.ACQUIRE_CAUSES_WAKEUP, ApiAddress.WACKLOCK_TAG);
+                if (null != mWakeLock) {
+                    Log.i("whd8","lock acquire");
+                    mWakeLock.acquire();
+                }
+            }
+        } catch(Exception e){
+
+            Log.i("whd8","e="+e.getMessage());
+
+        }
+    }
+
+    private void releaseWakeLock() {
+        try {
+            if (null != mWakeLock) {
+                mWakeLock.release();
+                mWakeLock = null;
+            }
+        } catch (Exception e) {
+
         }
     }
 
@@ -797,3 +901,4 @@ public class ZBFormService extends Service {
         mIGetHwDataCallBack = callBack;
     }
 }
+

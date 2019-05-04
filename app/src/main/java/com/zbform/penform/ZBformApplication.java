@@ -1,9 +1,11 @@
 package com.zbform.penform;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Bundle;
 import android.util.Log;
 
 
@@ -42,6 +44,12 @@ public class ZBformApplication extends Application {
      */
     public static ZBFormBlePenManager sBlePenManager;
 
+    public static int NOTIFICATION_ID = 1024;
+
+    private int mActivityCount;
+
+    public static boolean isForeground = true;
+
     //捕获全局Exception 重启界面
     public void initCatchException() {
         //设置该CrashHandler为程序的默认处理器
@@ -54,6 +62,7 @@ public class ZBformApplication extends Application {
         super.onCreate();
 
         context = this;
+        isForeground = true;
 
         initZBFormBlePenManager();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -66,6 +75,46 @@ public class ZBformApplication extends Application {
         mDB = DbUtils.create(this, "zbform.db");
         mDB.configAllowTransaction(true);
         mDB.configDebug(true);
+
+        registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+            }
+
+            @Override
+            public void onActivityStarted(Activity activity) {
+                mActivityCount++;
+                if (mActivityCount > 0) {
+                    isForeground = true;
+                }
+                Log.i("whd8", "mActivityCount="+mActivityCount);
+            }
+
+            @Override
+            public void onActivityResumed(Activity activity) {
+            }
+
+            @Override
+            public void onActivityPaused(Activity activity) {
+            }
+
+            @Override
+            public void onActivityStopped(Activity activity) {
+                mActivityCount--;
+                Log.i("whd8", "mActivityCount="+mActivityCount);
+                if (0 == mActivityCount) {
+                    isForeground = false;
+                }
+            }
+
+            @Override
+            public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
+            }
+
+            @Override
+            public void onActivityDestroyed(Activity activity) {
+            }
+        });
     }
 
     private void initZBFormBlePenManager() {

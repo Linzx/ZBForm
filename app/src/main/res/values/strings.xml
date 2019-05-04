@@ -9,6 +9,8 @@
     <string name="disconnect">断开连接</string>
     <string name="enter">进入绘制</string>
 
+    <string name="app_running">正在运行...</string>
+
 
 
     <string name="drawer_layout_open">drawer open</string>

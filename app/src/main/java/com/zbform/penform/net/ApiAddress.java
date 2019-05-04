@@ -14,7 +14,16 @@ import java.util.Date;
 public class ApiAddress {
     public final static String TAG = "apiaddress";
 
-    public static boolean DEBUG = true;
+    public static boolean DEBUG = false;
+
+    public static String CHANNEL_ID = DEBUG == false ?
+            "com.zbform.penform.demo" :
+            "com.zbform.penform";
+
+    public static String WACKLOCK_TAG = DEBUG == false ?
+            "com.zbform.penform.demo.tag" :
+            "com.zbform.penform.tag";
+
     public static final String SYSTEM_KEY = "7A1285_788a0f";
 
     public static final String DownLoadPdfUrlBase = DEBUG == true ?

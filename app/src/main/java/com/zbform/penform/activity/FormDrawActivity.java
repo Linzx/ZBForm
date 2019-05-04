@@ -30,6 +30,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -136,7 +137,7 @@ public class FormDrawActivity extends BaseActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         Log.i(TAG, "onCreate");
         setContentView(R.layout.formimg_activity);
         mZBFormBlePenManager = ZBFormBlePenManager.getInstance(FormDrawActivity.this);

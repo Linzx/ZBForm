@@ -1,9 +1,15 @@
 package com.zbform.penform.activity;
 
 import android.app.Activity;
+import android.app.NotificationManager;
+import android.app.Service;
 import android.bluetooth.BluetoothGatt;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
@@ -32,6 +38,7 @@ import com.zbform.penform.adapter.MenuItemAdapter;
 import com.zbform.penform.blepen.ZBFormBlePenManager;
 import com.zbform.penform.fragment.BaseFragment;
 import com.zbform.penform.fragment.FormListFragment;
+import com.zbform.penform.net.ApiAddress;
 import com.zbform.penform.services.BleConnectService;
 import com.zbform.penform.services.ZBFormService;
 
@@ -49,6 +56,7 @@ public class ZBformMain extends BaseActivity {
     private ListView mLvLeftMenu;
     private TextView mTootBarTitle;
     private long time = 0;
+    private ZBFormService mZBFormService;
     private Intent mService;
     private Intent mScanService;
 
@@ -133,6 +141,17 @@ public class ZBformMain extends BaseActivity {
         activity.startActivity(intent);
     }
 
+    ServiceConnection conn = new ServiceConnection() {
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d(TAG, "onServiceConnected");
+            ZBFormService.LocalBinder binder = (ZBFormService.LocalBinder) service;
+            mZBFormService = binder.getService();
+        }
+
+        public void onServiceDisconnected(ComponentName name) {
+            mZBFormService = null;
+        }
+    };
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
@@ -160,6 +179,9 @@ public class ZBformMain extends BaseActivity {
         // 开启数码笔连接服务
         mScanService = new Intent(this, BleConnectService.class);
         startService(mScanService);
+
+        Intent intent = new Intent(this, ZBFormService.class);
+        bindService(intent, conn, Service.BIND_AUTO_CREATE);
     }
 
     private void setUpMenu(Menu menu) {
@@ -256,6 +278,7 @@ public class ZBformMain extends BaseActivity {
 //                        drawerLayout.closeDrawers();
                     case 3:
                         // 退出
+                        cancelNotity();
                         finish();
                         drawerLayout.closeDrawers();
 
@@ -264,6 +287,11 @@ public class ZBformMain extends BaseActivity {
         });
     }
 
+    private void cancelNotity(){
+        if (mZBFormService != null){
+            mZBFormService.stopForeground(true);
+        }
+    }
     @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
 
@@ -304,6 +332,7 @@ public class ZBformMain extends BaseActivity {
 
     @Override
     protected void onDestroy() {
+        cancelNotity();
         ZBformApplication.sBlePenManager.removeZBBleConnectCallback(mBleGattCallback);
         ZBformApplication.sBlePenManager.removeBlePenStateCallBack(mBlePenStateCallBack);
         stopService(mScanService);

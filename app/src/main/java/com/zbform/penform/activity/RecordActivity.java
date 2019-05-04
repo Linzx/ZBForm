@@ -32,6 +32,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -187,7 +188,7 @@ public class RecordActivity extends BaseActivity implements RecordTask.OnTaskLis
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.fragment_record);
-
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         mContext = this;
 //        mRecordImg = findViewById(R.id.record_img);
         mListView = findViewById(R.id.id_lv_right_menu);
